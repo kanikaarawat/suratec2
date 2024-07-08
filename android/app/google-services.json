@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1000915057889",
+    "firebase_url": "https://surasoles-cloud.firebaseio.com",
+    "project_id": "surasoles-cloud",
+    "storage_bucket": "surasoles-cloud.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1000915057889:android:b37d4e3cef9bb32dbf0ba0",
+        "android_client_info": {
+          "package_name": "com.surasole.medical"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1000915057889-565gpudrhb68nvk8r5cgden10sbpqv6u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNRVyAn_bddwUyupO37Cl4rTJ5D3Fcxfo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1000915057889-565gpudrhb68nvk8r5cgden10sbpqv6u.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

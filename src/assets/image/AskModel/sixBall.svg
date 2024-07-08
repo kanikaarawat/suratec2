@@ -1,0 +1,21 @@
+<svg class="lds-balls" width="200px"  height="200px"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" style="background: none;"><circle cx="67.1289" cy="67.7156" r="6" fill="#93dbe9">
+  <animate attributeName="cx" values="80;59.270509831248425" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+  <animate attributeName="cy" values="50;78.53169548885461" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+  <animate attributeName="fill" values="#93dbe9;#689cc5" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+</circle><circle cx="38.4446" cy="71.765" r="6" fill="#689cc5">
+  <animate attributeName="cx" values="59.270509831248425;25.72949016875158" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+  <animate attributeName="cy" values="78.53169548885461;67.6335575687742" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+  <animate attributeName="fill" values="#689cc5;#5e6fa3" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+</circle><circle cx="25.7295" cy="45.7359" r="6" fill="#5e6fa3">
+  <animate attributeName="cx" values="25.72949016875158;25.729490168751575" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+  <animate attributeName="cy" values="67.6335575687742;32.366442431225806" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+  <animate attributeName="fill" values="#5e6fa3;#3b4368" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+</circle><circle cx="46.5554" cy="25.5997" r="6" fill="#3b4368">
+  <animate attributeName="cx" values="25.729490168751575;59.27050983124842" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+  <animate attributeName="cy" values="32.366442431225806;21.46830451114539" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+  <animate attributeName="fill" values="#3b4368;#191d3a" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+</circle><circle cx="72.1416" cy="39.1839" r="6" fill="#191d3a">
+  <animate attributeName="cx" values="59.27050983124842;80" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+  <animate attributeName="cy" values="21.46830451114539;49.99999999999999" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+  <animate attributeName="fill" values="#191d3a;#93dbe9" keyTimes="0;1" dur="1s" repeatCount="indefinite"></animate>
+</circle></svg>
