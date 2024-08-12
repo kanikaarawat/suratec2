@@ -42,7 +42,8 @@ export default class HeaderFix extends Component {
             {this.props.icon_rigth ? (
               <TouchableOpacity onPress={this.props.onpress_rigth}>
                 {this.props.iconType ? (
-                  <Icon type={this.props.iconType} name={this.props.icon_rigth} style={{ color: '#ffffff' }} />
+                  // <Icon type={this.props.iconType} name={this.props.icon_rigth} style={{ color: '#ffffff' }} />
+                  <Image source={require('../../assets/image/more.png')} tintColor={"#fff"} style={{ width: 18, height: 18, marginLeft: 10 }} />
                 ) : (
                   <Icon name={this.props.icon_rigth} style={{ color: '#ffffff' }} />
                 )
