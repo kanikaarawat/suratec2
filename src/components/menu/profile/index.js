@@ -24,7 +24,7 @@ import UI from '../../../config/styles/CommonStyles';
 import Lang from '../../../assets/language/menu/lang_profile';
 import LangModal from './lang_model';
 
-import ImagePicker from 'react-native-image-picker';
+import * as ImagePicker from 'react-native-image-picker';
 
 const options = {
   title: 'Select Picture',
