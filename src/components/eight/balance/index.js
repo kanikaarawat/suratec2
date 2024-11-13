@@ -643,9 +643,58 @@ class index extends Component {
                 .then(resp => resp.json())
                 .then(resp => {
                   // console.log(resp,content,"response");
+                  // if (resp.status != 'ผิดพลาด') {
+                  //   console.log(`Clear : ${r.path}`);
+                  //   RNFS.unlink(r.path);
+                  // }
                   if (resp.status != 'ผิดพลาด') {
                     console.log(`Clear : ${r.path}`);
                     RNFS.unlink(r.path);
+
+                    fetch(`${API}member/getUserDashboardStatic`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        id: this.props.user.id_customer,
+                        // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
+                      }),
+                    })
+                    .then(resp1 => {
+                          console.log('============API Response============');
+                          return  resp1.json();
+                        })
+                      .then(resp1 => {
+                        
+                        fetch(`${API}member/get_user_data`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            id: this.props.user.id_customer,
+                            ...resp1
+                            // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
+                          }),
+                        })
+                          .then(res => {
+                            console.log('============API Response============');
+                            return console.log(res), res.json();
+                          })
+                          .then(res => {
+                            console.log(res, 'responseFromAPU');
+
+                          })
+                          .catch(err => {
+                            console.log(err);
+                            this.setState({ isLoading: false });
+                            Toast.show('Something went wrong. Please Try again!!!');
+                          });
+                      }
+
+                      )
+                      .catch(err => {
+                        console.log(err);
+                        this.setState({ isLoading: false });
+                        Toast.show('Something went wrong. Please Try again!!!');
+                      });
                   }
                 });
             })
@@ -694,9 +743,58 @@ class index extends Component {
                 .then(resp => resp.json())
                 .then(resp => {
                   console.log(resp,content,"response");
+                  // if (resp.status != 'ผิดพลาด') {
+                  //   console.log(`Clear : ${r.path}`);
+                  //   RNFS.unlink(r.path);
+                  // }
                   if (resp.status != 'ผิดพลาด') {
                     console.log(`Clear : ${r.path}`);
                     RNFS.unlink(r.path);
+
+                    fetch(`${API}member/getUserDashboardStatic`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        id: this.props.user.id_customer,
+                        // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
+                      }),
+                    })
+                    .then(resp1 => {
+                          console.log('============API Response============');
+                          return  resp1.json();
+                        })
+                      .then(resp1 => {
+                        
+                        fetch(`${API}member/get_user_data`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            id: this.props.user.id_customer,
+                            ...resp1
+                            // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
+                          }),
+                        })
+                          .then(res => {
+                            console.log('============API Response============');
+                            return console.log(res), res.json();
+                          })
+                          .then(res => {
+                            console.log(res, 'responseFromAPU');
+
+                          })
+                          .catch(err => {
+                            console.log(err);
+                            this.setState({ isLoading: false });
+                            Toast.show('Something went wrong. Please Try again!!!');
+                          });
+                      }
+
+                      )
+                      .catch(err => {
+                        console.log(err);
+                        this.setState({ isLoading: false });
+                        Toast.show('Something went wrong. Please Try again!!!');
+                      });
                   }
                 });
             })

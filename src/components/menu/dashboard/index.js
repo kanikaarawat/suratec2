@@ -1235,9 +1235,9 @@ class index extends Component {
                                   fontWeight: 'bold',
                                 }}>
                                 {(this.state.healthData.fall_risk == 1 &&
-                                  'No') ||
+                                  'Low') ||
                                   (this.state.healthData.fall_risk == 2 &&
-                                    'Risk') ||
+                                    'Medium') ||
                                   (this.state.healthData.fall_risk == 3 &&
                                     'High')}
                               </Text>
