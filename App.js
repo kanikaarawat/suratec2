@@ -22,11 +22,19 @@ import GailAnalysisScreen from './src/components/menu/gail';
 import TrainingScreen from './src/components/menu/training';
 import ExerciseTraining from './src/components/menu/training/ExerciseTraining';
 import ExerciseWorkOutScreen from './src/components/menu/training/ExerciseWorkOut';
+import LowRiskExercise from './src/components/menu/training/LowRiskExercise';
+import ModerateRiskExercise from './src/components/menu/training/ModerateRiskExercise';
 import DashboardScreen from './src/components/menu/dashboard';
 import ProfileScreen from './src/components/menu/profile';
 import FootsBalanceScreen from './src/components/menu/balance';
 import LeftFootsScreen from './src/components/menu/balance/left';
 import RightFootsScreen from './src/components/menu/balance/right';
+import AssessmentHome from './src/components/menu/assessment/AssessmentHome';
+import StandOpenEyes from './src/components/menu/assessment/StandOpenEyes';
+import StandEyesClosed from './src/components/menu/assessment/StandEyesClosed';
+import TenMeterWalkTest from './src/components/menu/assessment/TenMeterWalkTest';
+import Chatbot from './src/components/menu/chat/Chatbot';
+
 import ShoeRecommendScreen from './src/components/menu/shoe/ShoeRecommendScreen';
 import CartScreen from './src/components/menu/shoe/CartScreen';
 
@@ -80,6 +88,13 @@ const AppStack = createStackNavigator(
     Training: TrainingScreen,
     ExerciseTraining: ExerciseTraining,
     ExerciseWorkOut: ExerciseWorkOutScreen,
+      LowRiskExercise: LowRiskExercise,
+      ModerateRiskExercise: ModerateRiskExercise,
+    AssessmentHome: AssessmentHome,
+    StandOpenEyes: StandOpenEyes,
+    StandEyesClosed: StandEyesClosed,
+    TenMeterWalkTest: TenMeterWalkTest,
+    Chatbot: Chatbot,
     Dashboard: DashboardScreen,
     ShoeRecommend: ShoeRecommendScreen,
       CartScreen: CartScreen,

@@ -46,6 +46,7 @@ export default class ExerciseTraining extends Component {
                     </TouchableOpacity>
 
 
+
                 </ScrollView>
             </View>
         );

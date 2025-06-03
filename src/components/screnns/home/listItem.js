@@ -284,9 +284,9 @@ class listItem extends Component {
                     }}>
                     <Items
                         text={'Assessment Tests'}
-                        source={require('../../../assets/image/menu/medicine.png')} // Replace with appropriate icon
+                        source={require('../../../assets/image/menu/assessment_icon.png')}
                         onPress={() => {
-                            this.props.navigation.navigate('AssessmentTests');
+                            this.props.navigation.navigate('AssessmentHome');
                         }}
                     />
                     <Items
@@ -303,7 +303,7 @@ class listItem extends Component {
                     />
                     <Items
                         text={'Exercise Training'}
-                        source={require('../../../assets/image/menu/training.png')} // Reuse or update icon
+                        source={require('../../../assets/image/menu/training.png')}
                         onPress={() => {
                             this.props.navigation.navigate('ExerciseTraining');
                         }}
@@ -338,7 +338,7 @@ class listItem extends Component {
                     />
                     <Items
                         text={'Shoe Recommend'}
-                        source={require('../../../assets/image/menu/profile.png')}
+                        source={require('../../../assets/image/menu/shoe_icon.png')}
                         onPress={() => {
                             this.props.navigation.navigate('ShoeRecommend');
                         }}
