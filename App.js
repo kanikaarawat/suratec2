@@ -20,11 +20,16 @@ import DailyDataScreen from './src/components/menu/dailydata';
 import PressureMapScreen from './src/components/menu/pressuremap';
 import GailAnalysisScreen from './src/components/menu/gail';
 import TrainingScreen from './src/components/menu/training';
+import ExerciseTraining from './src/components/menu/training/ExerciseTraining';
+import ExerciseWorkOutScreen from './src/components/menu/training/ExerciseWorkOut';
 import DashboardScreen from './src/components/menu/dashboard';
 import ProfileScreen from './src/components/menu/profile';
 import FootsBalanceScreen from './src/components/menu/balance';
 import LeftFootsScreen from './src/components/menu/balance/left';
 import RightFootsScreen from './src/components/menu/balance/right';
+import ShoeRecommendScreen from './src/components/menu/shoe/ShoeRecommendScreen';
+import CartScreen from './src/components/menu/shoe/CartScreen';
+
 
 import PressureMapEightSensorScreen from './src/components/eight/pressuremap';
 import GailAnalysisEightSensorScreen from './src/components/eight/gail';
@@ -73,9 +78,13 @@ const AppStack = createStackNavigator(
     PressureMap: PressureMapScreen,
     GailAnalysis: GailAnalysisScreen,
     Training: TrainingScreen,
+    ExerciseTraining: ExerciseTraining,
+    ExerciseWorkOut: ExerciseWorkOutScreen,
     Dashboard: DashboardScreen,
+    ShoeRecommend: ShoeRecommendScreen,
+      CartScreen: CartScreen,
 
-    Profile: ProfileScreen,
+      Profile: ProfileScreen,
     FootsBalance: FootsBalanceScreen,
     Try: Tryf,
     MonofilamentNew: MonofilamentNew,
@@ -90,6 +99,7 @@ const AppStack = createStackNavigator(
     LeftFootsEight: LeftFootsEightSensorScreen,
     RigthFootsEight: RightFootsEightSensorScreen,
     DashboardEight: DashboardEightSensorScreen,
+
   },
   {
     defaultNavigationOptions: {
