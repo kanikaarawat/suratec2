@@ -10,10 +10,24 @@ import {
     Dimensions,
     Platform,
 } from 'react-native';
+import { BackHandler } from 'react-native';
+import { useEffect } from 'react';
 
 const { width, height } = Dimensions.get('window');
 
 export default function Chatbot({ navigation }) {
+    useEffect(() => {
+        const backHandler = BackHandler.addEventListener(
+            'hardwareBackPress',
+            () => {
+                navigation.goBack();
+                return true;
+            }
+        );
+
+        return () => backHandler.remove();
+    }, [navigation]);
+
     return (
         <View style={styles.container}>
             {/* ===== Header Area ===== */}

@@ -343,6 +343,18 @@ class listItem extends Component {
                             this.props.navigation.navigate('ShoeRecommend');
                         }}
                     />
+                    <View
+                        style={{
+                            borderWidth: 0,
+                            height: 150,
+                            width: '30%',
+                            marginHorizontal: 5,
+                            borderRadius: 6,
+                            marginVertical: 5,
+                            backgroundColor: 'transparent', // invisible
+                        }}
+                    />
+
                 </View>
             </View>
         );

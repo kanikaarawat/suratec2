@@ -109,7 +109,7 @@ export default function DraggableFAB({ navigation }) {
 
     // Tapping the FAB navigates to Chatbot
     const handlePress = () => {
-        navigation.navigate('Chatbot');
+        navigation.push('Chatbot');
     };
 
     return (

@@ -512,7 +512,7 @@
 				DEVELOPMENT_TEAM = 489HTHJY2Q;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = SurasoleMedicalApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "SuraSole Medical";
+				INFOPLIST_KEY_CFBundleDisplayName = "SuraSole Fall Risk";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -542,7 +542,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 489HTHJY2Q;
 				INFOPLIST_FILE = SurasoleMedicalApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "SuraSole Medical";
+				INFOPLIST_KEY_CFBundleDisplayName = "SuraSole Fall Risk";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

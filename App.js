@@ -1,9 +1,14 @@
 import React from 'react';
-import {View, Image, Dimensions} from 'react-native';
-import {createAppContainer, createSwitchNavigator} from 'react-navigation';
+import { View, Image, Dimensions, StyleSheet } from 'react-native';
+import { createAppContainer, createSwitchNavigator } from 'react-navigation';
+import { createStackNavigator } from 'react-navigation-stack';
+import { ModalPortal } from 'react-native-modals';
+import { Root } from 'native-base';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/lib/integration/react';
+import configureStore from './src/Store';
 
-import {createStackNavigator} from 'react-navigation-stack';
-import {ModalPortal} from 'react-native-modals';
+// Auth Screens
 import TermsScreen from './src/components/auth/terms';
 import SignInScreen from './src/components/auth/Signln';
 import RegisterScreen from './src/components/auth/Register';
@@ -11,9 +16,8 @@ import ForgetPasswordScreen from './src/components/auth/ForgetPass';
 import AuthLoadingScreen from './src/components/auth/AuthLoading';
 import LoadingScreen from './src/components/auth/Loading';
 
-
+// Menu Screens
 import HomeScreen from './src/components/screnns/home';
-
 import DeviceScreen from './src/components/menu/device';
 import ProductScreen from './src/components/menu/product';
 import DailyDataScreen from './src/components/menu/dailydata';
@@ -34,11 +38,10 @@ import StandOpenEyes from './src/components/menu/assessment/StandOpenEyes';
 import StandEyesClosed from './src/components/menu/assessment/StandEyesClosed';
 import TenMeterWalkTest from './src/components/menu/assessment/TenMeterWalkTest';
 import Chatbot from './src/components/menu/chat/Chatbot';
-
 import ShoeRecommendScreen from './src/components/menu/shoe/ShoeRecommendScreen';
 import CartScreen from './src/components/menu/shoe/CartScreen';
 
-
+// Eight-Sensor Screens
 import PressureMapEightSensorScreen from './src/components/eight/pressuremap';
 import GailAnalysisEightSensorScreen from './src/components/eight/gail';
 import TrainingEightSensorScreen from './src/components/eight/training';
@@ -47,129 +50,146 @@ import LeftFootsEightSensorScreen from './src/components/eight/balance/left';
 import RightFootsEightSensorScreen from './src/components/eight/balance/right';
 import DashboardEightSensorScreen from './src/components/eight/dashboard';
 
-import {Root} from 'native-base';
-import {Provider} from 'react-redux';
-import {PersistGate} from 'redux-persist/lib/integration/react';
-import configureStore from './src/Store';
+// Other Screens
 import Footscreen from './src/components/screnns/Foot/Footscreen';
 import Tryf from './src/components/screnns/Try/Tryf';
 import Legs from './src/components/screnns/Try/Legs';
 import MonofilamentNew from './src/components/screnns/Try/MonofilamentNew';
 
+// FAB Component
+import DraggableFAB from './src/components/common/DraggableFAB';
+
 console.disableYellowBox = true;
 
-const {store, persister} = configureStore();
+const { store, persister } = configureStore();
 
+// 1. HOC to inject FAB on every screen except Chatbot
+const withFAB = (ScreenComponent) => {
+    return class extends React.Component {
+        render() {
+            return (
+                <View style={styles.screenContainer}>
+                    <ScreenComponent {...this.props} />
+                    <DraggableFAB navigation={this.props.navigation} />
+                </View>
+            );
+        }
+    };
+};
+
+const styles = StyleSheet.create({
+    screenContainer: {
+        flex: 1,
+    },
+});
+
+// 2. Auth Stack (no FAB needed)
 const AuthStack = createStackNavigator(
-  {
-    SignIn: SignInScreen,
-    Terms: TermsScreen,
-    Register: RegisterScreen,
-    ForgetPass: ForgetPasswordScreen,
-  },
-  {
-    defaultNavigationOptions: {
-      headerShown: false,
+    {
+        SignIn: SignInScreen,
+        Terms: TermsScreen,
+        Register: RegisterScreen,
+        ForgetPass: ForgetPasswordScreen,
     },
-    initialRouteName: 'SignIn',
-  },
+    {
+        defaultNavigationOptions: {
+            headerShown: false,
+        },
+        initialRouteName: 'SignIn',
+    },
 );
 
+// 3. App Stack (FAB added to all except Chatbot)
 const AppStack = createStackNavigator(
-  {
-    Home: HomeScreen,
-    Footscreen: Footscreen,
-
-    Device: DeviceScreen,
-    Product: ProductScreen,
-    DailyData: DailyDataScreen,
-    PressureMap: PressureMapScreen,
-    GailAnalysis: GailAnalysisScreen,
-    Training: TrainingScreen,
-    ExerciseTraining: ExerciseTraining,
-    ExerciseWorkOut: ExerciseWorkOutScreen,
-      LowRiskExercise: LowRiskExercise,
-      ModerateRiskExercise: ModerateRiskExercise,
-    AssessmentHome: AssessmentHome,
-    StandOpenEyes: StandOpenEyes,
-    StandEyesClosed: StandEyesClosed,
-    TenMeterWalkTest: TenMeterWalkTest,
-    Chatbot: Chatbot,
-    Dashboard: DashboardScreen,
-    ShoeRecommend: ShoeRecommendScreen,
-      CartScreen: CartScreen,
-
-      Profile: ProfileScreen,
-    FootsBalance: FootsBalanceScreen,
-    Try: Tryf,
-    MonofilamentNew: MonofilamentNew,
-    Legs: Legs,
-    LeftFoots: LeftFootsScreen,
-    RigthFoots: RightFootsScreen,
-
-    PressureMapEight: PressureMapEightSensorScreen,
-    GailAnalysisEight: GailAnalysisEightSensorScreen,
-    TrainingEight: TrainingEightSensorScreen,
-    FootsBalanceEight: FootsBalanceEightSensorScreen,
-    LeftFootsEight: LeftFootsEightSensorScreen,
-    RigthFootsEight: RightFootsEightSensorScreen,
-    DashboardEight: DashboardEightSensorScreen,
-
-  },
-  {
-    defaultNavigationOptions: {
-      headerShown: false,
+    {
+        Home: withFAB(HomeScreen),
+        Footscreen: withFAB(Footscreen),
+        Device: withFAB(DeviceScreen),
+        Product: withFAB(ProductScreen),
+        DailyData: withFAB(DailyDataScreen),
+        PressureMap: withFAB(PressureMapScreen),
+        GailAnalysis: withFAB(GailAnalysisScreen),
+        Training: withFAB(TrainingScreen),
+        ExerciseTraining: withFAB(ExerciseTraining),
+        ExerciseWorkOut: withFAB(ExerciseWorkOutScreen),
+        LowRiskExercise: withFAB(LowRiskExercise),
+        ModerateRiskExercise: withFAB(ModerateRiskExercise),
+        AssessmentHome: withFAB(AssessmentHome),
+        StandOpenEyes: withFAB(StandOpenEyes),
+        StandEyesClosed: withFAB(StandEyesClosed),
+        TenMeterWalkTest: withFAB(TenMeterWalkTest),
+        Dashboard: withFAB(DashboardScreen),
+        ShoeRecommend: withFAB(ShoeRecommendScreen),
+        CartScreen: withFAB(CartScreen),
+        Profile: withFAB(ProfileScreen),
+        FootsBalance: withFAB(FootsBalanceScreen),
+        Try: withFAB(Tryf),
+        MonofilamentNew: withFAB(MonofilamentNew),
+        Legs: withFAB(Legs),
+        LeftFoots: withFAB(LeftFootsScreen),
+        RigthFoots: withFAB(RightFootsScreen),
+        PressureMapEight: withFAB(PressureMapEightSensorScreen),
+        GailAnalysisEight: withFAB(GailAnalysisEightSensorScreen),
+        TrainingEight: withFAB(TrainingEightSensorScreen),
+        FootsBalanceEight: withFAB(FootsBalanceEightSensorScreen),
+        LeftFootsEight: withFAB(LeftFootsEightSensorScreen),
+        RigthFootsEight: withFAB(RightFootsEightSensorScreen),
+        DashboardEight: withFAB(DashboardEightSensorScreen),
+        Chatbot: Chatbot, // <-- No FAB here
     },
-    initialRouteName: 'Home',
-  },
+    {
+        defaultNavigationOptions: {
+            headerShown: false,
+        },
+        initialRouteName: 'Home',
+    },
 );
 
+// 4. Preload Screen (optional)
 class PreloadScreen extends React.PureComponent {
+    componentDidMount() {
+        // Firebase.initializeApp(); ← uncomment if Firebase used
+    }
 
-componentDidMount(){
-  Firebase.initializeApp();
+    render() {
+        return (
+            <View>
+                <Image
+                    style={{
+                        width: Dimensions.get('screen').width,
+                        height: Dimensions.get('screen').height,
+                        resizeMode: 'contain',
+                    }}
+                    // source={require('./src/assets/image/icons/surasolelogo.png')}
+                />
+            </View>
+        );
+    }
 }
 
-
-  render() {
-    return (
-      <View>
-        <Image
-          style={{
-            width: Dimensions.get('screen').width,
-            height: Dimensions.get('screen').height,
-            resizeMode: 'contain',
-          }}
-          // source={require('./src/assets/image/icons/surasolelogo.png')}
-        />
-      </View>
-    );
-  }
-}
-
+// 5. Main Navigation Container
 const Main = createAppContainer(
-  createSwitchNavigator(
-    {
-      AuthLoading: AuthLoadingScreen,
-      App: AppStack,
-      Auth: AuthStack,
-      Loading: LoadingScreen,
-    },
-    {
-      initialRouteName: 'AuthLoading',
-    },
-  ),
+    createSwitchNavigator(
+        {
+            AuthLoading: AuthLoadingScreen,
+            App: AppStack,
+            Auth: AuthStack,
+            Loading: LoadingScreen,
+        },
+        {
+            initialRouteName: 'AuthLoading',
+        },
+    ),
 );
 
+// 6. Root Component with Redux & Modal
 export default () => (
-  <Provider store={store}>
-    <PersistGate persistor={persister} loading={null}>
-      <Root>
-        <ModalPortal />
-        <Main />
-      </Root>
-    </PersistGate>
-  </Provider>
+    <Provider store={store}>
+        <PersistGate persistor={persister} loading={null}>
+            <Root>
+                <ModalPortal />
+                <Main />
+            </Root>
+        </PersistGate>
+    </Provider>
 );
-
-//export default createAppContainer(AppNavigator);

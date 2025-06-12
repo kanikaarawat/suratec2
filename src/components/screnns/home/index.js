@@ -46,8 +46,6 @@ import Modal, {
 } from 'react-native-modals';
 import RefreshComponent from '../../common/RefreshComponent';
 
-import DraggableFAB from '../../common/DraggableFAB';
-
 const screenWidth = Math.round(Dimensions.get('window').width) * 0.25;
 class index extends Component {
   constructor() {
@@ -367,8 +365,6 @@ class index extends Component {
           <ListItem navigation={this.props.navigation} />
         </ScrollView>
 
-        {/* Draggable FAB Overlaid on Top */}
-        <DraggableFAB navigation={this.props.navigation} />
       </View>
     );
   }

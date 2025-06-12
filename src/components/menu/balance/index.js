@@ -1272,60 +1272,60 @@ class index extends Component {
           </>
         ) : (
           <>
-            <View
-              style={{
-                // borderWidth: 0.5,
-                borderRadius: 6,
-                marginHorizontal: 20,
-                marginTop: 20,
-                // paddingVertical: 10,
-                flexDirection: 'row',
-                justifyContent: 'space-evenly',
-                alignItems: 'center',
-                backgroundColor: '#ccc',
-              }}>
-              {this.state.menuAction.map((data, index) => (
-                <TouchableOpacity
-                  onPress={() => this.setState({selectedMenu: data.key})}
-                  style={{
-                    padding: 10,
-                    width: '50%',
-                    backgroundColor:
-                      this.state.selectedMenu == data.key ? '#fff' : '#ccc',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderRadius: 6,
-                  }}>
-                  <RNText
-                    style={{
-                      fontSize: 17,
-                      color:
-                        this.state.selectedMenu == data.key
-                          ? '#0CFFD3'
-                          : '#000',
-                      fontWeight: '700',
-                    }}>
-                    {data.title}
-                  </RNText>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <NotificationsState />
+            {/*<View*/}
+            {/*  style={{*/}
+            {/*    // borderWidth: 0.5,*/}
+            {/*    borderRadius: 6,*/}
+            {/*    marginHorizontal: 20,*/}
+            {/*    marginTop: 20,*/}
+            {/*    // paddingVertical: 10,*/}
+            {/*    flexDirection: 'row',*/}
+            {/*    justifyContent: 'space-evenly',*/}
+            {/*    alignItems: 'center',*/}
+            {/*    backgroundColor: '#ccc',*/}
+            {/*  }}>*/}
+            {/*  {this.state.menuAction.map((data, index) => (*/}
+            {/*    <TouchableOpacity*/}
+            {/*      onPress={() => this.setState({selectedMenu: data.key})}*/}
+            {/*      style={{*/}
+            {/*        padding: 10,*/}
+            {/*        width: '50%',*/}
+            {/*        backgroundColor:*/}
+            {/*          this.state.selectedMenu == data.key ? '#fff' : '#ccc',*/}
+            {/*        justifyContent: 'center',*/}
+            {/*        alignItems: 'center',*/}
+            {/*        borderRadius: 6,*/}
+            {/*      }}>*/}
+            {/*      <RNText*/}
+            {/*        style={{*/}
+            {/*          fontSize: 17,*/}
+            {/*          color:*/}
+            {/*            this.state.selectedMenu == data.key*/}
+            {/*              ? '#0CFFD3'*/}
+            {/*              : '#000',*/}
+            {/*          fontWeight: '700',*/}
+            {/*        }}>*/}
+            {/*        {data.title}*/}
+            {/*      </RNText>*/}
+            {/*    </TouchableOpacity>*/}
+            {/*  ))}*/}
+            {/*</View>*/}
+            {/*<NotificationsState />*/}
             <View
               style={{
                 padding: 15,
               }}>
-              <View style={{flex: 4, height: '100%',marginHorizontal:10}}>
-                <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
+              <View style={{flex: 4, height: '100%', marginHorizontal: 10, marginTop: '5%'}}>
+              <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
                    <Text>Foot Balance </Text>
                 {this.state.selectedMenu == 2 && this.state.textAction == 'Stop' && <RNText style={{fontSize: 18, color: '#FF4433',fontWeight:"700"}}>
                           {this.state.countDownTimer}
-                        </RNText>}  
+                        </RNText>}
                 </View>
-             
 
-                <View style={{alignItems: 'center'}}>
-                  {this.state.focus ? (
+
+                <View style={{alignItems: 'center', marginBottom: '6%'}}>
+                {this.state.focus ? (
                     <RadarChartFix
                       xPos={this.state.xPosN}
                       yPos={this.state.yPosN}
@@ -1335,9 +1335,10 @@ class index extends Component {
                   )}
                 </View>
               </View>
-              {this.state.selectedMenu == 1 && (
-                <View style={{flex: 1, height: '100%'}}>
-                  <Grid style={{padding: 15}}>
+              {/*{this.state.selectedMenu == 1 && (*/}
+              {true && (
+                  <View style={{flex: 1, height: '100%'}}>
+                    <Grid style={{paddingHorizontal: 15, marginBottom: '6%'}}>
                     <Col>
                       <BalanceButton
                         bntName={'Left'}
@@ -1366,26 +1367,27 @@ class index extends Component {
                 </View>
               )}
 
-              <ScoreFix
-                title={'Balancing Grade'}
-                status={this.state.status}
-                score={this.state.score}
-              />
+              {/*<ScoreFix*/}
+              {/*  title={'Balancing Grade'}*/}
+              {/*  status={this.state.status}*/}
+              {/*  score={this.state.score}*/}
+              {/*/>*/}
 
-              <CardStatusFix
-                title={'Balancing Grade'}
-                status={this.state.status}
-                txt={this.state.txt}
-              />
+              {/*<CardStatusFix*/}
+              {/*  title={'Balancing Grade'}*/}
+              {/*  status={this.state.status}*/}
+              {/*  txt={this.state.txt}*/}
+              {/*/>*/}
 
               {this.state.selectedMenu == 1 ? (
-                <View
-                  style={{
-                    flex: 1,
-                    height: '100%',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
+                  <View
+                      style={{
+                        flex: 1,
+                        height: '100%',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginBottom: '10%',
+                      }}>
                   {/* <Grid style={{padding: 15}}> */}
                   {/* <Col> */}
                   <ButtonFix
