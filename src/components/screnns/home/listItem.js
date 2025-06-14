@@ -286,7 +286,7 @@ class listItem extends Component {
                         text={'Assessment Tests'}
                         source={require('../../../assets/image/menu/assessment_icon.png')}
                         onPress={() => {
-                            this.props.navigation.navigate('AssessmentHome');
+                            this.props.navigation.navigate('FallRiskScreen');
                         }}
                     />
                     <Items

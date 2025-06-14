@@ -33,9 +33,9 @@ import ProfileScreen from './src/components/menu/profile';
 import FootsBalanceScreen from './src/components/menu/balance';
 import LeftFootsScreen from './src/components/menu/balance/left';
 import RightFootsScreen from './src/components/menu/balance/right';
-import AssessmentHome from './src/components/menu/assessment/AssessmentHome';
-import StandOpenEyes from './src/components/menu/assessment/StandOpenEyes';
-import StandEyesClosed from './src/components/menu/assessment/StandEyesClosed';
+import FallRiskScreen from './src/components/menu/assessment/FallRiskScreen';
+import StandEyes from './src/components/menu/assessment/StandEyes';
+
 import TenMeterWalkTest from './src/components/menu/assessment/TenMeterWalkTest';
 import Chatbot from './src/components/menu/chat/Chatbot';
 import ShoeRecommendScreen from './src/components/menu/shoe/ShoeRecommendScreen';
@@ -114,9 +114,9 @@ const AppStack = createStackNavigator(
         ExerciseWorkOut: withFAB(ExerciseWorkOutScreen),
         LowRiskExercise: withFAB(LowRiskExercise),
         ModerateRiskExercise: withFAB(ModerateRiskExercise),
-        AssessmentHome: withFAB(AssessmentHome),
-        StandOpenEyes: withFAB(StandOpenEyes),
-        StandEyesClosed: withFAB(StandEyesClosed),
+        FallRiskScreen: withFAB(FallRiskScreen),
+        StandOpenEyes: withFAB((props) => <StandEyes {...props} type="open" />),
+        StandEyesClosed: withFAB((props) => <StandEyes {...props} type="closed" />),
         TenMeterWalkTest: withFAB(TenMeterWalkTest),
         Dashboard: withFAB(DashboardScreen),
         ShoeRecommend: withFAB(ShoeRecommendScreen),

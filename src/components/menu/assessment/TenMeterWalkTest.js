@@ -1,210 +1,266 @@
-// src/components/menu/assessment/TenMeterWalkTest.js
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Component } from 'react';
 import {
     View,
     Text,
-    TouchableOpacity,
     StyleSheet,
-    Dimensions,
+    Image,
+    TouchableOpacity,
+    Alert,
+    Vibration,
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { connect } from 'react-redux';
+import RNFS from 'react-native-fs';
+import BleManager from 'react-native-ble-manager';
+import { NativeModules, NativeEventEmitter } from 'react-native';
+import HeaderFix from '../../common/HeaderFix';
+import API from '../../../config/Api';
 
-const { width, height } = Dimensions.get('window');
+const BleManagerModule = NativeModules.BleManager;
+const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
-export default function TenMeterWalkTest({ navigation }) {
-    const [timer, setTimer] = useState(null);
-    const [isRunning, setIsRunning] = useState(false);
-    const intervalRef = useRef(null);
-
-    const handleStart = () => {
-        if (isRunning) return;
-        setIsRunning(true);
-        setTimer(0);
-        intervalRef.current = setInterval(() => {
-            setTimer((prev) => prev + 1);
-        }, 1000);
-    };
-
-    const handleFinish = () => {
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-        }
-        setIsRunning(false);
-        // TODO: send `timer` result to backend if needed
-        navigation.popToTop();
-    };
-
-    useEffect(() => {
-        return () => {
-            if (intervalRef.current) clearInterval(intervalRef.current);
+class TenMeterWalkTest extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            isConnected: true,
+            textAction: 'Start',
+            countDownTimer: 10,
         };
-    }, []);
 
-    return (
-        <View style={styles.container}>
-            {/* ===== Custom Header with plain < on left and “Finish” on right ===== */}
-            <View style={styles.header}>
-                {/* Back arrow as plain "<" */}
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Text style={styles.arrowText}>&lt;</Text>
-                </TouchableOpacity>
+        this.round = Math.floor(1000 + Math.random() * 9000);
+        this.lsensor = [0, 0, 0, 0, 0];
+        this.rsensor = [0, 0, 0, 0, 0];
+    }
 
-                <Text style={styles.headerTitle}>10-meter walk test</Text>
+    async componentDidMount() {
+        const noti = await AsyncStorage.getItem('notiSetting');
+        if (noti) this.setState({ notiAlarm: parseInt(noti) });
+        NetInfo.addEventListener(this.handleConnectivityChange);
 
-                {/* If running, show "Finish"; otherwise placeholder */}
-                {isRunning ? (
-                    <TouchableOpacity onPress={handleFinish}>
-                        <Text style={styles.finishText}>Finish</Text>
-                    </TouchableOpacity>
-                ) : (
-                    <View style={{ width: 60 }} />
-                )}
-            </View>
+        this.focusListener = this.props.navigation.addListener('didFocus', () => {
+            this.retrieveConnected();
+            this.startReading();
+        });
+    }
 
-            {/* ===== Vertically Centered Content ===== */}
-            <View style={styles.content}>
-                {/* Illustration Placeholder */}
-                <View style={styles.imagePlaceholder}>
-                    <View style={styles.pathLine} />
-                    <View style={styles.personSilhouetteStart} />
-                    <View style={styles.personSilhouetteMid} />
-                    <View style={styles.personSilhouetteEnd} />
-                    <Text style={styles.distanceLabel}>10 METERS</Text>
+    componentWillUnmount() {
+        clearInterval(this.readInterval);
+        if (this.dataRecord) this.dataRecord.remove();
+        if (this.focusListener) this.focusListener.remove();
+    }
+
+    handleConnectivityChange = status => {
+        this.setState({ isConnected: status.isConnected });
+    };
+
+    toDecimalArray(byteArray) {
+        let dec = [];
+        for (let i = 0; i < byteArray.length - 1; i += 2) {
+            dec.push(byteArray[i] * 255 + byteArray[i + 1]);
+        }
+        return dec;
+    }
+
+    recordData(data, sensor) {
+        if (sensor === 'L') this.lsensor = data;
+        else this.rsensor = data;
+    }
+
+    retrieveConnected() {
+        BleManager.getConnectedPeripherals([]).then(results => {
+            results.forEach(peripheral => this.connectPeripheral(peripheral));
+        });
+    }
+
+    connectPeripheral(peripheral) {
+        BleManager.connect(peripheral.id).then(() => {
+            if (peripheral.name?.endsWith('L')) {
+                this.props.addLeftDevice(peripheral.id);
+            } else if (peripheral.name?.endsWith('R')) {
+                this.props.addRightDevice(peripheral.id);
+            }
+        });
+    }
+
+    startReading() {
+        this.dataRecord = bleManagerEmitter.addListener(
+            'BleManagerDidUpdateValueForCharacteristic',
+            ({ value, peripheral }) => {
+                const time = new Date();
+                const data = this.toDecimalArray(value);
+                if (peripheral === this.props.rightDevice) this.recordData(data, 'R');
+                if (peripheral === this.props.leftDevice) this.recordData(data, 'L');
+            }
+        );
+    }
+
+    sendDataToServer = () => {
+        RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
+            res.forEach(r => {
+                RNFS.readFile(r.path)
+                    .then(text => {
+                        const data = JSON.parse('[' + text.slice(0, -1) + ']');
+                        const content = {
+                            data,
+                            id_customer: this.props.user.id_customer,
+                            id_device: '',
+                            type: 1,
+                            product_number: this.props.productNumber,
+                            bluetooth_left_id: this.props.leftDevice,
+                            bluetooth_right_id: this.props.rightDevice,
+                            shoe_size: 0,
+                            leg_type: '10MWT',
+                        };
+                        fetch(`${API}/addjson`, {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(content),
+                        })
+                            .then(resp => resp.json())
+                            .then(resp => {
+                                if (resp.status !== 'ผิดพลาด') {
+                                    RNFS.unlink(r.path);
+                                }
+                            });
+                    })
+                    .catch(e => console.error(e));
+            });
+        });
+    };
+
+    handleStart = () => {
+        const { rightDevice, leftDevice } = this.props;
+        if (!rightDevice && !leftDevice) {
+            Alert.alert('Warning!', 'Please Check Your Bluetooth Connect');
+            return;
+        }
+
+        this.setState({ textAction: 'Recording...' });
+
+        const start = new Date();
+        this.readInterval = setInterval(() => {
+            const time = new Date();
+            const data = {
+                stamp: time.getTime(),
+                timestamp: time,
+                duration: Math.floor((time - start) / 1000),
+                left: {
+                    sensor: this.lsensor,
+                    swing: 0,
+                    stance: 0,
+                },
+                right: {
+                    sensor: this.rsensor,
+                    swing: 0,
+                    stance: 0,
+                },
+                id_customer: this.props.user.id_customer,
+            };
+
+            RNFS.appendFile(
+                `${RNFS.CachesDirectoryPath}/suratechM/${start.getFullYear()}${start.getMonth()}${start.getDate()}${this.round}`,
+                JSON.stringify(data) + ',',
+            ).catch(() => {
+                RNFS.mkdir(`${RNFS.CachesDirectoryPath}/suratechM/`).then(() => {
+                    RNFS.appendFile(
+                        `${RNFS.CachesDirectoryPath}/suratechM/${start.getFullYear()}${start.getMonth()}${start.getDate()}${this.round}`,
+                        JSON.stringify(data) + ',',
+                    );
+                });
+            });
+        }, 100);
+
+        setTimeout(() => {
+            clearInterval(this.readInterval);
+            this.setState({ textAction: 'Start' });
+            this.sendDataToServer();
+        }, 10000);
+    };
+
+    render() {
+        return (
+            <View style={styles.container}>
+                <HeaderFix
+                    icon_left="left"
+                    onpress_left={() => this.props.navigation.goBack()}
+                    title="10-meter walk test"
+                    rightText="finish"
+                    onpress_right={() => Alert.alert('Test Complete')}
+                />
+
+                <View style={styles.content}>
+                    <Image
+                        source={require('../../../assets/image/dynamic/tenmeter.png')}
+                        style={styles.image}
+                    />
+                    <Text style={styles.title}>Walking</Text>
+                    <Text style={styles.description}>Walk straight for 10 meters.</Text>
                 </View>
 
-                <Text style={styles.subtitle}>Walking</Text>
-                <Text style={styles.instructionText}>Walk straight for 10 meters.</Text>
-
-                {isRunning ? (
-                    <Text style={styles.timerText}>{timer} s</Text>
-                ) : (
-                    <TouchableOpacity style={styles.startButton} onPress={handleStart}>
-                        <Text style={styles.startText}>Start</Text>
-                    </TouchableOpacity>
-                )}
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={this.handleStart}
+                    disabled={this.state.textAction !== 'Start'}>
+                    <Text style={styles.buttonText}>{this.state.textAction}</Text>
+                </TouchableOpacity>
             </View>
-        </View>
-    );
+        );
+    }
 }
 
-// ------------- Styles -------------
-const CARD_WIDTH = width * 0.8;
-
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#FAFEFE',
-    },
-    header: {
-        flexDirection: 'row',
-        height: 56,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#FFFFFF',
-        elevation: 2,
-        paddingHorizontal: 16,
-    },
-    arrowText: {
-        fontSize: 24,
-        color: '#00A499',
-        fontWeight: '700',
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#00A499',
-        textAlign: 'center',
-    },
-    finishText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#00A499',
-        width: 60,              // ensures same width as placeholder
-        textAlign: 'right',
-    },
-
+    container: { flex: 1, backgroundColor: '#FFF' },
     content: {
-        flex: 1,
-        justifyContent: 'center',   // vertical centering
         alignItems: 'center',
-        paddingHorizontal: 16,
+        marginTop: 50,
     },
-    imagePlaceholder: {
-        width: CARD_WIDTH,
-        height: CARD_WIDTH * 0.6,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 24,
+    image: {
+        width: '100%',
+        height: 300,
+        resizeMode: 'contain',
     },
-    pathLine: {
-        position: 'absolute',
-        bottom: CARD_WIDTH * 0.15,
-        width: CARD_WIDTH * 0.8,
-        height: 8,
-        backgroundColor: '#00A499',
-        borderRadius: 4,
-    },
-    personSilhouetteStart: {
-        position: 'absolute',
-        left: CARD_WIDTH * 0.05,
-        width: CARD_WIDTH * 0.08,
-        height: CARD_WIDTH * 0.3,
-        backgroundColor: '#00A499',
-        borderRadius: 4,
-    },
-    personSilhouetteMid: {
-        position: 'absolute',
-        left: CARD_WIDTH * 0.45,
-        width: CARD_WIDTH * 0.08,
-        height: CARD_WIDTH * 0.3,
-        backgroundColor: '#00A49988',
-        borderRadius: 4,
-    },
-    personSilhouetteEnd: {
-        position: 'absolute',
-        left: CARD_WIDTH * 0.85,
-        width: CARD_WIDTH * 0.08,
-        height: CARD_WIDTH * 0.3,
-        backgroundColor: '#00A49944',
-        borderRadius: 4,
-    },
-    distanceLabel: {
-        position: 'absolute',
-        bottom: CARD_WIDTH * 0.08,
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#00A499',
-    },
-
-    subtitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#00A499',
-        marginBottom: 8,
-        textAlign: 'center',
-    },
-    instructionText: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#00A499',
-        marginBottom: 32,
-        textAlign: 'center',
-    },
-
-    timerText: {
-        fontSize: 36,
+    title: {
+        fontSize: 20,
         fontWeight: '700',
-        color: '#00A499',
+        color: '#00A2A2',
+        marginTop: 20,
     },
-    startButton: {
-        backgroundColor: '#00A499',
-        borderRadius: 25,
-        paddingHorizontal: 32,
-        paddingVertical: 12,
-    },
-    startText: {
+    description: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#FFFFFF',
+        color: '#00A2A2',
+        marginTop: 10,
+    },
+    button: {
+        position: 'absolute',
+        bottom: 40,
+        alignSelf: 'center',
+        backgroundColor: '#00A2A2',
+        paddingVertical: 12,
+        paddingHorizontal: 32,
+        borderRadius: 20,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 18,
     },
 });
+
+const mapStateToProps = state => ({
+    user: state.user,
+    rightDevice: state.rightDevice,
+    leftDevice: state.leftDevice,
+    productNumber: state.productNumber,
+    lang: state.lang,
+});
+
+const mapDispatchToProps = dispatch => ({
+    addLeftDevice: device => dispatch({ type: 'ADD_LEFT_DEVICE', payload: device }),
+    addRightDevice: device => dispatch({ type: 'ADD_RIGHT_DEVICE', payload: device }),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(TenMeterWalkTest);
