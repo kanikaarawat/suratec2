@@ -1,6 +1,8 @@
 import React, {Component} from 'react';
 import {View, StyleSheet, Platform} from 'react-native';
 import {AccessToken, LoginManager} from 'react-native-fbsdk';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NavigationActions, StackActions } from 'react-navigation';
 
 import LinearGradient from 'react-native-linear-gradient';
 
@@ -60,79 +62,83 @@ class SingIn extends Component {
   };
 
   actionSignln = async (username, password) => {
-    if (username != '' && password != '') {
-      console.log(username);
-      console.log(API);
-
-      console.log(password);
-      fetch(`${API}/check/login`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: username,
-          password: password,
-        }),
-      })
-        .then(res => res.json())
-        .then(async res => {
-          console.log(res);
-          if (res.status == 'ผิดพลาด') {
-            //error
-            AlertFix.alertBasic(
-              this.props.lang
-                ? Lang.alertErrorTitle.thai
-                : Lang.alertErrorTitle.eng,
-              this.props.lang
-                ? Lang.alertErrorBody1.thai
-                : Lang.alertErrorBody1.eng,
-            );
-          } else {
-            // AsyncStorage.setItem('userToken', res.data);
-            // AsyncStorage.setItem('userInfo', JSON.stringify(res.user_info));
-            // AsyncStorage.setItem('memberInfo', JSON.stringify(res.member_info));
-            // AsyncStorage.setItem('role', res.member_info.data_role);
-            // AsyncStorage.setItem('id', res.user_info.id_member);
-
-            const deviceType = Platform.OS === 'ios' ? 2 : 1;
-            let userInfo = res.user_info;
-            const useId = res.member_info.id_data_role;
-            const roleInfo = res.member_info.data_role;
-            console.log('Firebase Token');
-            // const device_token = await messaging()
-            // .registerDeviceForRemoteMessages() // no-op on Android and if already registered
-            // .then(() => messaging())
-            // .then((t) => t
-            // )fpc001
-            const device_token = await messaging().getToken();
-            console.log('Firebase Token', device_token);
-            await this.addDeviceToken(
-              useId,
-              device_token,
-              deviceType,
-              roleInfo,
-            );
-            userInfo.role = res.member_info.data_role;
-            userInfo.device_token = device_token;
-            userInfo.deviceType = deviceType;
-            userInfo.iddatarole = res.member_info.id_data_role;
-
-            this.props.addUser({user: userInfo, token: res.data});
-            this.props.navigation.navigate('App');
-          }
-        })
-        .catch(error => {
-          console.error(error);
-        });
-    } else {
+    if (!username || !password) {
       AlertFix.alertBasic(
-        this.props.lang ? Lang.alertErrorTitle.thai : Lang.alertErrorTitle.eng,
-        this.props.lang ? Lang.alertErrorBody2.thai : Lang.alertErrorBody2.eng,
+          this.props.lang ? Lang.alertErrorTitle.thai : Lang.alertErrorTitle.eng,
+          this.props.lang ? Lang.alertErrorBody2.thai : Lang.alertErrorBody2.eng,
       );
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API}/check/login`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await response.json();
+      console.log('Sign-in API payload ➜', data);
+
+      if (data.status === 'ผิดพลาด') {
+        AlertFix.alertBasic(
+            this.props.lang ? Lang.alertErrorTitle.thai : Lang.alertErrorTitle.eng,
+            this.props.lang ? Lang.alertErrorBody1.thai : Lang.alertErrorBody1.eng,
+        );
+        return;
+      }
+
+      /** -------- success branch -------- */
+      const deviceType  = Platform.OS === 'ios' ? 2 : 1;
+      const deviceToken = await messaging().getToken();
+
+      /* Register the device for push */
+      await this.addDeviceToken(
+          data.member_info.id_data_role,
+          deviceToken,
+          deviceType,
+          data.member_info.data_role,
+      );
+
+      /* Build the user object we keep in Redux */
+      const userInfo = {
+        ...data.user_info,
+        role: data.member_info.data_role,      // 'mod_customer' or 'mod_employee'
+        iddatarole: data.member_info.id_data_role,
+        device_token: deviceToken,
+        deviceType,
+      };
+      if (data.patients) userInfo.patients = data.patients;
+
+      /* Persist doctor creds locally so PatientList -> “switch back” works */
+      if (userInfo.role === 'mod_employee') {
+        await AsyncStorage.setItem('doctor_username', username);
+        await AsyncStorage.setItem('doctor_password', password);
+      }
+
+      /* Push into Redux */
+      this.props.addUser({ user: userInfo, token: data.data });
+
+      /* Deep-reset navigation target depending on role */
+      /* Already stored user in Redux above … */
+
+      if (userInfo.role === 'mod_employee') {
+        // Send ONE action that jumps to AppSwitch AND inside AppStack to PatientList
+        const jumpToPatientList = NavigationActions.navigate({
+          routeName: 'App',                 // SwitchNavigator route
+          action: NavigationActions.navigate({ routeName: 'PatientList' }) // inner stack
+        });
+        this.props.navigation.dispatch(jumpToPatientList);
+      } else if (userInfo.role === 'mod_customer') {
+        this.props.navigation.navigate('App');   // normal flow
+      } else {
+        AlertFix.alertBasic('Unknown role', 'You do not have access rights assigned.');
+      }
+    } catch (err) {
+      console.error('Sign-in error ➜', err);
+      AlertFix.alertBasic('Login failed', 'Network or server error. Please retry.');
     }
   };
+
 
   actionSignlnFacebook = token => {
     fetch(

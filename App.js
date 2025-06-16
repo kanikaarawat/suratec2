@@ -55,6 +55,7 @@ import Footscreen from './src/components/screnns/Foot/Footscreen';
 import Tryf from './src/components/screnns/Try/Tryf';
 import Legs from './src/components/screnns/Try/Legs';
 import MonofilamentNew from './src/components/screnns/Try/MonofilamentNew';
+import PatientList from './src/components/screnns/Try/PatientList';
 
 // FAB Component
 import DraggableFAB from './src/components/common/DraggableFAB';
@@ -136,6 +137,7 @@ const AppStack = createStackNavigator(
         RigthFootsEight: withFAB(RightFootsEightSensorScreen),
         DashboardEight: withFAB(DashboardEightSensorScreen),
         Chatbot: Chatbot, // <-- No FAB here
+        PatientList: PatientList,   // no withFAB
     },
     {
         defaultNavigationOptions: {
