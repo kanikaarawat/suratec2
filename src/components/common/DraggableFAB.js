@@ -140,17 +140,7 @@ const styles = StyleSheet.create({
         width: FAB_SIZE,
         height: FAB_SIZE,
         borderRadius: FAB_SIZE / 2,
-        elevation: 5,
         backgroundColor: 'transparent',
-        // On iOS, add a subtle shadow
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.3,
-                shadowRadius: 3,
-            },
-        }),
     },
     fabIcon: {
         width: FAB_SIZE,
