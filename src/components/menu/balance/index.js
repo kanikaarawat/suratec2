@@ -989,7 +989,10 @@ class index extends Component {
     this.canVibration(this.state.shouldVibrate, this.state.switch);
 
     return (
-      <ScrollView style={{flex: 1,backgroundColor:"#fff"}}>
+        <ScrollView
+          style={{ flex: 1, backgroundColor: '#fff' }}
+          contentContainerStyle={{ flexGrow: 1 }}   // <- new
+        >
         {this.state.calibrationScreenOn ? (
           <HeaderFix
             icon_left={'left'}
@@ -1059,14 +1062,6 @@ class index extends Component {
                     }                     
                   } }
                   style={{
-                    marginHorizontal: 10,
-                    paddingHorizontal: 20,
-                    paddingVertical: 10,
-                    width:"60%",
-                    backgroundColor: '#00A2A2',
-                    borderRadius: 20,
-                    marginVertical: 40,
-                    justifyContent: 'center',
                     alignItems: 'center',
                   }}>
                   <RNText style={{fontSize: 18, color: '#fff'}}>
@@ -1312,74 +1307,69 @@ class index extends Component {
             {/*</View>*/}
             {/*<NotificationsState />*/}
             <View
-              style={{
-                padding: 15,
-              }}>
-              <View style={{flex: 4, height: '100%', marginHorizontal: 10, marginTop: '5%'}}>
-              <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center"}}>
-                   <Text>Foot Balance </Text>
-                {this.state.selectedMenu == 2 && this.state.textAction == 'Stop' && <RNText style={{fontSize: 18, color: '#FF4433',fontWeight:"700"}}>
-                          {this.state.countDownTimer}
-                        </RNText>}
+                style={{
+                  flex: 1,
+                  paddingHorizontal: 15,
+                  paddingTop: '30%',   // space below HeaderFix
+                  paddingBottom: 30 // space above OS nav-bar / home indicator
+                }}
+            >
+
+              {/* ① Middle block : title · radar · L/R buttons */}
+              <View style={{ flex: 1, justifyContent: 'center' }}>
+
+                {/* title row */}
+                <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                >
+                  <Text>Foot Balance</Text>
+
+                  {this.state.selectedMenu === 2 &&
+                      this.state.textAction === 'Stop' && (
+                          <RNText style={{ fontSize: 18, color: '#FF4433', fontWeight: '700' }}>
+                            {this.state.countDownTimer}
+                          </RNText>
+                      )}
                 </View>
 
-
-                <View style={{alignItems: 'center', marginBottom: '6%'}}>
-                {this.state.focus ? (
-                    <RadarChartFix
-                      xPos={this.state.xPosN}
-                      yPos={this.state.yPosN}
-                    />
-                  ) : (
-                    <View />
+                {/* radar chart */}
+                <View style={{ marginTop: 25, marginBottom: 25, alignItems: 'center' }}>
+                  {this.state.focus && (
+                      <RadarChartFix xPos={this.state.xPosN} yPos={this.state.yPosN} />
                   )}
                 </View>
-              </View>
-              {/*{this.state.selectedMenu == 1 && (*/}
-              {true && (
-                  <View style={{flex: 1, height: '100%'}}>
-                    <Grid style={{paddingHorizontal: 15, marginBottom: '6%'}}>
-                    <Col>
-                      <BalanceButton
-                        bntName={'Left'}
+
+                {/* Left / Right buttons */}
+                <Grid style={{ paddingHorizontal: 15 }}>
+                  <Col>
+                    <BalanceButton
+                        bntName="Left"
                         onPress={() => {
-                          if (this.dataRecord) {
-                            this.dataRecord.remove();
-                          }
-                          this.setState({focus: false});
+                          this.dataRecord?.remove?.();
+                          this.setState({ focus: false });
                           this.props.navigation.navigate('LeftFoots');
                         }}
-                      />
-                    </Col>
-                    <Col>
-                      <BalanceButton
-                        bntName={'Right'}
+                    />
+                  </Col>
+                  <Col>
+                    <BalanceButton
+                        bntName="Right"
                         onPress={() => {
-                          if (this.dataRecord) {
-                            this.dataRecord.remove();
-                          }
-                          this.setState({focus: false});
+                          this.dataRecord?.remove?.();
+                          this.setState({ focus: false });
                           this.props.navigation.navigate('RigthFoots');
                         }}
-                      />
-                    </Col>
-                  </Grid>
-                </View>
-              )}
+                    />
+                  </Col>
+                </Grid>
+              </View>
 
-              {/*<ScoreFix*/}
-              {/*  title={'Balancing Grade'}*/}
-              {/*  status={this.state.status}*/}
-              {/*  score={this.state.score}*/}
-              {/*/>*/}
-
-              {/*<CardStatusFix*/}
-              {/*  title={'Balancing Grade'}*/}
-              {/*  status={this.state.status}*/}
-              {/*  txt={this.state.txt}*/}
-              {/*/>*/}
-
-              {this.state.selectedMenu == 1 ? (
+              {/* ② Bottom block : Record / Calibration */}
+              {this.state.selectedMenu === 1 ? (
                   <View
                       style={{
                         flex: 1,
@@ -1388,78 +1378,63 @@ class index extends Component {
                         alignItems: 'center',
                         marginBottom: '10%',
                       }}>
-                  {/* <Grid style={{padding: 15}}> */}
-                  {/* <Col> */}
-                  <ButtonFix
-                    action={true}
-                    rounded={true}
-                    title={this.state.textAction}
-                    onPress={() => this.actionRecording()}
-                  />
 
-                  {/* </Col> */}
-                  {/* <Col>
-                <ButtonFix
-                  rounded={true}
-                  title={'Dashboard'}
-                  onPress={() => this.actionDashboard()}
-                />
-              </Col> */}
-                  {/* </Grid> */}
-                </View>
+                  <ButtonFix
+                        action
+                        rounded
+                        title={this.state.textAction}
+                        onPress={this.actionRecording}
+                    />
+                  </View>
               ) : (
-                <View
-                  style={{
-                    flex: 1,
-                    height: '100%',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}>
-                  <Grid style={{padding: 15}}>
-                    <Col>
-                      <TouchableOpacity
-                        onPress={() => this.startCalibration()}
-                        disabled={this.state.isCalibrated}
-                        style={{
-                          marginHorizontal: 10,
-                          padding: 10,
-                          backgroundColor: this.state.isCalibrated
-                          ? '#ccc'
-                          : '#FF4433',
-                          borderRadius: 10,
-                          marginVertical: 10,
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        }}>
-                        <RNText style={{fontSize: 18, color: '#fff'}}>
-                          Calibration
-                        </RNText>
-                      </TouchableOpacity>
-                    </Col>
-                    <Col>
-                      <TouchableOpacity
-                        onPress={() => this.actionRecordingFor10()}
-                        disabled={!this.state.isCalibrated || this.state.textAction != "Record"}
-                        style={{
-                          marginHorizontal: 10,
-                          padding: 10,
-                          backgroundColor: !this.state.isCalibrated || this.state.textAction != 'Record'
-                            ? '#ccc'
-                            : '#FF4433',
-                          borderRadius: 10,
-                          marginVertical: 10,
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        }}>
-                        <RNText style={{fontSize: 18, color: '#fff'}}>
-                          {this.state.textAction}
-                        </RNText>
-                      </TouchableOpacity>
-                    </Col>
-                  </Grid>
-                </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Grid style={{ padding: 15 }}>
+                      <Col>
+                        <TouchableOpacity
+                            onPress={this.startCalibration}
+                            disabled={this.state.isCalibrated}
+                            style={{
+                              marginHorizontal: 10,
+                              padding: 10,
+                              backgroundColor: this.state.isCalibrated ? '#ccc' : '#FF4433',
+                              borderRadius: 10,
+                              justifyContent: 'center',
+                              alignItems: 'center'
+                            }}
+                        >
+                          <RNText style={{ fontSize: 18, color: '#fff' }}>Calibration</RNText>
+                        </TouchableOpacity>
+                      </Col>
+
+                      <Col>
+                        <TouchableOpacity
+                            onPress={this.actionRecordingFor10}
+                            disabled={
+                                !this.state.isCalibrated || this.state.textAction !== 'Record'
+                            }
+                            style={{
+                              marginHorizontal: 10,
+                              padding: 10,
+                              backgroundColor:
+                                  !this.state.isCalibrated || this.state.textAction !== 'Record'
+                                      ? '#ccc'
+                                      : '#FF4433',
+                              borderRadius: 10,
+                              justifyContent: 'center',
+                              alignItems: 'center'
+                            }}
+                        >
+                          <RNText style={{ fontSize: 18, color: '#fff' }}>
+                            {this.state.textAction}
+                          </RNText>
+                        </TouchableOpacity>
+                      </Col>
+                    </Grid>
+                  </View>
               )}
             </View>
+
+
           </>
         )}
       </ScrollView>
