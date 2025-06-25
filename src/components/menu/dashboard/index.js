@@ -1480,6 +1480,20 @@ class index extends Component {
                   >
                       <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 20 }}>
 
+                          {/* paragraph */}
+                          <Text
+                              style={{
+                                  width: 325,
+                                  marginTop: 24,
+                                  fontFamily: 'BaiJamjuree-Medium',
+                                  fontSize: 30,
+                                  lineHeight: 20 * 1.53,
+                                  textAlign: 'center',
+                                  color: '#00A2A2',
+                              }}
+                          >
+                              Summary
+                          </Text>
                           <View
                               style={{
                                   width: 300,

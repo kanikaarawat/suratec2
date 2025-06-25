@@ -17,7 +17,6 @@ export default class button_lang extends Component {
                         source={require('../../../assets/image/icons/change.png')}
                     />
                     <View style={{ padding: 5 }}><Text style={{ fontSize: 10 }}>{this.props.labelLang}</Text></View>
-
                 </TouchableOpacity>
 
             </View>

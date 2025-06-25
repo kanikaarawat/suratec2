@@ -7,6 +7,10 @@ const footsBalanceButton = {thai: 'สมดุลเท้า', eng: 'Foot Bala
 const dashboardButton = {thai: 'สรุปกิจกรรม', eng: 'DashBoard'};
 const telemedicineButton = {thai: 'สรุปกิจกรรม', eng: 'Telemedicine'};
 const dashboard = {thai: 'แผงควบคุม', eng: 'Dashboard'};
+const assessmentTests = {thai: 'แบบทดสอบประเมินผล', eng: 'Assessment Tests'};
+const exerciseTraining = {thai: 'การฝึกออกกำลังกาย', eng: 'Exercise Training'};
+const shoeRecommend = {thai: 'รองเท้าแนะนำ', eng: 'Shoe Recommend'};
+const chatbot = {thai: 'แชทบอท', eng: 'Chatbot'};
 
 export default {
   gaitAnalysisButton,
@@ -18,4 +22,8 @@ export default {
   dashboardButton,
   telemedicineButton,
   dashboard,
+  assessmentTests,
+  exerciseTraining,
+  shoeRecommend,
+  chatbot,
 };

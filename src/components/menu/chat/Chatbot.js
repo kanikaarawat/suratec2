@@ -10,38 +10,19 @@ import {
     Dimensions,
     Platform,
 } from 'react-native';
-import { BackHandler } from 'react-native';
-import { useEffect } from 'react';
+import HeaderFix from '../../common/HeaderFix';
 
 const { width, height } = Dimensions.get('window');
 
 export default function Chatbot({ navigation }) {
-    useEffect(() => {
-        const backHandler = BackHandler.addEventListener(
-            'hardwareBackPress',
-            () => {
-                navigation.goBack();
-                return true;
-            }
-        );
-
-        return () => backHandler.remove();
-    }, [navigation]);
-
     return (
         <View style={styles.container}>
             {/* ===== Header Area ===== */}
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                >
-                    <Text style={styles.arrowText}>&lt;</Text>
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Chatbot</Text>
-                {/* Placeholder on right to keep title centered */}
-                <View style={styles.rightPlaceholder} />
-            </View>
+            <HeaderFix
+                icon_left={'left'}
+                onpress_left={() => navigation.goBack()}
+                title={navigation.getParam('name', 'Chatbot')}
+            />
 
             {/* ===== Chat Display Area ===== */}
             <View style={styles.chatContainer}>

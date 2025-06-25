@@ -16,7 +16,7 @@ export default function LowRiskExercise({ navigation }) {
             <HeaderFix
                 icon_left="left"
                 onpress_left={() => navigation.goBack()}
-                title="Low Risk Program"
+                title="Moderate Risk Program"
             />
 
             {/* Month / Week “Pills” */}

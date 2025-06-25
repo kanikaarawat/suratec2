@@ -351,11 +351,11 @@ class index extends Component {
                   />
                 </TouchableOpacity>
                 <Text
-                  styles={{color: '#fff', height: 30, marginTop: 10}}
+                  styles={{color: 'black', height: 30, marginTop: 10, fontSize: 20}}
                   type={'bold'}>
                   {this.props.user.fname} {this.props.user.lname}
                 </Text>
-                <Text styles={{color: '#fff', fontWeight: '400', height: 40}}>
+                <Text styles={{color: '#fff', fontWeight: '700', height: 40, fontSize: 15}}>
                   {this.props.user.email}
                 </Text>
               </View>

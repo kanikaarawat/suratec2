@@ -255,7 +255,9 @@ class listItem extends Component {
                         text={this.props.lang ? Lang.dashboard.thai : Lang.dashboard.eng}
                         source={require('../../../assets/image/dashboard.png')}
                         onPress={() => {
-                            this.props.navigation.navigate('Dashboard');
+                            this.props.navigation.navigate('Dashboard', {
+                                name: this.props.lang ? Lang.dashboard.thai : Lang.dashboard.eng,
+                            });
                         }}
                     />
                     <Items
@@ -283,10 +285,12 @@ class listItem extends Component {
                         marginHorizontal: 5,
                     }}>
                     <Items
-                        text={'Assessment Tests'}
+                        text={this.props.lang ? Lang.assessmentTests.thai : Lang.assessmentTests.eng}
                         source={require('../../../assets/image/menu/assessment_icon.png')}
                         onPress={() => {
-                            this.props.navigation.navigate('FallRiskScreen');
+                            this.props.navigation.navigate('FallRiskScreen', {
+                                name: this.props.lang ? Lang.assessmentTests.thai : Lang.assessmentTests.eng,
+                            });
                         }}
                     />
                     <Items
@@ -302,10 +306,12 @@ class listItem extends Component {
                         }}
                     />
                     <Items
-                        text={'Exercise Training'}
+                        text={this.props.lang ? Lang.exerciseTraining.thai : Lang.exerciseTraining.eng}
                         source={require('../../../assets/image/menu/training.png')}
                         onPress={() => {
-                            this.props.navigation.navigate('ExerciseTraining');
+                            this.props.navigation.navigate('ExerciseTraining', {
+                                name: this.props.lang ? Lang.exerciseTraining.thai : Lang.exerciseTraining.eng,
+                            });
                         }}
                     />
 
@@ -337,10 +343,12 @@ class listItem extends Component {
                         }}
                     />
                     <Items
-                        text={'Shoe Recommend'}
+                        text={this.props.lang ? Lang.shoeRecommend.thai : Lang.shoeRecommend.eng}
                         source={require('../../../assets/image/menu/shoe_icon.png')}
                         onPress={() => {
-                            this.props.navigation.navigate('ShoeRecommend');
+                            this.props.navigation.navigate('ShoeRecommend', {
+                                name: this.props.lang ? Lang.shoeRecommend.thai : Lang.shoeRecommend.eng,
+                            });
                         }}
                     />
                     <View
