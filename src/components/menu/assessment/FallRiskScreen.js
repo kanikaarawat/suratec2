@@ -7,6 +7,7 @@ import {
     View,
     TouchableOpacity,
     Alert,
+    ScrollView,
 } from 'react-native';
 import HeaderFix from '../../common/HeaderFix';
 import MultiSelectCheckbox from '../../MultiSelectCheckbox';
@@ -80,6 +81,10 @@ const FallRiskScreen = ({ navigation }) => {
                 title="Fall Risk Screening"
             />
 
+            <ScrollView
+                contentContainerStyle={{ flexGrow: 1, padding: 20 }}
+                showsVerticalScrollIndicator={false}
+            >
             <Text style={[styles.text, { marginTop: '10%', textAlign: 'center' }]}>
                 FALL PAST 12 MONTHS?
             </Text>
@@ -131,6 +136,7 @@ const FallRiskScreen = ({ navigation }) => {
                     <Text style={styles.submitText}>Submit</Text>
                 </TouchableOpacity>
             </View>
+            </ScrollView>
         </View>
     );
 };

@@ -8,6 +8,7 @@ import {
   Platform,
   Vibration,
   Alert,
+  ScrollView,
 } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -579,9 +580,12 @@ class index extends React.PureComponent {
           title={this.props.navigation.getParam('name', '')}
         />
 
-        <NotificationsState />
 
-        <View style={{ flex: 4, height: '100%', padding: 15 }}>
+        <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+        >
+        <View style={{ flex: 4, height: '100%', padding: 15, marginTop: 130 }}>
           <Text>kPa .</Text>
           <View>
             <SvgContourBasic
@@ -616,6 +620,7 @@ class index extends React.PureComponent {
             </Col> */}
           </Grid>
         </View>
+        </ScrollView>
       </View>
     );
   }

@@ -7,6 +7,7 @@ import {
     Image,
     StyleSheet,
     TouchableOpacity,
+    ScrollView,
 } from 'react-native';
 import HeaderFix from '../../common/HeaderFix';
 
@@ -44,6 +45,12 @@ const StandEyes = ({ navigation, type }) => {
                 title={type === 'open' ? 'Stand Open Eyes' : 'Stand Eyes Closed'}
             />
 
+            <ScrollView
+                contentContainerStyle={{
+                    flexGrow: 1,
+                }}
+                showsVerticalScrollIndicator={false}
+            >
             {isActive && (
                 <Text style={styles.timerText}>{seconds}</Text>
             )}
@@ -79,6 +86,7 @@ const StandEyes = ({ navigation, type }) => {
                     <Text style={styles.buttonText}>{'Start'}</Text>
                 </TouchableOpacity>
             </View>
+            </ScrollView>
         </View>
     );
 };

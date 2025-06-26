@@ -17,3 +17,22 @@ const heartText = {thai: 'อัตราการเต้นหัวใจ', 
 const calorieText = {thai: 'พลังงานโดยประมาณ', eng: 'Est. Calories'}
 const peakPressureIconText = {thai: 'แรงกดสูงสุด', eng: 'Peak Pressure'}
 const swingText = {thai: 'ความเคลื่อนจากจุดสมดุล', eng: 'CG Swing'}
+const lang_dashboard = {
+    noSummary: {
+        eng: 'No summary available for today.',
+        thai: 'ไม่มีสรุปสำหรับวันนี้',
+    },
+    error: {
+        eng: 'Unable to load summary. Please check your connection.',
+        thai: 'ไม่สามารถโหลดสรุปได้ กรุณาตรวจสอบการเชื่อมต่อของคุณ',
+    },
+};
+const dashboard = {thai: 'แผงควบคุม', eng: 'Dashboard'};
+const summary = {thai: 'สรุป', eng: 'Summary'};
+
+
+export default {
+    lang_dashboard,
+    dashboard,
+    summary,
+};

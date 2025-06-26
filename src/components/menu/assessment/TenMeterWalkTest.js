@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     Alert,
     Vibration,
+    ScrollView,
 } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -193,6 +194,13 @@ class TenMeterWalkTest extends Component {
                     onpress_right={() => Alert.alert('Test Complete')}
                 />
 
+                <ScrollView
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        padding: 20,
+                    }}
+                    showsVerticalScrollIndicator={false}
+                >
                 <View style={styles.content}>
                     <Image
                         source={require('../../../assets/image/dynamic/tenmeter.png')}
@@ -208,6 +216,7 @@ class TenMeterWalkTest extends Component {
                     disabled={this.state.textAction !== 'Start'}>
                     <Text style={styles.buttonText}>{this.state.textAction}</Text>
                 </TouchableOpacity>
+                </ScrollView>
             </View>
         );
     }

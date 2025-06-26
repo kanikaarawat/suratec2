@@ -32,6 +32,7 @@ import Swiper from 'react-native-swiper';                          // 🔹 carou
 import exerciseImg     from '../../../assets/image/dashboard/exercise.png';
 import stanceStandImg  from '../../../assets/image/dashboard/stanceStand.png';
 import stanceWalkImg   from '../../../assets/image/dashboard/stanceWalk.png';
+import LangDashboard from '../../../assets/language/menu/lang_dashboard';
 
 var RNFS = require('react-native-fs');
 
@@ -434,31 +435,37 @@ class index extends Component {
 
     fetchDashboardSummary = async () => {
         const { id_customer } = this.props.user;
+        console.log('LANG STATE:', this.props.lang);
+        const lang_mode = this.props.lang ? 1 : 0;
+        console.log('lang_mode being sent to API:', lang_mode);
+
         try {
-            const response = await fetch(`https://www.surasole.com/api/dashboard/dashboard-summary`, {
+            const response = await fetch('https://www.surasole.com/api/dashboard/dashboard-summary', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     user_id: id_customer,
-                    lang_mode: 0,
+                    lang_mode: lang_mode,
                 }),
             });
 
             const res = await response.json();
 
-            // Assuming the API returns something like { summary: "..." }
             if (res.summary) {
                 this.setState({ dashboardSummaryText: res.summary });
             } else {
                 this.setState({
-                    dashboardSummaryText: 'No summary available for today.',
+                    dashboardSummaryText: this.props.lang
+                        ? LangDashboard.noSummary.thai
+                        : LangDashboard.noSummary.eng,
                 });
             }
         } catch (err) {
             console.error('Error fetching dashboard summary:', err);
             this.setState({
-                dashboardSummaryText:
-                    'Unable to load summary. Please check your connection.',
+                dashboardSummaryText: this.props.lang
+                    ? LangDashboard.error.thai
+                    : LangDashboard.error.eng,
             });
         }
     };
@@ -625,7 +632,14 @@ class index extends Component {
                       this.setState({ currentPageIndex: index });
 
                       this.props.navigation.setParams({
-                          name: index === 0 ? 'Dashboard' : 'Summary',
+                          name:
+                              index === 0
+                                  ? this.props.lang
+                                      ? LangDashboard.dashboard.thai
+                                      : LangDashboard.dashboard.eng
+                                  : this.props.lang
+                                      ? LangDashboard.summary.thai
+                                      : LangDashboard.summary.eng,
                       });
                   }}
               >
@@ -1520,6 +1534,14 @@ class index extends Component {
                       end={{ x: 0, y: 1 }}
                       style={{ flex: 1 }}
                   >
+                      <ScrollView
+                          contentContainerStyle={{
+                              flexGrow: 1,
+                              alignItems: 'center',
+                              paddingHorizontal: 20,
+                          }}
+                          showsVerticalScrollIndicator={false}
+                      >
                       <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 20 }}>
 
                           <View
@@ -1585,6 +1607,7 @@ class index extends Component {
                               </Text>
                           </TouchableOpacity>
                       </View>
+                      </ScrollView>
                   </LinearGradient>
 
               </Swiper>
@@ -1598,6 +1621,7 @@ const mapStateToProps = state => {
   return {
     user: state.user,
     data: state.data,
+    lang: state.lang,
   };
 };
 
