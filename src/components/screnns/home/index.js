@@ -68,6 +68,21 @@ class index extends Component {
     this.props.resetUser();
     this.props.navigation.navigate('Auth');
   };
+  checkExitOrLogout = async () => {
+    const backup = await AsyncStorage.getItem('doctor_user');
+    const backupToken = await AsyncStorage.getItem('doctor_token');
+
+    if (backup && backupToken) {
+      const user = JSON.parse(backup);
+      this.props.addUser(user, backupToken);
+      await AsyncStorage.removeItem('doctor_user');
+      await AsyncStorage.removeItem('doctor_token');
+      this.props.navigation.navigate('PatientList');
+    } else {
+      this.actionLogout();
+    }
+  };
+
 
   actionDisconnectBle = async () => {
     if (typeof this.props.rightDevice !== 'undefined') {
@@ -85,6 +100,13 @@ class index extends Component {
     console.log('HOME !!!');
     console.log(this.props.user);
     console.log(this.state, 'here we go');
+    AsyncStorage.getItem('doctor_user').then(backup => {
+      if (backup) {
+        this.setState({ showExitIcon: true });
+      } else {
+        this.setState({ showExitIcon: false });
+      }
+    });
     await messaging().requestPermission();
     const enabled = await messaging().hasPermission();
     BackHandler.addEventListener(
@@ -279,14 +301,16 @@ class index extends Component {
 
   render() {
     let img = 'user.png';
-    if (this.props.user.image === '' || this.props.user.image === undefined) {
-      if (this.props.user.role == 'mod_employee') {
-        img = 'doctor.png';
+    if (this.props.user) {
+      if (this.props.user.image === '' || this.props.user.image === undefined) {
+        if (this.props.user.role === 'mod_employee') {
+          img = 'doctor.png';
+        } else {
+          img = 'user.png';
+        }
       } else {
-        img = 'user.png';
+        img = this.props.user.image;
       }
-    } else {
-      img = this.props.user.image;
     }
 
     return (
@@ -297,19 +321,30 @@ class index extends Component {
           
           <View style={styles.oval}>
             <TouchableOpacity
-              style={{
-                position: 'absolute',
-                right: screenWidth * 0.2,
-                top: screenWidth * 0.55,
-                borderWidth: 1.2,
-                borderColor: '#fff',
-                padding: 2,
-                borderRadius: screenWidth / 2,
-              }}
-              onPress={() => this.actionLogout()}>
+                style={[
+                  {
+                    position: 'absolute',
+                    right: screenWidth * 0.2,
+                    top: screenWidth * 0.55,
+                  },
+                  !this.state.showExitIcon && {
+                    borderWidth: 1.2,
+                    borderColor: '#fff',
+                    padding: 2,
+                    borderRadius: screenWidth / 2,
+                  },
+                ]}
+                onPress={() => {
+                  this.checkExitOrLogout();
+                }}
+            >
               <Image
-                style={{width: 30, height: 30}}
-                source={require('../../../assets/image/icons/logout.png')}
+                  style={{width: 30, height: 30}}
+                  source={
+                    this.state.showExitIcon
+                        ? require('../../../assets/image/menu/exit.png')
+                        : require('../../../assets/image/icons/logout.png')
+                  }
               />
             </TouchableOpacity>
             {this.props.user && (
@@ -355,7 +390,7 @@ class index extends Component {
                   type={'bold'}>
                   {this.props.user.fname} {this.props.user.lname}
                 </Text>
-                <Text styles={{color: '#fff', fontWeight: '700', height: 40, fontSize: 15}}>
+                <Text styles={{color: 'black', fontWeight: '700', height: 40, fontSize: 15}}>
                   {this.props.user.email}
                 </Text>
               </View>
@@ -415,6 +450,9 @@ const mapDispatchToProps = dispatch => {
     },
     startCall: bleState => {
       dispatch({type: 'START_CALL', payload: bleState});
+    },
+    addUser: (user, token) => {
+      dispatch({type: 'ADD_USERINFO', payload: {user, token}});
     },
   };
 };
