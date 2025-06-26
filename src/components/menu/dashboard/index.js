@@ -1,6 +1,6 @@
 //5.11.62
 
-import React, { Component } from 'react';
+import React, { Component,  useState, useEffect  } from 'react';
 import {
   View,
   ScrollView,
@@ -83,6 +83,8 @@ class index extends Component {
       spinner: false,
       positionValue: [],
       dataShow: false,
+      dashboardSummaryText: '',
+      currentPageIndex: 0,
     };
     this.onPreLoad();
   }
@@ -297,6 +299,7 @@ class index extends Component {
   componentDidMount = () => {
     NetInfo.addEventListener(this.handleConnectivityChange);
     this.handleFetchDashboardData();
+    this.fetchDashboardSummary();
     fetch(`${API}/record`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -429,7 +432,39 @@ class index extends Component {
     //   });
   };
 
-  handleConnectivityChange = async status => {
+    fetchDashboardSummary = async () => {
+        const { id_customer } = this.props.user;
+        try {
+            const response = await fetch(`https://www.surasole.com/api/dashboard/dashboard-summary`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: id_customer,
+                    lang_mode: 0,
+                }),
+            });
+
+            const res = await response.json();
+
+            // Assuming the API returns something like { summary: "..." }
+            if (res.summary) {
+                this.setState({ dashboardSummaryText: res.summary });
+            } else {
+                this.setState({
+                    dashboardSummaryText: 'No summary available for today.',
+                });
+            }
+        } catch (err) {
+            console.error('Error fetching dashboard summary:', err);
+            this.setState({
+                dashboardSummaryText:
+                    'Unable to load summary. Please check your connection.',
+            });
+        }
+    };
+
+
+    handleConnectivityChange = async status => {
     console.log(status.isConnected);
     await this.setState({ isConnected: status.isConnected });
     console.log(`Internet Connection : ${this.state.isConnected}`);
@@ -586,6 +621,13 @@ class index extends Component {
                   dot={<Dot />}                 // ◯ white-inside
                   activeDot={<ActiveDot />}     // ● filled
                   paginationStyle={{ bottom: 25 }}
+                  onIndexChanged={(index) => {
+                      this.setState({ currentPageIndex: index });
+
+                      this.props.navigation.setParams({
+                          name: index === 0 ? 'Dashboard' : 'Summary',
+                      });
+                  }}
               >
                 {/* ──────────── PAGE 1 ──────────── */}
                 <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
@@ -1480,20 +1522,6 @@ class index extends Component {
                   >
                       <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 20 }}>
 
-                          {/* paragraph */}
-                          <Text
-                              style={{
-                                  width: 325,
-                                  marginTop: 24,
-                                  fontFamily: 'BaiJamjuree-Medium',
-                                  fontSize: 30,
-                                  lineHeight: 20 * 1.53,
-                                  textAlign: 'center',
-                                  color: '#00A2A2',
-                              }}
-                          >
-                              Summary
-                          </Text>
                           <View
                               style={{
                                   width: 300,
@@ -1523,8 +1551,7 @@ class index extends Component {
                                   color: '#000',
                               }}
                           >
-                              Today, the patient’s weight distribution between both feet is nearly
-                              equal. Balance is within a normal range. No signs of fall risk detected.
+                              {this.state.dashboardSummaryText || 'Loading summary...'}
                           </Text>
 
                           {/* push button to the bottom */}
