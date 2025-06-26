@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -8,11 +8,18 @@ import {
     Image,
     TextInput,
     Modal,
+    BackHandler,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
-import UI from '../../../config/styles/CommonStyles';
 import HeaderFix from '../../common/HeaderFix';
+import shoeLang from '../../../assets/language/menu/lang_shoe';
+import { connect } from 'react-redux';
 
-export default function CartScreen({ navigation }) {
+const UK_SIZES = ['5', '6', '7', '8', '9', '10', '11', '12'];
+
+const CartScreen = ({ route, navigation, lang }) => {
     const selectedShoes = navigation.getParam('selectedShoes', []);
 
     const [cartItems, setCartItems] = useState(
@@ -23,162 +30,413 @@ export default function CartScreen({ navigation }) {
         }))
     );
 
+    const [sizeModal, setSizeModal] = useState({ visible: false, index: null });
+    const [note, setNote] = useState('');
     const [showPopup, setShowPopup] = useState(false);
 
-    const removeItem = (id) => {
-        setCartItems(cartItems.filter((item) => item.id !== id));
+    const updateSize = (size) => {
+        const updated = [...cartItems];
+        if (sizeModal.index !== null) {
+            updated[sizeModal.index].size = size;
+            setCartItems(updated);
+        }
+        setSizeModal({ visible: false, index: null });
     };
+
+    const updateQuantity = (index, delta) => {
+        const updated = [...cartItems];
+        const newQty = updated[index].quantity + delta;
+        updated[index].quantity = newQty < 1 ? 1 : newQty;
+        setCartItems(updated);
+    };
+
+    const removeItem = (index) => {
+        const updated = [...cartItems];
+        updated.splice(index, 1);
+        setCartItems(updated);
+    };
+
+    const calculateTotal = () =>
+        cartItems.reduce((sum, item) => sum + (parseFloat(item.price || 0) * item.quantity), 0);
 
     const handleConfirm = () => {
+        const missingSize = cartItems.some((item) => !item.size);
+        if (missingSize) {
+            Alert.alert(
+                lang ? shoeLang.missingSize.thai : shoeLang.missingSize.eng,
+                lang ? shoeLang.pleaseSelectSize.thai : shoeLang.pleaseSelectSize.eng
+            );
+            return;
+        }
         setShowPopup(true);
-        setTimeout(() => setShowPopup(false), 2000);
+        setTimeout(() => {
+            setShowPopup(false);
+            navigation.navigate('Home');
+        }, 2000);
     };
 
-    const renderItem = ({ item }) => (
-        <View style={styles.row}>
-            <View style={styles.productCol}>
-                <Image source={item.image} style={styles.shoeImage} />
-                <View style={styles.details}>
-                    <Text style={styles.shoeLabel}>{item.label}</Text>
-                    <Text style={styles.shoeSub}>Company: {item.company}</Text>
-                    <TextInput
-                        style={styles.sizeInput}
-                        placeholder="Size: Select"
-                        placeholderTextColor="#aaa"
-                        value={item.size}
-                        onChangeText={(text) =>
-                            setCartItems((prev) =>
-                                prev.map((shoe) =>
-                                    shoe.id === item.id ? { ...shoe, size: text } : shoe
-                                )
-                            )
-                        }
-                    />
+
+    const renderItem = ({ item, index }) => (
+        <View style={styles.rowCard}>
+            {/* PRODUCT section */}
+            <View style={[styles.column, { flex: 2, flexDirection: 'row', alignItems: 'center' }]}>
+                <Image source={{ uri: item.image_url }} style={styles.image} />
+                <View style={styles.itemDetails}>
+                    <Text style={styles.name}>{item.product_name}</Text>
+                    <TouchableOpacity
+                        onPress={() => setSizeModal({ visible: true, index })}
+                        style={styles.sizeBox}
+                    >
+                        <Text style={{ fontSize: 13, color: item.size ? '#000' : '#888' }}>
+                            {item.size ? `${lang ? shoeLang.uk.thai : shoeLang.uk.eng} ${item.size}` : (lang ? shoeLang.selectSize.thai : shoeLang.selectSize.eng)}
+                        </Text>
+                    </TouchableOpacity>
                 </View>
             </View>
-            <Text style={styles.colText}>{item.price} THB</Text>
-            <Text style={styles.colText}>{item.quantity}</Text>
-            <TouchableOpacity onPress={() => removeItem(item.id)}>
-                <Text style={styles.remove}>🗑️</Text>
-            </TouchableOpacity>
+
+            {/* PRICE section */}
+            <View style={styles.column}>
+                <Text style={styles.price}>{item.price} THB</Text>
+            </View>
+
+            {/* QTY section */}
+            <View style={[styles.column, styles.qtyControls]}>
+                <TouchableOpacity onPress={() => updateQuantity(index, -1)} style={styles.qtyBtn}>
+                    <Text style={styles.qtySymbol}>-</Text>
+                </TouchableOpacity>
+                <Text style={styles.qtyText}>{item.quantity}</Text>
+                <TouchableOpacity onPress={() => updateQuantity(index, 1)} style={styles.qtyBtn}>
+                    <Text style={styles.qtySymbol}>+</Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* REMOVE section */}
+            <View style={styles.column}>
+                <TouchableOpacity onPress={() => removeItem(index)} style={styles.deleteBtn}>
+                    <Text style={styles.deleteText}>🗑️</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 
-    return (
-        <View style={styles.container}>
-            <HeaderFix
-                icon_left={'left'}
-                onpress_left={() => navigation.goBack()}
-                title={'Cart'}
-            />
 
-            {/* Table Header */}
-            <View style={styles.headerRow}>
-                <Text style={[styles.headerText, { flex: 2 }]}>PRODUCT</Text>
-                <Text style={styles.headerText}>Price</Text>
-                <Text style={styles.headerText}>Quantity</Text>
-                <Text style={styles.headerText}>Remove</Text>
+
+    return (
+        <KeyboardAvoidingView
+            behavior={Platform.select({ ios: 'padding', android: undefined })}
+            style={styles.container}
+        >
+            <HeaderFix icon_left="left" onpress_left={() => navigation.goBack()} title={lang ? shoeLang.cart.thai : shoeLang.cart.eng} />
+
+            <View style={styles.tableHeader}>
+                <Text style={[styles.headerText, { flex: 2 }]}>{lang ? shoeLang.product.thai : shoeLang.product.eng}</Text>
+                <Text style={styles.headerText}>{lang ? shoeLang.price.thai : shoeLang.price.eng}</Text>
+                <Text style={styles.headerText}>{lang ? shoeLang.qty.thai : shoeLang.qty.eng}</Text>
+                <Text style={styles.headerText}>{lang ? shoeLang.remove.thai : shoeLang.remove.eng}</Text>
             </View>
 
             <FlatList
                 data={cartItems}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item, i) => item.product_name + i}
                 renderItem={renderItem}
-                contentContainerStyle={{ paddingBottom: 80 }}
+                ListFooterComponent={
+                    cartItems.length > 0 ? (
+                        <View style={styles.noteSection}>
+                            <Text style={styles.noteLabel}>{lang ? shoeLang.addNote.thai : shoeLang.addNote.eng}</Text>
+                            <TextInput
+                                style={styles.noteInput}
+                                placeholder={lang ? shoeLang.notePlaceholder.thai : shoeLang.notePlaceholder.eng}
+                                placeholderTextColor="#aaa"
+                                value={note}
+                                onChangeText={setNote}
+                            />
+                            <Text style={styles.total}>{lang ? shoeLang.total.thai : shoeLang.total.eng}: ฿{calculateTotal().toFixed(2)}</Text>
+                        </View>
+                    ) : null
+                }
+                contentContainerStyle={{ paddingBottom: 140 }}
             />
 
-            {/* Confirm Button */}
-            <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
-                <Text style={styles.confirmText}>Confirm</Text>
-            </TouchableOpacity>
+            {cartItems.length > 0 && (
+                <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
+                    <Text style={styles.confirmText}>{lang ? shoeLang.confirm.thai : shoeLang.confirm.eng}</Text>
+                </TouchableOpacity>
+            )}
 
-            {/* Popup */}
-            <Modal transparent={true} visible={showPopup} animationType="fade">
-                <View style={styles.popupContainer}>
-                    <View style={styles.popupBox}>
-                        <Text style={styles.popupText}>Order Confirmed</Text>
+            {/* Size Modal */}
+            <Modal transparent visible={sizeModal.visible} animationType="slide" onRequestClose={() => setSizeModal({ visible: false, index: null })}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalBox}>
+                        {UK_SIZES.map((size) => (
+                            <TouchableOpacity key={size} onPress={() => updateSize(size)} style={styles.modalItem}>
+                                <Text style={styles.modalItemText}>{lang ? shoeLang.uk.thai : shoeLang.uk.eng} {size}</Text>
+                            </TouchableOpacity>
+                        ))}
+                        <TouchableOpacity onPress={() => setSizeModal({ visible: false, index: null })}>
+                            <Text style={[styles.modalItemText, { color: 'red', marginTop: 10 }]}>{lang ? shoeLang.cancel.thai : shoeLang.cancel.eng}</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
-        </View>
+
+            {/* Confirmation Popup */}
+            <Modal transparent visible={showPopup} animationType="fade">
+                <View style={styles.popupOverlay}>
+                    <View style={styles.popupBox}>
+                        <Text style={styles.popupText}>{lang ? shoeLang.orderConfirmed.thai : shoeLang.orderConfirmed.eng}</Text>
+                    </View>
+                </View>
+            </Modal>
+        </KeyboardAvoidingView>
     );
-}
+};
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F1F8F9' },
-    headerRow: {
+    container: { flex: 1, backgroundColor: '#eafcff' },
+
+    tableHeader: {
         flexDirection: 'row',
         paddingVertical: 10,
+        backgroundColor: '#00c3cc',
         paddingHorizontal: 10,
-        backgroundColor: UI.color_Gradient[1],
-        alignItems: 'center',
     },
     headerText: {
         flex: 1,
         color: '#fff',
         fontWeight: 'bold',
-        fontSize: 12,
         textAlign: 'center',
+        fontSize: 13,
+    },
+
+    card: {
+        backgroundColor: '#fff',
+        marginHorizontal: 12,
+        marginTop: 10,
+        borderRadius: 12,
+        padding: 12,
+        elevation: 2,
     },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
-        borderBottomColor: '#ddd',
-        borderBottomWidth: 1,
     },
-    productCol: {
+    image: {
+        width: 60,
+        height: 60,
+        borderRadius: 6,
+        marginRight: 10,
+    },
+    details: {
         flex: 2,
+    },
+    name: { fontSize: 14, fontWeight: 'bold', color: '#222' },
+    group: { fontSize: 12, color: '#555', marginVertical: 4 },
+    sizeBox: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 6,
+        paddingVertical: 5,
+        paddingHorizontal: 12,
+        marginTop: 4,
+        alignSelf: 'flex-start',
+        backgroundColor: '#f9f9f9',
+    },
+
+    actions: {
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    price: {
+        fontSize: 13,
+        color: '#00a0a8',
+        fontWeight: '600',
+    },
+    qtyControls: {
         flexDirection: 'row',
         alignItems: 'center',
+        marginVertical: 6,
     },
-    shoeImage: { width: 40, height: 40, marginRight: 8 },
-    details: { flexShrink: 1 },
-    shoeLabel: { color: '#5a5a5a', fontWeight: 'bold', fontSize: 12 },
-    shoeSub: { color: '#5a5a5a', fontSize: 11 },
-    sizeInput: {
-        borderBottomWidth: 1,
+    qtyBtn: {
+        backgroundColor: '#00c3cc',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 4,
+    },
+    qtySymbol: {
+        fontSize: 14,
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    qtyText: {
+        marginHorizontal: 8,
+        fontSize: 14,
+        color: '#333',
+    },
+    deleteBtn: { marginTop: 2 },
+    deleteText: { fontSize: 18, color: '#cc0000' },
+
+    noteSection: {
+        marginHorizontal: 16,
+        marginTop: 20,
+    },
+    noteLabel: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#444',
+        marginBottom: 6,
+    },
+    noteInput: {
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        borderWidth: 1,
         borderColor: '#ccc',
-        fontSize: 11,
-        paddingVertical: 2,
-        color: '#5a5a5a',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontSize: 13,
     },
-    colText: {
-        flex: 1,
-        color: '#5a5a5a',
-        fontSize: 12,
-        textAlign: 'center',
+    total: {
+        textAlign: 'right',
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#007B7F',
+        marginTop: 12,
     },
-    remove: {
-        fontSize: 18,
-        textAlign: 'center',
-    },
+
     confirmBtn: {
         position: 'absolute',
-        bottom: 16,
+        bottom: 20,
         left: 20,
         right: 20,
-        backgroundColor: UI.color_Gradient[1],
-        paddingVertical: 16,
+        backgroundColor: '#00c3cc',
+        paddingVertical: 14,
         borderRadius: 30,
         alignItems: 'center',
-        elevation: 3,
     },
-    confirmText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-    popupContainer: {
+    confirmText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 18,
+    },
+
+    modalOverlay: {
         flex: 1,
         backgroundColor: '#00000080',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    popupBox: {
-        backgroundColor: UI.color_Gradient[1],
-        padding: 30,
+    modalBox: {
+        backgroundColor: '#fff',
         borderRadius: 16,
+        padding: 20,
+        width: '80%',
+    },
+    modalItem: {
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderColor: '#eee',
+    },
+    modalItemText: {
+        fontSize: 17,
+        textAlign: 'center',
+        color: '#333',
+    },
+
+    popupOverlay: {
+        flex: 1,
+        backgroundColor: '#00000088',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    popupBox: {
+        backgroundColor: '#00c3cc',
+        padding: 30,
+        borderRadius: 20,
     },
     popupText: {
-        color: 'white',
         fontSize: 20,
+        color: '#fff',
         fontWeight: 'bold',
     },
+    itemDetails: {
+        flex: 1,
+        justifyContent: 'center',
+        zIndex:10,
+        marginEnd:-10
+    },
+
+    rightSection: {
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginLeft: 10,
+    },
+
+    price: {
+        fontSize: 13,
+        color: '#00a0a8',
+        fontWeight: '600',
+        marginStart:10,
+        marginEnd:-15
+    },
+
+    qtyControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 4,
+        marginStart:30
+    },
+
+    qtyBtn: {
+        backgroundColor: '#00c3cc',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+    },
+
+    qtySymbol: {
+        fontSize: 14,
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+
+    qtyText: {
+        marginHorizontal: 3,
+        fontSize: 14,
+        color: '#333',
+    },
+
+    deleteBtn: {
+        marginTop: 4,
+        marginEnd:-20
+    },
+
+    deleteText: {
+        fontSize: 18,
+        color: '#cc0000',
+    },
+    rowCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        marginHorizontal: 12,
+        marginTop: 10,
+        borderRadius: 12,
+        padding: 10,
+        elevation: 2,
+    },
+
+    column: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    image: {
+        width: 50,
+        height: 50,
+        borderRadius: 6,
+        marginRight: 8,
+    },
+
 });
+
+export default connect(state => ({ lang: state.lang }))(CartScreen);
