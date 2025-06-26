@@ -1603,7 +1603,7 @@ class index extends Component {
                                       textAlign: 'center',
                                   }}
                               >
-                                  Exercise Training
+                                  {this.props.exerciseTrainingLabel}
                               </Text>
                           </TouchableOpacity>
                       </View>
@@ -1618,10 +1618,12 @@ class index extends Component {
 }
 
 const mapStateToProps = state => {
+    const langKey = state.lang === 1 ? 'thai' : 'eng';
   return {
     user: state.user,
     data: state.data,
     lang: state.lang,
+    exerciseTrainingLabel: LangDashboard.exerciseTraining?.[langKey] || 'Exercise Training',
   };
 };
 

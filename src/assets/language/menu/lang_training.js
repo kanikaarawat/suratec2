@@ -10,6 +10,11 @@ const highPressure = { eng: 'high pressure', thai: 'มีแรงกดมี�
 const mediumPressure = { eng: 'medium pressure', thai: 'แรงกดมีค่าปานกลาง' }
 const lowPressure = { eng: 'low pressure', thai: 'แรงกดมีค่าน้อย' }
 
+const exerciseTraining = { eng: 'Exercise Training', thai: 'การฝึกออกกำลังกาย' }
+const lowRiskProgram = { eng: 'Low Risk Program', thai: 'โปรแกรมความเสี่ยงต่ำ' }
+const moderateRiskProgram = { eng: 'Moderate Risk Program', thai: 'โปรแกรมความเสี่ยงปานกลาง' }
+const exerciseWorkOut = { eng: 'Exercise Work Out', thai: 'ออกกำลังกาย' }
+
 export default {
     title,
     notificationTitle,
@@ -20,5 +25,9 @@ export default {
     dashboardButoon,
     highPressure,
     mediumPressure,
-    lowPressure
+    lowPressure,
+    exerciseTraining,
+    lowRiskProgram,
+    moderateRiskProgram,
+    exerciseWorkOut,
 }

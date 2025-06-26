@@ -10,10 +10,19 @@ import {
     ScrollView,
 } from 'react-native';
 import HeaderFix from '../../common/HeaderFix';
+import { useSelector } from 'react-redux';
+import langAssessment from '../../../assets/language/menu/lang_assessmentTests';
 
 const StandEyes = ({ navigation, type }) => {
     const [seconds, setSeconds] = useState(10);
     const [isActive, setIsActive] = useState(false);
+    const lang = useSelector(state => state?.lang);
+    const langKey = lang === 1 ? 'thai' : 'eng';
+    const localizedTitle =
+        type === 'open'
+            ? langAssessment.standOpenEyes?.[langKey]
+            : langAssessment.standEyesClosed?.[langKey];
+
 
     useEffect(() => {
         let timer = null;
@@ -42,7 +51,7 @@ const StandEyes = ({ navigation, type }) => {
             <HeaderFix
                 icon_left={'left'}
                 onpress_left={() => navigation.goBack()}
-                title={type === 'open' ? 'Stand Open Eyes' : 'Stand Eyes Closed'}
+                title={localizedTitle}
             />
 
             <ScrollView

@@ -1,4 +1,4 @@
-const title = {thai: 'สรุปกิจกรรม', eng: 'DashBoard'}
+const title = {thai: 'สรุปกิจกรรม', eng: 'Dashboard'}
 const telemedicineText = {thai: 'สรุปกิจกรรม', eng: 'Telemedicine'}
 const headerCardresult0 = {thai: 'บริเวณ', eng: 'Zone'}
 const headerCardresult1 = {thai: 'เดิน', eng: 'Walk'}
@@ -29,10 +29,12 @@ const lang_dashboard = {
 };
 const dashboard = {thai: 'แผงควบคุม', eng: 'Dashboard'};
 const summary = {thai: 'สรุป', eng: 'Summary'};
+const exerciseTraining = { eng: 'Exercise Training', thai: 'การฝึกออกกำลังกาย' }
 
 
 export default {
     lang_dashboard,
     dashboard,
     summary,
+    exerciseTraining,
 };

@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions } from
 import { WebView } from 'react-native-webview';
 import HeaderFix from '../../common/HeaderFix';
 import UI from '../../../config/styles/CommonStyles';
+import { useSelector } from 'react-redux';
+import langTraining from '../../../assets/language/menu/lang_training';
 
 const { width } = Dimensions.get('window');
 
@@ -24,6 +26,9 @@ const exercises = [
 
 export default function ExerciseWorkOut({ navigation }) {
     const [selectedExercise, setSelectedExercise] = React.useState(null);
+    const lang = useSelector(state => state.lang);
+    const langKey = lang === 1 ? 'thai' : 'eng';
+    const localizedTitle = langTraining.exerciseWorkOut?.[langKey] || 'Exercise Work Out';
 
     if (selectedExercise) {
         return (
@@ -47,7 +52,7 @@ export default function ExerciseWorkOut({ navigation }) {
             <HeaderFix
                 icon_left={'left'}
                 onpress_left={() => navigation.goBack()}
-                title="Exercise Work Out"
+                title={localizedTitle}
             />
             <ScrollView style={{ backgroundColor: '#E0F7FA' }} contentContainerStyle={styles.container}>
                 {exercises.map((item, index) => (

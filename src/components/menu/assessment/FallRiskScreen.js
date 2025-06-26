@@ -12,11 +12,19 @@ import {
 import HeaderFix from '../../common/HeaderFix';
 import MultiSelectCheckbox from '../../MultiSelectCheckbox';
 import { useSelector } from 'react-redux';
+import langAssessment from '../../../assets/language/menu/lang_assessmentTests';
+
 
 const FallRiskScreen = ({ navigation }) => {
     const [select, setSelect] = useState('yes');
     const [selectedOptions, setSelectedOptions] = useState([]);
     const user = useSelector(state => state?.user);
+    const lang = useSelector(state => state?.lang);
+    const langKey = lang === 1 ? 'thai' : 'eng';
+    const localizedTitle = langAssessment.fallRiskScreening?.[langKey] || 'Fall Risk Screening';
+
+
+
 
     const options = [
         'Injury',
@@ -78,7 +86,7 @@ const FallRiskScreen = ({ navigation }) => {
             <HeaderFix
                 icon_left="left"
                 onpress_left={() => navigation.goBack()}
-                title="Fall Risk Screening"
+                title={localizedTitle}
             />
 
             <ScrollView

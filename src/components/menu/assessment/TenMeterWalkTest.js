@@ -17,6 +17,8 @@ import BleManager from 'react-native-ble-manager';
 import { NativeModules, NativeEventEmitter } from 'react-native';
 import HeaderFix from '../../common/HeaderFix';
 import API from '../../../config/Api';
+import langAssessment from '../../../assets/language/menu/lang_assessmentTests';
+
 
 const BleManagerModule = NativeModules.BleManager;
 const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
@@ -184,12 +186,15 @@ class TenMeterWalkTest extends Component {
     };
 
     render() {
+        const langKey = this.props.lang === 1 ? 'thai' : 'eng';
+        const localizedTitle = langAssessment.tenMeterWalkTest?.[langKey] || '10-meter walk test';
+
         return (
             <View style={styles.container}>
                 <HeaderFix
                     icon_left="left"
                     onpress_left={() => this.props.navigation.goBack()}
-                    title="10-meter walk test"
+                    title={localizedTitle}
                     rightText="finish"
                     onpress_right={() => Alert.alert('Test Complete')}
                 />

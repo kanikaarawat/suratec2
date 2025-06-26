@@ -2,15 +2,20 @@ import React, { Component } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import HeaderFix from '../../common/HeaderFix';
 import UI from '../../../config/styles/CommonStyles';
+import { connect } from 'react-redux';
 
 const { width } = Dimensions.get('window');
+import langTraining from '../../../assets/language/menu/lang_training';
 
-export default class ExerciseTraining extends Component {
+class ExerciseTraining extends Component {
     handleNavigate = route => {
         this.props.navigation.navigate(route);
     };
 
     render() {
+        const langKey = this.props.lang === 1 ? 'thai' : 'eng';
+        const localizedTitle = langTraining.exerciseTraining?.[langKey] || 'Exercise Training';
+
         return (
             <View style={styles.container}>
                 <HeaderFix
@@ -18,7 +23,7 @@ export default class ExerciseTraining extends Component {
                     onpress_left={() => {
                         this.props.navigation.goBack();
                     }}
-                    title="Exercise Training"
+                    title={localizedTitle}
                 />
                 <ScrollView contentContainerStyle={styles.scrollContainer}>
                     <TouchableOpacity
@@ -38,7 +43,7 @@ export default class ExerciseTraining extends Component {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={[styles.card, styles.outlinedCard]}
+                        style={[styles.card, { backgroundColor: '#fff' }]}
                         onPress={() => this.handleNavigate('ExerciseWorkOut')}>
                         <Text style={[styles.cardText, { color: '#00a4cc' }]}>
                             Exercise Work out
@@ -51,7 +56,6 @@ export default class ExerciseTraining extends Component {
             </View>
         );
     }
-
 }
 
 
@@ -65,21 +69,29 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     card: {
+        height: 101,
         width: width * 0.9,
         padding: 18,
         borderRadius: 12,
         marginBottom: 20,
         alignItems: 'center',
         elevation: 3,
-    },
-    outlinedCard: {
-        backgroundColor: '#fff',
         borderWidth: 1.5,
         borderColor: '#00a4cc',
+        justifyContent: 'center',
     },
     cardText: {
-        fontSize: 15,
+        fontSize: 24,
         textAlign: 'center',
         fontWeight: '600',
+        verticalAlign: 'center',
     },
 });
+
+
+const mapStateToProps = state => ({
+    lang: state.lang,
+});
+
+export default connect(mapStateToProps)(ExerciseTraining);
+

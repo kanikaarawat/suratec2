@@ -3,12 +3,18 @@
 import React, { useState } from 'react';
 import { StyleSheet, Dimensions, View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import HeaderFix from '../../common/HeaderFix';
+import { useSelector } from 'react-redux';
+import langTraining from '../../../assets/language/menu/lang_training';
 
 const { width } = Dimensions.get('window');
 
-export default function LowRiskExercise({ navigation }) {
+export default function ModerateRiskExercise({ navigation }) {
     const [selectedMonth, setSelectedMonth] = React.useState('1');
     const [selectedWeek, setSelectedWeek] = React.useState('1');
+    const lang = useSelector(state => state.lang);
+    const langKey = lang === 1 ? 'thai' : 'eng';
+    const localizedTitle = langTraining.moderateRiskProgram?.[langKey] || 'Moderate Risk Program';
+
 
     return (
         <View style={styles.container}>
@@ -16,7 +22,7 @@ export default function LowRiskExercise({ navigation }) {
             <HeaderFix
                 icon_left="left"
                 onpress_left={() => navigation.goBack()}
-                title="Moderate Risk Program"
+                title={localizedTitle}
             />
 
             {/* Month / Week “Pills” */}
