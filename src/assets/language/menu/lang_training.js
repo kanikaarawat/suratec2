@@ -14,6 +14,14 @@ const exerciseTraining = { eng: 'Exercise Training', thai: 'การฝึก�
 const lowRiskProgram = { eng: 'Low Risk Program', thai: 'โปรแกรมความเสี่ยงต่ำ' }
 const moderateRiskProgram = { eng: 'Moderate Risk Program', thai: 'โปรแกรมความเสี่ยงปานกลาง' }
 const exerciseWorkOut = { eng: 'Exercise Work Out', thai: 'ออกกำลังกาย' }
+const lowRiskProgramCard = {
+    eng: 'Exercise program for people\nat low risk of falls',
+    thai: 'โปรแกรมออกกำลังกายสำหรับผู้ที่\nมีความเสี่ยงต่อการหกล้มน้อย',
+};
+const moderateRiskProgramCard = {
+    eng: 'Exercise program for people\nwith moderate fall risk',
+    thai: 'โปรแกรมออกกำลังกายสำหรับผู้ที่\nมีความเสี่ยงต่อการหกล้มปานกลาง',
+};
 
 export default {
     title,
@@ -30,4 +38,6 @@ export default {
     lowRiskProgram,
     moderateRiskProgram,
     exerciseWorkOut,
+    lowRiskProgramCard,
+    moderateRiskProgramCard,
 }

@@ -15,6 +15,7 @@ const INIT_STATE = {
   chatProfile: false,
   eightSensor: false,
   productID: null,
+  impersonating: false,
 };
 
 export default (Reducer = (state = INIT_STATE, action = {}) => {
@@ -121,6 +122,11 @@ export default (Reducer = (state = INIT_STATE, action = {}) => {
       return {
         ...state,
         productNumber: action.payload,
+      };
+    case 'SET_IMPERSONATION':
+      return {
+        ...state,
+        impersonating: action.payload
       };
     default:
       return state;

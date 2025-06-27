@@ -30,7 +30,7 @@ class ExerciseTraining extends Component {
                         style={[styles.card, { backgroundColor: '#d2f6fb' }]}
                         onPress={() => this.handleNavigate('LowRiskExercise')}>
                         <Text style={[styles.cardText, { color: '#007b8a' }]}>
-                            Exercise program for people{'\n'}at low risk of falls
+                            {langTraining.lowRiskProgramCard?.[langKey]}
                         </Text>
                     </TouchableOpacity>
 
@@ -38,7 +38,7 @@ class ExerciseTraining extends Component {
                         style={[styles.card, { backgroundColor: '#fef8cb' }]}
                         onPress={() => this.handleNavigate('ModerateRiskExercise')}>
                         <Text style={[styles.cardText, { color: '#027b57' }]}>
-                            Exercise program for people{'\n'}with moderate fall risk
+                            {langTraining.moderateRiskProgramCard?.[langKey]}
                         </Text>
                     </TouchableOpacity>
 
@@ -46,7 +46,7 @@ class ExerciseTraining extends Component {
                         style={[styles.card, { backgroundColor: '#fff' }]}
                         onPress={() => this.handleNavigate('ExerciseWorkOut')}>
                         <Text style={[styles.cardText, { color: '#00a4cc' }]}>
-                            Exercise Work out
+                            {langTraining.exerciseWorkOut?.[langKey]}
                         </Text>
                     </TouchableOpacity>
 

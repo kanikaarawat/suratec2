@@ -75,11 +75,13 @@ class index extends Component {
     if (backup && backupToken) {
       const user = JSON.parse(backup);
       this.props.addUser(user, backupToken);
+      this.props.setImpersonation(false); // <-- Clear flag
       await AsyncStorage.removeItem('doctor_user');
       await AsyncStorage.removeItem('doctor_token');
       this.props.navigation.navigate('PatientList');
     } else {
       this.actionLogout();
+      this.props.setImpersonation(false);
     }
   };
 
@@ -300,6 +302,14 @@ class index extends Component {
   );
 
   render() {
+    <NavigationEvents
+        onDidFocus={async () => {
+          const backup = await AsyncStorage.getItem('doctor_user');
+          this.setState({ showExitIcon: !!backup });
+          console.log('[Home] Exit Icon:', !!backup);
+        }}
+    />
+
     let img = 'user.png';
     if (this.props.user) {
       if (this.props.user.image === '' || this.props.user.image === undefined) {
@@ -327,7 +337,7 @@ class index extends Component {
                     right: screenWidth * 0.2,
                     top: screenWidth * 0.55,
                   },
-                  !this.state.showExitIcon && {
+                  !this.props.impersonating && {
                     borderWidth: 1.2,
                     borderColor: '#fff',
                     padding: 2,
@@ -341,7 +351,7 @@ class index extends Component {
               <Image
                   style={{width: 30, height: 30}}
                   source={
-                    this.state.showExitIcon
+                    this.props.impersonating
                         ? require('../../../assets/image/menu/exit.png')
                         : require('../../../assets/image/icons/logout.png')
                   }
@@ -425,6 +435,7 @@ const mapStateToProps = state => {
     lang: state.lang,
     rightDevice: state.rightDevice,
     leftDevice: state.leftDevice,
+    impersonating: state.impersonating,
   };
 };
 
@@ -453,6 +464,9 @@ const mapDispatchToProps = dispatch => {
     },
     addUser: (user, token) => {
       dispatch({type: 'ADD_USERINFO', payload: {user, token}});
+    },
+    setImpersonation: (flag) => {
+      dispatch({ type: 'SET_IMPERSONATION', payload: flag });
     },
   };
 };

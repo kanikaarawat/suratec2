@@ -5,13 +5,21 @@ import UI from '../../../config/styles/CommonStyles';
 import { connect } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationActions } from 'react-navigation';
+import langPatientList from '../../../assets/language/auth/lang_patientList';
 
-const PatientList = ({ navigation, user, token, addUser }) => {
+const PatientList = ({ navigation, user, token, addUser, setImpersonation, lang  }) => {
     const [selectedId, setSelectedId] = useState(null);
     const [search, setSearch] = useState('');
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const langKey = lang === 1 ? 'thai' : 'eng';
+    const titleText = langPatientList.title[langKey];
+    const selectPatient = langPatientList.selectPatient[langKey];
+    const searchPatients = langPatientList.searchPatients[langKey];
+    const name = langPatientList.name[langKey];
+    const username = langPatientList.username[langKey];
+    const role = langPatientList.role[langKey];
 
     useEffect(() => {
         // Get patients from the user data that was stored during login
@@ -39,6 +47,7 @@ const PatientList = ({ navigation, user, token, addUser }) => {
                 // Save doctor info before switching
                 await AsyncStorage.setItem('doctor_user', JSON.stringify(user));
                 await AsyncStorage.setItem('doctor_token', token);
+                setImpersonation(true);
                 console.log('Selected patient:', selected);
                 console.log('Token:', token);
 
@@ -139,48 +148,50 @@ const PatientList = ({ navigation, user, token, addUser }) => {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#222' }}>
-            <LinearGradient colors={UI.color_Gradient} style={styles.gradient}>
-                <View style={styles.card}>
-                    <TouchableOpacity style={styles.powerBtn} onPress={handleLogout}>
-                        <Image source={require('../../../assets/image/icons/logout.png')} style={styles.powerIcon} />
-                    </TouchableOpacity>
-                    <Text style={styles.title}>Patient List</Text>
-                    <View style={styles.searchBar}>
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Search patients..."
-                            placeholderTextColor="#aaa"
-                            value={search}
-                            onChangeText={setSearch}
-                            underlineColorAndroid="transparent"
-                            autoCapitalize="none"
-                        />
-                    </View>
-                    <View style={styles.listContainer}>
-                        <View style={styles.headerRow}>
-                            <Text style={styles.headerCell}>Name</Text>
-                            <Text style={styles.headerCell}>Username</Text>
-                            <Text style={styles.headerCell}>Role</Text>
-                        </View>
-                        <FlatList
-                            data={filteredPatients}
-                            renderItem={renderPatient}
-                            keyExtractor={item => item.id_data_role}
-                            style={{ flexGrow: 0 }}
-                            contentContainerStyle={{ paddingBottom: 8 }}
-                        />
-                    </View>
-                    <TouchableOpacity
-                        style={[styles.selectButton, !selectedId && { opacity: 0.5 }]}
-                        disabled={!selectedId}
-                        onPress={handleSelectButton}
-                    >
-                        <Text style={styles.selectButtonText}>Select Patient</Text>
-                    </TouchableOpacity>
-                </View>
-            </LinearGradient>
-        </View>
+      <View style={{flex: 1, backgroundColor: '#222'}}>
+        <LinearGradient colors={UI.color_Gradient} style={styles.gradient}>
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.powerBtn} onPress={handleLogout}>
+              <Image
+                source={require('../../../assets/image/icons/logout.png')}
+                style={styles.powerIcon}
+              />
+            </TouchableOpacity>
+            <Text style={styles.title}>{titleText}</Text>
+            <View style={styles.searchBar}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder={searchPatients}
+                placeholderTextColor="#aaa"
+                value={search}
+                onChangeText={setSearch}
+                underlineColorAndroid="transparent"
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.listContainer}>
+              <View style={styles.headerRow}>
+                <Text style={styles.headerCell}>{name}</Text>
+                <Text style={styles.headerCell}>{username}</Text>
+                <Text style={styles.headerCell}>{role}</Text>
+              </View>
+              <FlatList
+                data={filteredPatients}
+                renderItem={renderPatient}
+                keyExtractor={item => item.id_data_role}
+                style={{flexGrow: 0}}
+                contentContainerStyle={{paddingBottom: 8}}
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.selectButton, !selectedId && {opacity: 0.5}]}
+              disabled={!selectedId}
+              onPress={handleSelectButton}>
+              <Text style={styles.selectButtonText}>{selectPatient}</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+      </View>
     );
 };
 
@@ -339,11 +350,14 @@ const styles = StyleSheet.create({
 
 const mapStateToProps = state => ({
     user: state.user,
-    token: state.token
+    token: state.token,
+    lang: state.lang,
 });
 
 const mapDispatchToProps = dispatch => ({
-    addUser: user => dispatch({ type: 'ADD_USERINFO', payload: user })
+    addUser: user => dispatch({ type: 'ADD_USERINFO', payload: user }),
+    setImpersonation: flag => dispatch({ type: 'SET_IMPERSONATION', payload: flag })
 });
+
 
 export default connect(mapStateToProps, mapDispatchToProps)(PatientList);
