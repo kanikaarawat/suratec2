@@ -1,22 +1,22 @@
+// src/components/menu/chat/Chatbot.js
+
 import React, { useState, useRef, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
     StyleSheet, Dimensions, Platform, KeyboardAvoidingView,
-    Image, PermissionsAndroid, BackHandler, ActivityIndicator
+    Image, PermissionsAndroid, ActivityIndicator
 } from 'react-native';
 import { connect } from 'react-redux';
-import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import Sound from 'react-native-sound';
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import HeaderFix from '../../common/HeaderFix';
 import Toast from 'react-native-simple-toast';
-import chatbotLang from '../../../assets/language/menu/lang_chatbot';
+import langChatbot from '../../../assets/language/menu/lang_chatbot';
 
 const { width } = Dimensions.get('window');
-// 💡 Place this at the top level (outside the component)
-const globalRecorderInstance = new AudioRecorderPlayer();
+const audioRecorderPlayer = new AudioRecorderPlayer();
 
-function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
+function Chatbot({ navigation, user, token, lang }) {
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState([]);
     const [isTyping, setIsTyping] = useState(false);
@@ -24,27 +24,14 @@ function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
     const [inputDisabled, setInputDisabled] = useState(false);
     const scrollRef = useRef();
     const soundRef = useRef(null);
+
     const langKey = lang === 1 ? 'thai' : 'eng';
+    const titleText = langChatbot.title[langKey];
+    const sendText = langChatbot.send[langKey];
 
-    const audioRecorderPlayerRef = useRef(globalRecorderInstance);
-
-    useEffect(() => {
-        console.log('📦 Initializing AudioRecorderPlayer...');
-        audioRecorderPlayerRef.current = new AudioRecorderPlayer();
-        console.log('✅ Initialized:', audioRecorderPlayerRef.current);
-
-        return () => {
-            console.log('♻️ Cleaning up recorder...');
-            if (audioRecorderPlayerRef.current) {
-                audioRecorderPlayerRef.current.stopRecorder();
-                audioRecorderPlayerRef.current.removeRecordBackListener();
-            }
-        };
-    }, []);
-
-
-
-    const scrollToEnd = () => scrollRef.current?.scrollToEnd({ animated: true });
+    const scrollToEnd = () => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+    };
 
     const addMessage = (type, text, audio = null) => {
         setMessages(prev => {
@@ -55,12 +42,12 @@ function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
     };
 
     const getAuthFormData = () => {
-        if (!tokenProp || !user?.id_customer) {
-            Toast.show(chatbotLang.missingAuth[langKey]);
+        if (!token || !user?.id_customer) {
+            Toast.show('Missing user/token');
             return null;
         }
         return {
-            token: tokenProp,
+            token: token,
             userId: user.id_customer,
         };
     };
@@ -73,17 +60,16 @@ function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 body: formData,
             });
-            const data = await res.json();
-            console.log('🧠 Chatbot API response:', data);
 
+            const data = await res.json();
             if (data?.text_response) {
                 addMessage('bot', data.text_response, data.voice_url);
             } else {
-                Toast.show(chatbotLang.noResponse[langKey]);
+                Toast.show('No response from server');
             }
-        } catch (err) {
-            console.error('❌ Chatbot API Error:', err);
-            Toast.show(chatbotLang.apiFailed[langKey]);
+        } catch (error) {
+            console.error('Chatbot API error:', error);
+            Toast.show('Chatbot API failed');
         } finally {
             setIsTyping(false);
         }
@@ -92,7 +78,7 @@ function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
     const handleSendText = async () => {
         if (!input.trim() || inputDisabled) return;
 
-        const message = input.trim().replace(/\s+/g, ' ');
+        const message = input.trim();
         setInput('');
         setInputDisabled(true);
         addMessage('user', message);
@@ -104,52 +90,43 @@ function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
         formData.append('text', message);
         formData.append('security_token', auth.token);
         formData.append('user_id', auth.userId);
-        await sendMessageToAPI(formData);
 
+        await sendMessageToAPI(formData);
         setTimeout(() => setInputDisabled(false), 1000);
     };
 
     const startRecording = async () => {
-        if (!audioRecorderPlayerRef.current) {
-            console.warn('Recorder not initialized');
-            Toast.show('Recorder not ready');
-            return;
-        }
-
         if (Platform.OS === 'android') {
             const granted = await PermissionsAndroid.request(
                 PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
             );
             if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-                Toast.show(chatbotLang.micPermissionDenied[langKey]);
+                Toast.show('Microphone permission denied');
                 return;
             }
         }
 
         try {
-            await audioRecorderPlayerRef.current.removeRecordBackListener();
-            const result = await audioRecorderPlayerRef.current.startRecorder(
-                Platform.OS === 'ios' ? 'hello.m4a' : undefined
-            );
-            console.log('📂 Recorder started at:', result);
+            await audioRecorderPlayer.removeRecordBackListener();
+            await audioRecorderPlayer.startRecorder();
             setIsRecording(true);
         } catch (err) {
             console.error('Recording error:', err);
-            Toast.show('Recording failed to start');
         }
     };
 
-
     const stopRecording = async () => {
         try {
-            const filePath = await audioRecorderPlayerRef.current?.stopRecorder();
-            await audioRecorderPlayerRef.current?.removeRecordBackListener();
+            const filePath = await audioRecorderPlayer.stopRecorder();
+            await audioRecorderPlayer.removeRecordBackListener();
             setIsRecording(false);
+
             if (!filePath) {
-                Toast.show(chatbotLang.recordingFailed[langKey]);
+                Toast.show('Recording failed');
                 return;
             }
-            addMessage('user', chatbotLang.voiceSent[langKey]);
+
+            addMessage('user', '🎤 Voice message sent');
 
             const auth = getAuthFormData();
             if (!auth) return;
@@ -162,6 +139,7 @@ function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
             });
             formData.append('security_token', auth.token);
             formData.append('user_id', auth.userId);
+
             await sendMessageToAPI(formData);
         } catch (err) {
             console.error('Stop recording error:', err);
@@ -175,11 +153,17 @@ function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
                 soundRef.current = null;
             });
         }
+
         const sound = new Sound(url, null, (error) => {
-            if (error) return console.error('Sound load error:', error);
+            if (error) {
+                console.log('Sound load error:', error);
+                return;
+            }
             soundRef.current = sound;
             sound.play(success => {
-                if (!success) Toast.show(chatbotLang.playbackFailed[langKey]);
+                if (!success) {
+                    Toast.show('Playback failed');
+                }
                 sound.release();
             });
         });
@@ -196,28 +180,13 @@ function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
         };
     }, []);
 
-    useEffect(() => {
-        const onBackPress = () => {
-            if (navigation.canGoBack()) {
-                navigation.goBack();
-                return true;
-            } else {
-                navigation.navigate('Home');
-                return true;
-            }
-        };
-
-        BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
-        return () => {
-            BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-        };
-    }, [navigation]);
-
-
     return (
         <View style={styles.container}>
-            <HeaderFix icon_left="left" onpress_left={() => navigation.goBack()} title={chatbotLang.title[langKey]} />
+            <HeaderFix
+                icon_left={'left'}
+                onpress_left={() => navigation.goBack()}
+                title={titleText}
+            />
 
             <ScrollView
                 ref={scrollRef}
@@ -225,15 +194,17 @@ function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
                 contentContainerStyle={{ padding: 12 }}
                 onContentSizeChange={scrollToEnd}
             >
-                {messages.map((msg, i) => (
+                {messages.map((msg, index) => (
                     <View
-                        key={i}
+                        key={index}
                         style={[
                             styles.messageBubble,
                             msg.type === 'user' ? styles.userBubble : styles.botBubble,
                         ]}
                     >
-                        <Text style={msg.type === 'user' ? styles.userText : styles.botText}>{msg.text}</Text>
+                        <Text style={msg.type === 'user' ? styles.userText : styles.botText}>
+                            {msg.text}
+                        </Text>
                         {msg.type === 'bot' && msg.audio && (
                             <TouchableOpacity style={styles.volumeIcon} onPress={() => playAudio(msg.audio)}>
                                 <Image
@@ -245,6 +216,7 @@ function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
                         )}
                     </View>
                 ))}
+
                 {isTyping && (
                     <View style={[styles.messageBubble, styles.botBubble]}>
                         <ActivityIndicator color="#fff" size="small" />
@@ -256,7 +228,7 @@ function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
                 <View style={styles.inputRow}>
                     <TextInput
                         style={styles.inputBox}
-                        placeholder={chatbotLang.askAnything[langKey]}
+                        placeholder="Ask anything"
                         placeholderTextColor="#A0A0A0"
                         value={input}
                         onChangeText={setInput}
@@ -266,16 +238,16 @@ function ChatbotScreen({ navigation, user, token: tokenProp, lang }) {
                         onPress={handleSendText}
                         disabled={!input.trim() || inputDisabled}
                     >
-                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>{chatbotLang.send[langKey]}</Text>
+                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>{sendText}</Text>
                     </TouchableOpacity>
-                    {/*<TouchableOpacity*/}
-                    {/*    style={[styles.audioButton, { backgroundColor: isRecording ? 'red' : '#007D75' }]}*/}
-                    {/*    onPress={isRecording ? stopRecording : startRecording}*/}
-                    {/*>*/}
-                    {/*    <Text style={{ color: '#fff', fontWeight: 'bold' }}>*/}
-                    {/*        {isRecording ? chatbotLang.stop[langKey] : '🎤'}*/}
-                    {/*    </Text>*/}
-                    {/*</TouchableOpacity>*/}
+                    <TouchableOpacity
+                        style={[styles.audioButton, { backgroundColor: isRecording ? 'red' : '#007D75' }]}
+                        onPress={isRecording ? stopRecording : startRecording}
+                    >
+                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                            {isRecording ? '■' : '🎤'}
+                        </Text>
+                    </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
         </View>
@@ -291,7 +263,7 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         borderColor: '#00A499',
         borderRadius: 12,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
     },
     messageBubble: {
         maxWidth: '85%',
@@ -310,8 +282,8 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
         borderTopLeftRadius: 0,
     },
-    userText: { color: '#333', fontSize: 15 },
-    botText: { color: '#fff', fontSize: 15 },
+    userText: { color: '#333333', fontSize: 15 },
+    botText: { color: '#ffffff', fontSize: 15 },
     volumeIcon: {
         position: 'absolute',
         bottom: 6,
@@ -331,8 +303,8 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         paddingHorizontal: 16,
         fontSize: 16,
-        color: '#333',
-        backgroundColor: '#fff',
+        color: '#333333',
+        backgroundColor: '#FFFFFF',
     },
     sendButton: {
         backgroundColor: '#00A499',
@@ -347,28 +319,12 @@ const styles = StyleSheet.create({
         marginLeft: 6,
         borderRadius: 24,
     },
-    typingDots: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: 10,
-        gap: 6,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-    },
-    dot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: '#fff',
-        opacity: 0.8,
-    },
 });
 
-const mapStateToProps = (state) => ({
+const mapStateToProps = state => ({
     user: state.user,
     token: state.token,
     lang: state.lang,
 });
 
-export default connect(mapStateToProps)(ChatbotScreen);
+export default connect(mapStateToProps)(Chatbot);
