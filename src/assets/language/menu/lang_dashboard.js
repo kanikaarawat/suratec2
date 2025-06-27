@@ -29,6 +29,7 @@ const lang_dashboard = {
 };
 const dashboard = {thai: 'แผงควบคุม', eng: 'Dashboard'};
 const summary = {thai: 'สรุป', eng: 'Summary'};
+const noSummary = {thai: 'ไม่มีบทสรุป', eng: 'No Summary'};
 const exerciseTraining = { eng: 'Exercise Training', thai: 'การฝึกออกกำลังกาย' }
 
 
@@ -37,4 +38,5 @@ export default {
     dashboard,
     summary,
     exerciseTraining,
+    noSummary,
 };

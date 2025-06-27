@@ -301,7 +301,10 @@ class index extends Component {
     NetInfo.addEventListener(this.handleConnectivityChange);
     this.handleFetchDashboardData();
     this.fetchDashboardSummary();
-    fetch(`${API}/record`, {
+      console.log('Redux user:', this.props.user);
+
+
+      fetch(`${API}/record`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -434,18 +437,23 @@ class index extends Component {
   };
 
     fetchDashboardSummary = async () => {
-        const { id_customer } = this.props.user;
-        console.log('LANG STATE:', this.props.lang);
+        const { id_customer, security_token } = this.props.user;
         const lang_mode = this.props.lang ? 1 : 0;
-        console.log('lang_mode being sent to API:', lang_mode);
+
+        console.log('Fetching dashboard summary with lang_mode:', lang_mode);
+        console.log('User ID:', id_customer);
+        console.log('Security Token:', security_token);
 
         try {
             const response = await fetch('https://www.surasole.com/api/dashboard/dashboard-summary', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     user_id: id_customer,
-                    lang_mode: lang_mode,
+                    lang_mode,
+                    security_token,
                 }),
             });
 
@@ -469,6 +477,7 @@ class index extends Component {
             });
         }
     };
+
 
 
     handleConnectivityChange = async status => {

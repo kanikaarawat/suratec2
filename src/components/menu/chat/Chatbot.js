@@ -15,17 +15,21 @@ import {
 } from 'react-native';
 import HeaderFix from '../../common/HeaderFix';
 import Sound from 'react-native-sound';
+import { connect } from 'react-redux';
+import langChatbot from '../../../assets/language/menu/lang_chatbot';
+
 
 const { width } = Dimensions.get('window');
 
-export default function Chatbot({ navigation }) {
+function Chatbot({ navigation, user, lang }) {
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState([]);
     const scrollRef = useRef();
     const [isTyping, setIsTyping] = useState(false);
     const soundRef = useRef(null);
-
-    const user_id = 'xa38c6c4c8ed3a6d19bf6209edd52f7d2de';
+    const langKey = lang === 1 ? 'thai' : 'eng';
+    const titleText = langChatbot.title[langKey];
+    const sendText = langChatbot.send[langKey];
 
     const handleSend = async () => {
         if (!input.trim()) return;
@@ -33,14 +37,15 @@ export default function Chatbot({ navigation }) {
         const userMessage = { type: 'user', text: input.trim() };
         setMessages(prev => [...prev, userMessage]);
         setInput('');
-
-        setIsTyping(true); // show typing indicator before API call
+        setIsTyping(true);
 
         try {
             const formData = new FormData();
+            formData.append('security_token', user.security_token);
+            formData.append('user_id', user.id_customer);
             formData.append('text', input.trim());
 
-            const res = await fetch(`https://www.surasole.com/api/voice-chat/?user_id=${user_id}`, {
+            const res = await fetch(`https://www.surasole.com/api/voice-chat/`, {
                 method: 'POST',
                 body: formData,
             });
@@ -56,12 +61,12 @@ export default function Chatbot({ navigation }) {
                 setMessages(prev => [...prev, botMessage]);
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Chatbot API error:', error);
         } finally {
-            setIsTyping(false); // hide indicator after response
+            setIsTyping(false);
         }
-
     };
+
 
 
     const playAudio = (url) => {
@@ -102,7 +107,7 @@ export default function Chatbot({ navigation }) {
             <HeaderFix
                 icon_left={'left'}
                 onpress_left={() => navigation.goBack()}
-                title={navigation.getParam('name', 'Chatbot')}
+                title={titleText}
             />
 
             <ScrollView
@@ -165,7 +170,7 @@ export default function Chatbot({ navigation }) {
                         onChangeText={setInput}
                     />
                     <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>Send</Text>
+                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>{sendText}</Text>
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
@@ -270,3 +275,11 @@ const styles = StyleSheet.create({
     },
 
 });
+
+const mapStateToProps = state => ({
+    user: state.user,
+    lang: state.lang,
+});
+
+export default connect(mapStateToProps)(Chatbot);
+

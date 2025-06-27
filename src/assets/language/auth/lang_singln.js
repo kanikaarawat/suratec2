@@ -1,6 +1,9 @@
-const titleName = {thai: 'เข้าสู่ระบบ', eng: 'Sign in'};
+const titleName = {thai: 'สุระโซล เสี่ยงตก', eng: 'SuraSole Fall Risk'};
+const signIn = {thai: 'เข้าสู่ระบบ', eng: 'Sign in'};
 const fieldUsername = {thai: 'ชื่อผู้ใช้', eng: 'Username'};
 const fieldPassword = {thai: 'รหัสผ่าน', eng: 'Password'};
+const usernamePlaceholder = {thai: 'รหัสผ่าน', eng: 'Enter username'};
+const passwordPlaceholder = {thai: 'รหัสผ่าน', eng: 'Enter password'};
 const titleBtn = {thai: 'เข้าสู่ระบบ', eng: 'Sign ln'};
 const labelForgot = {thai: 'ลืมรหัสผ่าน ?', eng: 'Forgot your Password ?'};
 const labelSignUp = {
@@ -27,4 +30,7 @@ export default {
   alertErrorBody1,
   alertErrorBody2,
   alertErrorTitle,
+  signIn,
+  usernamePlaceholder,
+  passwordPlaceholder,
 };
