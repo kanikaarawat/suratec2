@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Modal, Image, Dimensions } from 'react-native';
+import {View, Modal, Image, Dimensions, ScrollView} from 'react-native';
 
 import Header from '../../common/HeaderFix';
 import ButtonFix from '../../common/ButtonFix';
@@ -10,6 +10,7 @@ export default class LangModal extends Component {
         let modalContent = null;
         if (this.props.modalVisible) {
             modalContent = (
+                <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
                 <View style={{ flex: 1 }}>
                     <Header
                         icon_left={"close"}
@@ -28,6 +29,7 @@ export default class LangModal extends Component {
                         <ButtonFix rounded={true} title={this.props.labelBtn} onPress={this.props.onLang} />
                     </View>
                 </View>
+                </ScrollView>
             );
         }
 

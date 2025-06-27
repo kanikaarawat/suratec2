@@ -133,7 +133,7 @@ const FallRiskScreen = ({ navigation }) => {
                 </>
             )}
 
-            <View style={styles.submitWrapper}>
+                <View style={{ alignItems: 'center', marginTop: 40, marginBottom: 60 }}>
                 <TouchableOpacity
                     style={styles.submitBtn}
                     onPress={() => {

@@ -12,7 +12,7 @@ configureStore = (initialState = {}) => {
         key: 'data',
         storage: AsyncStorage,
         timeout: null,
-        whitelist: ['lang', 'user', 'token'],
+        whitelist: ['lang', 'user', 'token', 'impersonating'],
       },
       Reducer,
     ),

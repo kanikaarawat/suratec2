@@ -1533,10 +1533,12 @@ class index extends Component {
                 {/* ──────────── PAGE 2 ──────────── */}
                   <LinearGradient
                       colors={[
-                          '#FFFFFF',
-                          '#FFFFFF',
-                          'rgba(216,255,255,0.6)',
-                          '#CFFFFF',
+                          '#eafffa',
+                          '#eafffa'
+                          // '#FFFFFF',
+                          // '#FFFFFF',
+                          // 'rgba(216,255,255,0.6)',
+                          // '#CFFFFF',
                       ]}
                       locations={[0, 0.9, 0.96, 1]}
                       start={{ x: 0, y: 0 }}
@@ -1571,19 +1573,21 @@ class index extends Component {
                           </View>
 
                           {/* paragraph */}
+                          <View style={{ width: '85%', backgroundColor: '#fff', borderRadius: 16, padding: 18, marginVertical: 10, elevation: 2 }}>
                           <Text
                               style={{
                                   width: 325,
-                                  marginTop: 24,
+                                  // marginTop: 24,
                                   fontFamily: 'BaiJamjuree-Medium',
                                   fontSize: 16,
                                   lineHeight: 16 * 1.53,
-                                  textAlign: 'left',
-                                  color: '#000',
+                                  textAlign: 'justify',
+                                  color: '#333',
                               }}
                           >
                               {this.state.dashboardSummaryText || 'Loading summary...'}
                           </Text>
+                          </View>
 
                           {/* push button to the bottom */}
                           <View style={{ flex: 1 }} />
