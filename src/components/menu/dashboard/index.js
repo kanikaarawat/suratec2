@@ -506,9 +506,9 @@ class index extends Component {
 
   render() {
 
-      const rawFallRisk   = this.state.healthData?.fall_risk;
-      const fallRisk      = Number(rawFallRisk);      // convert once, reuse everywhere
-      console.log('[Dashboard] fall_risk ->', rawFallRisk, '(parsed:', fallRisk, ')');
+      const healthData   = this.state.healthData ?? {};
+      const dataType     = parseInt(healthData.data_type, 10);   // '1' | '2'  ➜  1 | 2
+      const fallRisk     = parseInt(healthData.fall_risk, 10);   // '0'–'3' → number
       // 0 when not yet loaded
 
       const fallRingColors =
@@ -1315,10 +1315,14 @@ class index extends Component {
                             {/* End of Right Leg */}
                           </View>
                         </View>
-                      </View>
-                    </LinearGradient>
+                        </View>
+                        </LinearGradient>
 
-                      {/* ---------- ① FALL-RISK + CADENCE/STEP/SPEED ROW ---------- */}
+
+                      <View style={{ flex: 1 }}>
+                          {dataType === 2 ? (
+                          <>
+                              {/* ---------- ① FALL-RISK + CADENCE/STEP/SPEED ROW ---------- */}
                       <View
                           style={{
                               flexDirection: 'row',
@@ -1467,8 +1471,8 @@ class index extends Component {
                           </LinearGradient>
                       </View>
 
-                      {/* ─────────── PRESSURE + STANCE-TIME PERCENTAGE CARD ─────────── */}
-                      <LinearGradient
+                        {/* ─────────── PRESSURE + STANCE-TIME PERCENTAGE CARD ─────────── */}
+                        <LinearGradient
                           colors={['#005C51', '#0CFFD3']}
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 0 }}
@@ -1478,7 +1482,7 @@ class index extends Component {
                               marginHorizontal: 10,
                               marginTop: 0,           // ← adds breathing room under Peak-Pressure card
                           }}
-                      >
+                        >
                           <View style={{ backgroundColor: '#fff', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 12 }}>
 
                               {/* ── reusable pill component ─────────────────────────────── */}
@@ -1531,12 +1535,253 @@ class index extends Component {
                               <Text style={{ flex:1, textAlign:'center', color:'#00A2A2', fontSize:14 }}>
                                   Right foot
                               </Text>
-                          </View>
+                            </View>
+                            </View>
+                        </LinearGradient>
+                      </>
+                      ) : (
+                      /* -------------------------------------------------------------- *
+                      *   SENSOR-TYPE 1  →  show existing Foot-Balance card           *
+                      * -------------------------------------------------------------- */
+                        <View style={{ marginVertical: 10 }}>
+                          {/*  keep your original Foot Balance JSX exactly as-is  */}
+                            <>
+                                <View style={{ marginVertical: 10 }}>
+                                    <LinearGradient
+                                        colors={['#005C51', '#0CFFD3']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={{
+                                            padding: 1,
+                                            borderRadius: 10,
+                                            marginHorizontal: 10,
+                                        }}>
+                                        <View
+                                            style={{
+                                                backgroundColor: '#fff',
+                                                padding: 10,
+                                                borderRadius: 10,
+                                            }}>
+                                            <View
+                                                style={{
+                                                    flexDirection: 'row',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    paddingHorizontal: 10,
+                                                    width: '100%',
+                                                }}>
+                                                {/* ---------- Left column: Radar + labels ---------- */}
+                                                <View style={{ width: '40%' }}>
+                                                    <Text style={{ fontSize: 18, color: '#00A2A2' }}>
+                                                        Foot Balance{' '}
+                                                    </Text>
+
+                                                    <View style={{ alignItems: 'center', marginVertical: 5 }}>
+                                                        {this.state.focus ? (
+                                                            <RadarChartForDashboard
+                                                                positionValue={this.state.positionValue}
+                                                            />
+                                                        ) : (
+                                                            <View />
+                                                        )}
+                                                    </View>
+
+                                                    <View
+                                                        style={{
+                                                            flexDirection: 'row',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                        }}>
+                                                        <Text style={{ fontSize: 15, color: '#00A2A2' }}>Left</Text>
+                                                        <Text style={{ fontSize: 15, color: '#00A2A2' }}>Right</Text>
+                                                    </View>
+                                                </View>
+
+                                                {/* ---------- Right column: sway / velocity cards ---------- */}
+                                                <View
+                                                    style={{
+                                                        width: '65%',
+                                                        paddingHorizontal: 5,
+                                                        paddingVertical: 5,
+                                                    }}>
+                                                    {/* -- Card 1 : Path, ML, AP sway -- */}
+                                                    <LinearGradient
+                                                        colors={['#005C51', '#0CFFD3']}
+                                                        start={{ x: 0, y: 0 }}
+                                                        end={{ x: 1, y: 0 }}
+                                                        style={{
+                                                            padding: 1,
+                                                            borderRadius: 10,
+                                                            marginHorizontal: 5,
+                                                            marginVertical: 10,
+                                                        }}>
+                                                        <View
+                                                            style={{
+                                                                backgroundColor: '#fff',
+                                                                padding: 10,
+                                                                borderRadius: 10,
+                                                            }}>
+                                                            <View
+                                                                style={{
+                                                                    justifyContent: 'center',
+                                                                    alignItems: 'center',
+                                                                }}>
+                                                                <Text style={{ fontSize: 15, color: '#00A2A2' }}>
+                                                                    Path Sway
+                                                                </Text>
+                                                                <Text
+                                                                    style={{
+                                                                        fontSize: 15,
+                                                                        color: '#00A2A2',
+                                                                        fontWeight: 'bold',
+                                                                    }}>
+                                                                    {this.state.healthData.path_sway} cm
+                                                                </Text>
+                                                            </View>
+
+                                                            <View
+                                                                style={{
+                                                                    flexDirection: 'row',
+                                                                    justifyContent: 'space-evenly',
+                                                                    alignItems: 'center',
+                                                                }}>
+                                                                <View
+                                                                    style={{
+                                                                        justifyContent: 'center',
+                                                                        alignItems: 'center',
+                                                                    }}>
+                                                                    <Text style={{ fontSize: 15, color: '#00A2A2' }}>
+                                                                        ML Sway
+                                                                    </Text>
+                                                                    <Text
+                                                                        style={{
+                                                                            fontSize: 15,
+                                                                            color: '#00A2A2',
+                                                                            fontWeight: 'bold',
+                                                                        }}>
+                                                                        {this.state.healthData.ml_sway} cm
+                                                                    </Text>
+                                                                </View>
+
+                                                                <View
+                                                                    style={{
+                                                                        justifyContent: 'center',
+                                                                        alignItems: 'center',
+                                                                    }}>
+                                                                    <Text style={{ fontSize: 15, color: '#00A2A2' }}>
+                                                                        AP Sway
+                                                                    </Text>
+                                                                    <Text
+                                                                        style={{
+                                                                            fontSize: 15,
+                                                                            color: '#00A2A2',
+                                                                            fontWeight: 'bold',
+                                                                        }}>
+                                                                        {this.state.healthData.ap_sway} cm
+                                                                    </Text>
+                                                                </View>
+                                                            </View>
+                                                        </View>
+                                                    </LinearGradient>
+
+                                                    {/* -- Card 2 : Ellipse area + velocity -- */}
+                                                    <LinearGradient
+                                                        colors={['#005C51', '#0CFFD3']}
+                                                        start={{ x: 0, y: 0 }}
+                                                        end={{ x: 1, y: 0 }}
+                                                        style={{
+                                                            padding: 1,
+                                                            borderRadius: 10,
+                                                            marginHorizontal: 5,
+                                                            marginVertical: 10,
+                                                        }}>
+                                                        <View
+                                                            style={{
+                                                                backgroundColor: '#fff',
+                                                                padding: 10,
+                                                                borderRadius: 10,
+                                                            }}>
+                                                            <View
+                                                                style={{
+                                                                    flexDirection: 'row',
+                                                                    justifyContent: 'space-evenly',
+                                                                    alignItems: 'center',
+                                                                }}>
+                                                                {/* Ellipse area */}
+                                                                <View
+                                                                    style={{
+                                                                        justifyContent: 'center',
+                                                                        alignItems: 'center',
+                                                                        marginHorizontal: 5,
+                                                                    }}>
+                                                                    <Text
+                                                                        style={{
+                                                                            fontSize: 15,
+                                                                            color: '#00A2A2',
+                                                                            textAlign: 'center',
+                                                                        }}>
+                                                                        Ellipse Area
+                                                                    </Text>
+                                                                    <Text
+                                                                        style={{
+                                                                            fontSize: 15,
+                                                                            textAlign: 'center',
+                                                                            color: '#00A2A2',
+                                                                            fontWeight: 'bold',
+                                                                        }}>
+                                                                        {this.state.healthData.ellipse_area + '\n'} cm
+                                                                    </Text>
+                                                                    <Text
+                                                                        style={{
+                                                                            position: 'absolute',
+                                                                            fontSize: 10,
+                                                                            top: 37,
+                                                                            left: 52,
+                                                                            color: '#00A2A2',
+                                                                            fontWeight: 'bold',
+                                                                        }}>
+                                                                        ²
+                                                                    </Text>
+                                                                </View>
+
+                                                                {/* Velocity */}
+                                                                <View
+                                                                    style={{
+                                                                        justifyContent: 'center',
+                                                                        alignItems: 'center',
+                                                                        marginHorizontal: 5,
+                                                                    }}>
+                                                                    <Text
+                                                                        style={{
+                                                                            fontSize: 15,
+                                                                            color: '#00A2A2',
+                                                                            textAlign: 'center',
+                                                                        }}>
+                                                                        Velocity
+                                                                    </Text>
+                                                                    <Text
+                                                                        style={{
+                                                                            textAlign: 'center',
+                                                                            fontSize: 15,
+                                                                            color: '#00A2A2',
+                                                                            fontWeight: 'bold',
+                                                                        }}>
+                                                                        {this.state.healthData.velocity + '\n'} cm/sec
+                                                                    </Text>
+                                                                </View>
+                                                            </View>
+                                                        </View>
+                                                    </LinearGradient>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    </LinearGradient>
+                                </View>
+                            </>
+                        </View>
+                      )}
+                      </View>
                   </View>
-                </LinearGradient>
-
-
-              </View>
                 </ScrollView>
 
                 {/* ──────────── PAGE 2 ──────────── */}
