@@ -55,6 +55,13 @@ class index extends Component {
     id_facebook: '',
   };
 
+  getImageURI = (img_path) => {
+    if (!img_path) return null;
+    return img_path.startsWith('http')
+        ? img_path
+        : `https://api1.suratec.co.th/pic/${img_path}`;
+  };
+
   actionLang = () => {
     this.props.lang == 1 ? this.props.edit_Lang(0) : this.props.edit_Lang(1);
     this.setState({onModal: false});
@@ -177,82 +184,84 @@ class index extends Component {
   editprofilePicture = () => {
     this.setState({loading: true});
     console.log('Edit Profile Picture Called');
-    ImagePicker.launchImageLibrary(options, response => {
-      console.log(response);
-      if (response.fileName) {
-        console.log(response);
-        const data = new FormData();
-        data.append('id', this.state.id);
-        data.append('type', this.props.user.role);
-        data.append('image', {
-          name: response.fileName,
-          type: response.type,
-          uri: response.uri,
-        });
-        fetch(`${API}/profile`, {
+
+    ImagePicker.launchImageLibrary(options, async (response) => {
+      console.log('Image Picker Response:', response);
+
+      if (!response || response.didCancel) {
+        console.log('User cancelled image selection');
+        this.setState({loading: false});
+        return;
+      }
+
+      if (response.errorCode) {
+        console.log('Image Picker Error:', response.errorMessage);
+        this.setState({loading: false});
+        return;
+      }
+
+      const image = response.assets?.[0];
+      if (!image) {
+        console.log('No image asset found in response');
+        this.setState({loading: false});
+        return;
+      }
+
+      const { uri, fileName, type } = image;
+
+      const data = new FormData();
+      data.append('id', this.state.id);
+      data.append('type', this.props.user.role);
+      data.append('image', {
+        uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+        name: fileName,
+        type: type,
+      });
+
+      // Log form data
+      console.log('Uploading image with data:');
+      console.log('ID:', this.state.id);
+      console.log('TYPE:', this.props.user.role);
+      console.log('FILE:', { uri, name: fileName, type });
+
+      try {
+        const res = await fetch(`${API}/profile`, {
           method: 'POST',
           headers: {
             'Content-Type': 'multipart/form-data',
           },
           body: data,
-        })
-          .then(res => {
-            console.log(res);
-            return res.json();
-          })
-          .then(res => {
-            console.log(res);
-            this.setState({loading: false});
-            if (res.status === 'สำเร็จ') {
-              let user = {...this.props.user, image: res.data};
-              this.setState({img_path: res.data});
-              this.props.updatePath(user);
-              AlertFix.alertBasic(
-                this.props.lang
-                  ? Lang.alertSuccessTitle.thai
-                  : Lang.alertSuccessTitle.eng,
-                this.props.lang
-                  ? Lang.successTitleContentAlert.thai
-                  : Lang.successTitleContentAlert.eng,
-              );
-            } else {
-              AlertFix.alertBasic(
-                this.props.lang
-                  ? Lang.alertErrorTitle.thai
-                  : Lang.alertErrorTitle.eng,
-                this.props.lang
-                  ? Lang.cannotEditAlert.thai
-                  : Lang.cannotEditAlert.eng,
-              );
-            }
-          })
-          .catch(err => {
-            this.setState({loading: false});
-            AlertFix.alertBasic(
-              this.props.lang
-                ? Lang.alertErrorTitle.thai
-                : Lang.alertErrorTitle.eng,
-              this.props.lang
-                ? Lang.cannotEditAlert.thai
-                : Lang.cannotEditAlert.eng,
-            );
-            console.log(err);
-          });
+        });
+
+        const json = await res.json();
+        console.log('Upload Response:', json);
+
+        if (json.status === 'สำเร็จ') {
+          let updatedUser = { ...this.props.user, image: json.data };
+          this.setState({ img_path: json.data });
+          this.props.updatePath(updatedUser);
+          AlertFix.alertBasic(
+              this.props.lang ? Lang.alertSuccessTitle.thai : Lang.alertSuccessTitle.eng,
+              this.props.lang ? Lang.successTitleContentAlert.thai : Lang.successTitleContentAlert.eng
+          );
+        } else {
+          AlertFix.alertBasic(
+              this.props.lang ? Lang.alertErrorTitle.thai : Lang.alertErrorTitle.eng,
+              this.props.lang ? Lang.cannotEditAlert.thai : Lang.cannotEditAlert.eng
+          );
+        }
+      } catch (err) {
+        console.log('Upload Error:', err);
+        AlertFix.alertBasic(
+            this.props.lang ? Lang.alertErrorTitle.thai : Lang.alertErrorTitle.eng,
+            this.props.lang ? Lang.cannotEditAlert.thai : Lang.cannotEditAlert.eng
+        );
+      } finally {
+        this.setState({ loading: false });
       }
     });
-    //   .catch(err => {
-    //     console.log(err);
-    //     AlertFix.alertBasic(
-    //       this.props.lang
-    //         ? Lang.alertErrorTitle.thai
-    //         : Lang.alertErrorTitle.eng,
-    //       this.props.lang
-    //         ? Lang.cannotEditAlert.thai
-    //         : Lang.cannotEditAlert.eng,
-    //     );
-
-    //   });
   };
+
 
   validateNumber(key, value) {
     var temp = value;
@@ -296,6 +305,8 @@ class index extends Component {
 
   render() {
     const {img_path, loading} = this.state;
+    console.log('props.user.image:', this.props.user.image);
+    console.log('state.img_path:', this.state.img_path);
 
     return (
       <ScrollView style={{flex: 1}}>
@@ -329,8 +340,13 @@ class index extends Component {
                   borderRadius: screenWidth / 2,
                 }}
                 source={{
-                  uri: this.props.user.image,
-                  // uri: 'https://api1.suratec.co.th/pic/' + img_path
+                  uri: this.getImageURI(this.state.img_path),
+                }}
+                onError={(e) => {
+                  console.log('Image failed to load:', e.nativeEvent);
+                }}
+                onLoad={() => {
+                  console.log('Image loaded successfully');
                 }}
               />
               <View
