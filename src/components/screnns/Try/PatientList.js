@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationActions } from 'react-navigation';
 import langPatientList from '../../../assets/language/auth/lang_patientList';
 
-const PatientList = ({ navigation, user, token, addUser, setImpersonation, lang  }) => {
+const PatientList = ({ navigation, user, token, addUser, setImpersonation, setPatientId, setPatientToken, lang, impersonating }) => {
     const [selectedId, setSelectedId] = useState(null);
     const [search, setSearch] = useState('');
     const [patients, setPatients] = useState([]);
@@ -40,66 +40,151 @@ const PatientList = ({ navigation, user, token, addUser, setImpersonation, lang 
         setSelectedId(item.id_data_role);
     };
 
+    // const handleSelectButton = async () => {
+    //     const selected = patients.find(p => p.id_data_role === selectedId);
+    //     if (selected) {
+    //         try {
+    //             // Save doctor info before switching
+    //             await AsyncStorage.setItem('doctor_user', JSON.stringify(user));
+    //             await AsyncStorage.setItem('doctor_token', token);
+    //             setImpersonation(true);
+    //             setPatientToken(data.patient_token);
+    //             await AsyncStorage.setItem('patient_token', data.patient_token);
+    //             console.log('Selected patient:', selected);
+    //             console.log('Token:', token);
+    //
+    //             if (!token) {
+    //                 Alert.alert('Error', 'Authentication token not found. Please log in again.');
+    //                 navigation.navigate('Auth');
+    //                 return;
+    //             }
+    //
+    //             // Make API call to switch to patient
+    //             const response = await fetch('https://api1.suratec.co.th/api/doctor/switch-to-patient', {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     'Content-Type': 'application/json',
+    //                     'Authorization': `Bearer ${token}`
+    //                 },
+    //                 body: JSON.stringify({
+    //                     patient_id: selected.id_data_role
+    //                 })
+    //             });
+    //
+    //             console.log('API Response status:', response.status);
+    //             const data = await response.json();
+    //             console.log('API Response data:', data);
+    //
+    //             if (data.status === 'success') {
+    //                 // Create a patient object with the data from the API response
+    //                 const patientData = {
+    //                     id_customer: data.user_info.id_customer,
+    //                     fname: data.user_info.fname,
+    //                     lname: data.user_info.lname || '',
+    //                     email: data.user_info.email,
+    //                     role: data.member_info.data_role,
+    //                     token: data.patient_token, // Use the new patient token
+    //                     image: data.user_info.image,
+    //                     // Add other required fields from the API response
+    //                     ...data.user_info
+    //                 };
+    //
+    //                 // Update the Redux store with the new patient data and token
+    //                 addUser({ user: patientData, token: data.patient_token });
+    //
+    //                 // Navigate to home page
+    //                 navigation.navigate('Home', { patient: patientData });
+    //             } else {
+    //                 console.log('API Error:', data);
+    //                 Alert.alert('Error', data.message || 'Failed to switch to patient. Please try again.');
+    //             }
+    //         } catch (error) {
+    //             console.error('Error switching to patient:', error);
+    //             Alert.alert('Error', 'Failed to switch to patient. Please try again.');
+    //         }
+    //     }
+    // };
+
     const handleSelectButton = async () => {
         const selected = patients.find(p => p.id_data_role === selectedId);
-        if (selected) {
-            try {
-                // Save doctor info before switching
-                await AsyncStorage.setItem('doctor_user', JSON.stringify(user));
-                await AsyncStorage.setItem('doctor_token', token);
-                setImpersonation(true);
-                console.log('Selected patient:', selected);
-                console.log('Token:', token);
+        if (!selected) return;
 
-                if (!token) {
-                    Alert.alert('Error', 'Authentication token not found. Please log in again.');
-                    navigation.navigate('Auth');
+        try {
+            if (!token) {
+                Alert.alert('Error', 'Authentication token not found. Please log in again.');
+                navigation.navigate('Auth');
+                return;
+            }
+
+            // Save doctor info before switching
+            await AsyncStorage.setItem('doctor_user', JSON.stringify(user));
+            await AsyncStorage.setItem('doctor_token', token);
+            setImpersonation(true);
+
+            console.log('Selected patient:', selected);
+            console.log('Doctor Token:', token);
+
+            // Make API call to switch to patient
+            const fetchResponse = await fetch('https://api1.suratec.co.th/api/doctor/switch-to-patient', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    patient_id: selected.id_data_role,
+                }),
+            });
+
+            const rawText = await fetchResponse.text();
+            console.log('🔍 Raw response text:', rawText);
+
+            let data;
+            try {
+                data = JSON.parse(rawText);
+                console.log('✅ Parsed response:', data);
+            } catch (e) {
+                console.error('❌ Failed to parse JSON:', e);
+                Alert.alert('Error', 'Invalid JSON response from server.');
+                return;
+            }
+
+            if (data.status === 'success') {
+                if (!data.patient_token || !data.user_info || !data.member_info) {
+                    console.error('❌ Missing keys in API response:', data);
+                    Alert.alert('Error', 'Incomplete response from server.');
                     return;
                 }
 
-                // Make API call to switch to patient
-                const response = await fetch('https://api1.suratec.co.th/api/doctor/switch-to-patient', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        patient_id: selected.id_data_role
-                    })
-                });
+                // Set patient token and ID in Redux and AsyncStorage
+                setPatientToken(data.patient_token);
+                await AsyncStorage.setItem('patient_token', data.patient_token);
 
-                console.log('API Response status:', response.status);
-                const data = await response.json();
-                console.log('API Response data:', data);
+                setPatientId(data.user_info.id_customer); // ✅ <--- ADD THIS LINE
+                await AsyncStorage.setItem('patient_id', data.user_info.id_customer); // (Optional) Persist
 
-                if (data.status === 'success') {
-                    // Create a patient object with the data from the API response
-                    const patientData = {
-                        id_customer: data.user_info.id_customer,
-                        fname: data.user_info.fname,
-                        lname: data.user_info.lname || '',
-                        email: data.user_info.email,
-                        role: data.member_info.data_role,
-                        token: data.patient_token, // Use the new patient token
-                        image: data.user_info.image,
-                        // Add other required fields from the API response
-                        ...data.user_info
-                    };
+                const patientData = {
+                    id_customer: data.user_info.id_customer,
+                    fname: data.user_info.fname,
+                    lname: data.user_info.lname || '',
+                    email: data.user_info.email,
+                    role: data.member_info.data_role,
+                    token: data.patient_token,
+                    image: data.user_info.image,
+                    security_token: data.patient_token,
+                    ...data.user_info,
+                };
 
-                    // Update the Redux store with the new patient data and token
-                    addUser({ user: patientData, token: data.patient_token });
+                addUser({ user: patientData, token: data.patient_token });
+                navigation.navigate('Home', { patient: patientData });
 
-                    // Navigate to home page
-                    navigation.navigate('Home', { patient: patientData });
-                } else {
-                    console.log('API Error:', data);
-                    Alert.alert('Error', data.message || 'Failed to switch to patient. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error switching to patient:', error);
-                Alert.alert('Error', 'Failed to switch to patient. Please try again.');
+            } else {
+                console.log('❌ API Error:', data);
+                Alert.alert('Error', data.message || 'Failed to switch to patient.');
             }
+        } catch (error) {
+            console.error('❌ Error switching to patient:', error);
+            Alert.alert('Error', 'Network error while switching to patient.');
         }
     };
 
@@ -127,7 +212,7 @@ const PatientList = ({ navigation, user, token, addUser, setImpersonation, lang 
     };
 
     console.log('Rendering PatientList', user && user.role, user && user.patients);
-    if (!user || user.role !== 'mod_employee') {
+    if (!user || (!impersonating && user.role !== 'mod_employee')) {
         return null;
     }
 
@@ -352,11 +437,14 @@ const mapStateToProps = state => ({
     user: state.user,
     token: state.token,
     lang: state.lang,
+    impersonating: state.impersonating,
 });
 
 const mapDispatchToProps = dispatch => ({
     addUser: user => dispatch({ type: 'ADD_USERINFO', payload: user }),
-    setImpersonation: flag => dispatch({ type: 'SET_IMPERSONATION', payload: flag })
+    setImpersonation: flag => dispatch({ type: 'SET_IMPERSONATION', payload: flag }),
+    setPatientId: id => dispatch({ type: 'SET_PATIENT_ID', payload: id }),
+    setPatientToken: token => dispatch({ type: 'SET_PATIENT_TOKEN', payload: token }),
 });
 
 

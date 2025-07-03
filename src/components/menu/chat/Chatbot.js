@@ -16,7 +16,7 @@ import langChatbot from '../../../assets/language/menu/lang_chatbot';
 const { width } = Dimensions.get('window');
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
-function Chatbot({ navigation, user, token, lang }) {
+function Chatbot({ navigation, user, token, lang, impersonating, patient_token }) {
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState([]);
     const [isTyping, setIsTyping] = useState(false);
@@ -28,6 +28,14 @@ function Chatbot({ navigation, user, token, lang }) {
     const langKey = lang === 1 ? 'thai' : 'eng';
     const titleText = langChatbot.title[langKey];
     const sendText = langChatbot.send[langKey];
+
+    // Helper to inspect formData
+    const debugFormData = (formData) => {
+        for (let pair of formData._parts) {
+            console.log('📦 FormData -', pair[0], ':', pair[1]);
+        }
+    };
+
 
     const scrollToEnd = () => {
         scrollRef.current?.scrollToEnd({ animated: true });
@@ -42,26 +50,58 @@ function Chatbot({ navigation, user, token, lang }) {
     };
 
     const getAuthFormData = () => {
-        if (!token || !user?.id_customer) {
-            Toast.show('Missing user/token');
+        if (!user?.id_customer) {
+            Toast.show('Missing user info');
             return null;
         }
+
+        const effectiveToken = impersonating && patient_token ? patient_token : token;
+
+        if (!effectiveToken) {
+            Toast.show('Missing token');
+            return null;
+        }
+
         return {
-            token: token,
+            token: effectiveToken,
             userId: user.id_customer,
         };
     };
 
+
     const sendMessageToAPI = async (formData) => {
         setIsTyping(true);
         try {
+            // debugFormData(formData);
+
             const res = await fetch('https://www.surasole.com/api/voice-chat/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'multipart/form-data' },
                 body: formData,
             });
 
-            const data = await res.json();
+            const status = res.status;
+            const rawText = await res.text();
+
+            console.log('📨 Chatbot API status:', status);
+            console.log('📨 Raw response text:', rawText);
+
+            let data;
+            try {
+                data = JSON.parse(rawText);
+                console.log('✅ Parsed response:', data);
+            } catch (e) {
+                console.error('❌ Failed to parse JSON:', e);
+                Toast.show('Invalid server response');
+                return;
+            }
+
+            if (status !== 200) {
+                console.error('❌ Server returned error status:', status, data);
+                Toast.show(data?.message || 'Server error');
+                return;
+            }
+
             if (data?.text_response) {
                 addMessage('bot', data.text_response, data.voice_url);
             } else {
@@ -324,7 +364,10 @@ const styles = StyleSheet.create({
 const mapStateToProps = state => ({
     user: state.user,
     token: state.token,
+    patient_token: state.patient_token,
+    impersonating: state.impersonating,
     lang: state.lang,
 });
+
 
 export default connect(mapStateToProps)(Chatbot);

@@ -16,6 +16,8 @@ const INIT_STATE = {
   eightSensor: false,
   productID: null,
   impersonating: false,
+  patient_id: null,
+  patient_token: null,
 };
 
 export default (Reducer = (state = INIT_STATE, action = {}) => {
@@ -127,6 +129,16 @@ export default (Reducer = (state = INIT_STATE, action = {}) => {
       return {
         ...state,
         impersonating: action.payload
+      };
+    case 'SET_PATIENT_ID':
+      return {
+        ...state,
+        patient_id: action.payload,
+      };
+    case 'SET_PATIENT_TOKEN':
+      return {
+        ...state,
+        patient_token: action.payload,
       };
     default:
       return state;

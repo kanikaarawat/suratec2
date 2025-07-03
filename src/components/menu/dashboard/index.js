@@ -297,73 +297,72 @@ class index extends Component {
     };
   };
 
-  componentDidMount = () => {
-    NetInfo.addEventListener(this.handleConnectivityChange);
-    this.handleFetchDashboardData();
-    this.fetchDashboardSummary();
-      console.log('Redux user:', this.props.user);
+    componentDidMount = () => {
+        NetInfo.addEventListener(this.handleConnectivityChange);
 
+        const { user, token } = this.props;
+        const { id_customer } = user;
 
-      fetch(`${API}/record`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        customer: this.props.user.id_customer,
-      }),
-    })
-        // .then(res => {
-        //   console.log('============API Response============');
-        //   return console.log(res), res.json();
-        // })
-        .then(res => {
-          let dataSpecified = [];
-          res.forEach(e => {
-            let date = new Date(e.action.replace(' ', 'T'));
-            console.log(date);
-            let { max, index } = this.findPeak([...e.left, ...e.right]);
-            dataSpecified.push({
-              dateTime: `${date.getHours().toString().slice(-2)}:${date
-                  .getMinutes()
-                  .toString()
-                  .slice(-2)}:${date.getSeconds().toString().slice(-2)}`,
-              valueZone: index,
-              valuePeak: max,
-            });
-          });
-          let result = this.findDataResult(res);
-          let dataResult = [
-            {
-              nameZone: 'Toe',
-              valueWalk: result.value[0],
-              valueRun: result.max[0],
+        console.log('🧾 Logged-in/Impersonated user details:', user);
+        console.log('🔐 Using token:', token);
+
+        // Call dashboard APIs
+        this.handleFetchDashboardData();
+        this.fetchDashboardSummary();
+
+        console.log('📤 Sending /record for user:', id_customer);
+
+        fetch(`${API}/record`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
             },
-            {
-              nameZone: 'Medial Metatarsal',
-              valueWalk: result.value[1],
-              valueRun: result.max[1],
-            },
-            {
-              nameZone: 'Lateral Metatarsal',
-              valueWalk: result.value[2],
-              valueRun: result.max[2],
-            },
-            {
-              nameZone: 'Medial Midfoot',
-              valueWalk: result.value[3],
-              valueRun: result.max[3],
-            },
-            {
-              nameZone: 'Heel',
-              valueWalk: result.value[4],
-              valueRun: result.max[4],
-            },
-          ];
-          this.setState({ record: res, dataSpecified, dataResult });
+            body: JSON.stringify({
+                customer: id_customer,
+            }),
         })
-        .catch(err => {
-          console.log(err);
-        });
-  };
+            .then(response => response.json())
+            .then(res => {
+                console.log('📦 Parsed /record response:', res);
+
+                // Guard: Check if response is an array
+                if (!Array.isArray(res)) {
+                    console.warn('🚫 Expected array from /record, got:', res);
+                    return;
+                }
+
+                let dataSpecified = [];
+                res.forEach(e => {
+                    let date = new Date(e.action.replace(' ', 'T'));
+                    console.log('📅 Timestamp parsed:', date);
+
+                    let { max, index } = this.findPeak([...e.left, ...e.right]);
+                    dataSpecified.push({
+                        dateTime: `${date.getHours().toString().padStart(2, '0')}:${date
+                            .getMinutes()
+                            .toString()
+                            .padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`,
+                        valueZone: index,
+                        valuePeak: max,
+                    });
+                });
+
+                let result = this.findDataResult(res);
+                let dataResult = [
+                    { nameZone: 'Toe', valueWalk: result.value[0], valueRun: result.max[0] },
+                    { nameZone: 'Medial Metatarsal', valueWalk: result.value[1], valueRun: result.max[1] },
+                    { nameZone: 'Lateral Metatarsal', valueWalk: result.value[2], valueRun: result.max[2] },
+                    { nameZone: 'Medial Midfoot', valueWalk: result.value[3], valueRun: result.max[3] },
+                    { nameZone: 'Heel', valueWalk: result.value[4], valueRun: result.max[4] },
+                ];
+
+                this.setState({ record: res, dataSpecified, dataResult });
+            })
+            .catch(err => {
+                console.error('❌ Error fetching /record data:', err);
+            });
+    };
 
   handleFetchDashboardData = async () => {
     const { id_customer } = this.props.user;
@@ -438,17 +437,26 @@ class index extends Component {
 
     fetchDashboardSummary = async () => {
         const { id_customer, security_token } = this.props.user;
+        const { token } = this.props;
         const lang_mode = this.props.lang ? 1 : 0;
 
-        console.log('Fetching dashboard summary with lang_mode:', lang_mode);
+        console.log('🔁 Dashboard Summary');
         console.log('User ID:', id_customer);
         console.log('Security Token:', security_token);
+        console.log('Token:', token);
+
+        // ✅ Add the check here
+        if (!id_customer || !security_token || !token) {
+            console.warn('🚨 Missing one of: id_customer, security_token, or token');
+            return;
+        }
 
         try {
             const response = await fetch('https://www.surasole.com/api/dashboard/dashboard-summary', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     user_id: id_customer,
@@ -458,7 +466,9 @@ class index extends Component {
             });
 
             const res = await response.json();
+            console.log('✅ Full response from dashboard-summary:', res);
             console.log('res.summary: ', res.summary);
+
             if (res.summary) {
                 this.setState({ dashboardSummaryText: res.summary });
             } else {
@@ -477,6 +487,7 @@ class index extends Component {
             });
         }
     };
+
 
 
 
@@ -1886,12 +1897,22 @@ class index extends Component {
 
 const mapStateToProps = state => {
     const langKey = state.lang === 1 ? 'thai' : 'eng';
-  return {
-    user: state.user,
-    data: state.data,
-    lang: state.lang,
-    exerciseTrainingLabel: LangDashboard.exerciseTraining?.[langKey] || 'Exercise Training',
-  };
+
+    const effectiveUser = state.impersonating && state.patient_id
+        ? { ...state.user, id_customer: state.patient_id, security_token: state.patient_token }
+        : state.user;
+
+    const effectiveToken = state.impersonating && state.patient_token
+        ? state.patient_token
+        : state.token;
+
+    return {
+        user: effectiveUser,
+        token: effectiveToken,
+        lang: state.lang,
+        exerciseTrainingLabel: LangDashboard.exerciseTraining?.[langKey] || 'Exercise Training',
+    };
 };
+
 
 export default connect(mapStateToProps)(index);
