@@ -17,7 +17,6 @@ import { Col, Grid } from 'react-native-easy-grid';
 import { connect } from 'react-redux';
 
 import HeaderFix from '../../common/HeaderFix';
-import NotificationsState from '../../shared/Notification';
 import Text from '../../common/TextFix';
 import ButtonFix from '../../common/ButtonFix';
 import SvgContourBasic from '../../contourlib/screens/SvgD3ContourBasic';

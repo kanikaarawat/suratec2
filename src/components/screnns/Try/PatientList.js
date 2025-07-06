@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, Image, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Image, TextInput, ActivityIndicator, Alert, AppState } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import UI from '../../../config/styles/CommonStyles';
 import { connect } from 'react-redux';
@@ -12,6 +12,7 @@ const PatientList = ({ navigation, user, token, addUser, setImpersonation, setPa
     const [search, setSearch] = useState('');
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [appState, setAppState] = useState(AppState.currentState);
     const [error, setError] = useState(null);
     const langKey = lang === 1 ? 'thai' : 'eng';
     const titleText = langPatientList.title[langKey];
@@ -20,6 +21,17 @@ const PatientList = ({ navigation, user, token, addUser, setImpersonation, setPa
     const name = langPatientList.name[langKey];
     const username = langPatientList.username[langKey];
     const role = langPatientList.role[langKey];
+    const EXIT_FLAG = 'doctor_left_on_patientlist';
+
+    const setExitFlag   = () => AsyncStorage.setItem(EXIT_FLAG, '1');
+    const clearExitFlag = () => AsyncStorage.removeItem(EXIT_FLAG);
+
+
+    useEffect(() => {
+        setExitFlag();          // doctor has landed on PatientList
+        return () => clearExitFlag();   // leaving screen normally
+    }, []);
+
 
     useEffect(() => {
         // Get patients from the user data that was stored during login
@@ -176,6 +188,7 @@ const PatientList = ({ navigation, user, token, addUser, setImpersonation, setPa
                 };
 
                 addUser({ user: patientData, token: data.patient_token });
+                await clearExitFlag();
                 navigation.navigate('Home', { patient: patientData });
 
             } else {
@@ -188,12 +201,14 @@ const PatientList = ({ navigation, user, token, addUser, setImpersonation, setPa
         }
     };
 
-    const handleLogout = () => {
-        addUser({ user: null, token: null });   // clear Redux
-
-        // hop to the SwitchNavigator route 'Auth'
+    const handleLogout = async () => {
+        await clearExitFlag();
+        addUser({ user: null, token: null });
+        setImpersonation(false);
         navigation.dispatch(NavigationActions.navigate({ routeName: 'Auth' }));
     };
+
+
 
 
     const renderPatient = ({ item }) => {
