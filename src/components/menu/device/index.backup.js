@@ -27,6 +27,7 @@ import { Card, CardItem, Icon } from 'native-base';
 import UI from '../../../config/styles/CommonStyles';
 import { connect } from 'react-redux';
 import Lang from '../../../assets/language/menu/lang_device';
+import { getLocalizedText } from '../../../assets/language/langUtils';
 import { stat } from 'react-native-fs';
 import RNAndroidLocationEnabler from 'react-native-android-location-enabler';
 import RNPermissions, { NotificationOption, Permission, PERMISSIONS } from 'react-native-permissions';
@@ -677,7 +678,7 @@ class index extends Component {
           onpress_left={() => {
             this.props.navigation.navigate('Home');
           }}
-          title={this.props.navigation.getParam('name', '')}
+          title={getLocalizedText(this.props.lang, Lang.title)}
         />
         <RefreshComponent methodToCall={() => this.retrieveConnected()} />
         <View style={styles.container}>

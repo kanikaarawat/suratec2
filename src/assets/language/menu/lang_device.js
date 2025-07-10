@@ -1,15 +1,15 @@
-const title = {thai: 'เพิ่มอุปกรณ์', eng: 'Add Devices'}
-const devicesListText = {thai: 'อุปกรณ์ที่เชื่อมต่อ', eng: 'Connected Device List'}
-const connectText = {thai: 'เชื่อมต่อ', eng: 'Connect'}
-const disConnectText = {thai: 'ตัดการเชื่อมต่อ', eng: 'Disconnect'}
-const cancelText = {thai: 'ยกเลิก', eng: 'Cancel'}
-const nameText = {thai: 'ชื่อ', eng: 'Name'}
-const idText = {thai: 'รหัสอุปกรณ์', eng: 'ID'}
-const searchText = {thai: 'กำลังค้นหาอุปกรณ์', eng: 'Searching'}
-const rssiText = {thai: 'ความเข้มสัญญาณ', eng: 'Signal Strength'}
-const connectSuccess = (text) => ({thai: `เชื่อมต่อ ${text} สำเร็จ`, eng: `Connect to ${text} Success`})
-const connected = (text) => ({thai: `${text} ได้เชื่อมต่อแล้ว`, eng: `${text} has Connected`})
-const connectFail = {thai: 'ไม่สามารถเชื่อมต่อกับอุปกรณ์นี้ได้', eng: `Can't Conect to This Device`}
+const title = {thai: 'เพิ่มอุปกรณ์', eng: 'Add Devices', japanese: 'デバイスを追加'}
+const devicesListText = {thai: 'อุปกรณ์ที่เชื่อมต่อ', eng: 'Connected Device List', japanese: '接続されたデバイス一覧'}
+const connectText = {thai: 'เชื่อมต่อ', eng: 'Connect', japanese: '接続'}
+const disConnectText = {thai: 'ตัดการเชื่อมต่อ', eng: 'Disconnect', japanese: '切断'}
+const cancelText = {thai: 'ยกเลิก', eng: 'Cancel', japanese: 'キャンセル'}
+const nameText = {thai: 'ชื่อ', eng: 'Name', japanese: '名前'}
+const idText = {thai: 'รหัสอุปกรณ์', eng: 'ID', japanese: 'デバイスID'}
+const searchText = {thai: 'กำลังค้นหาอุปกรณ์', eng: 'Searching', japanese: 'デバイスを検索中'}
+const rssiText = {thai: 'ความเข้มสัญญาณ', eng: 'Signal Strength', japanese: '信号強度'}
+const connectSuccess = (text) => ({thai: `เชื่อมต่อ ${text} สำเร็จ`, eng: `Connect to ${text} Success`, japanese: `${text}への接続が成功しました`})
+const connected = (text) => ({thai: `${text} ได้เชื่อมต่อแล้ว`, eng: `${text} has Connected`, japanese: `${text}は既に接続されています`})
+const connectFail = {thai: 'ไม่สามารถเชื่อมต่อกับอุปกรณ์นี้ได้', eng: `Can't Conect to This Device`, japanese: 'このデバイスに接続できません'}
 
 export default {
     title,

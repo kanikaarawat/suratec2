@@ -22,7 +22,8 @@ import API from '../../../config/Api';
 import UI from '../../../config/styles/CommonStyles';
 
 import Lang from '../../../assets/language/menu/lang_profile';
-import {getLocalizedText, getLangKeysSize} from '../../../assets/language/langUtils';
+import LanguagePickerFix from '../../common/LanguagePickerFix';
+import {getLocalizedText} from '../../../assets/language/langUtils';
 import LangModal from './lang_model';
 
 import * as ImagePicker from 'react-native-image-picker';
@@ -127,21 +128,13 @@ class index extends Component {
 
         if (res.message == 'บันทึกไม่สำเร็จ') {
           AlertFix.alertBasic(
-            this.props.lang
-              ? Lang.alertErrorTitle.thai
-              : Lang.alertErrorTitle.eng,
-            this.props.lang
-              ? Lang.cannotEditAlert.thai
-              : Lang.cannotEditAlert.eng,
+              getLocalizedText(this.props.lang, Lang.alertErrorTitle),
+              getLocalizedText(this.props.lang, Lang.cannotEditAlert),
           );
         } else {
           AlertFix.alertBasic(
-            this.props.lang
-              ? Lang.alertSuccessTitle.thai
-              : Lang.alertSuccessTitle.eng,
-            this.props.lang
-              ? Lang.successTitleContentAlert.thai
-              : Lang.successTitleContentAlert.eng,
+              getLocalizedText(this.props.lang, Lang.alertSuccessTitle),
+              getLocalizedText(this.props.lang, Lang.successTitleContentAlert),
           );
           let actualUser = res.customer_info;
           actualUser.role = this.props.user.role;
@@ -248,20 +241,20 @@ class index extends Component {
           this.setState({ img_path: json.data });
           this.props.updatePath(updatedUser);
           AlertFix.alertBasic(
-              this.props.lang ? Lang.alertSuccessTitle.thai : Lang.alertSuccessTitle.eng,
-              this.props.lang ? Lang.successTitleContentAlert.thai : Lang.successTitleContentAlert.eng
+              getLocalizedText(this.props.lang, Lang.alertSuccessTitle),
+              getLocalizedText(this.props.lang, Lang.successTitleContentAlert)
           );
         } else {
           AlertFix.alertBasic(
-              this.props.lang ? Lang.alertErrorTitle.thai : Lang.alertErrorTitle.eng,
-              this.props.lang ? Lang.cannotEditAlert.thai : Lang.cannotEditAlert.eng
+              getLocalizedText(this.props.lang, Lang.alertErrorTitle),
+              getLocalizedText(this.props.lang, Lang.cannotEditAlert)
           );
         }
       } catch (err) {
         console.log('Upload Error:', err);
         AlertFix.alertBasic(
-            this.props.lang ? Lang.alertErrorTitle.thai : Lang.alertErrorTitle.eng,
-            this.props.lang ? Lang.cannotEditAlert.thai : Lang.cannotEditAlert.eng
+            getLocalizedText(this.props.lang, Lang.alertErrorTitle),
+            getLocalizedText(this.props.lang, Lang.cannotEditAlert)
         );
       } finally {
         this.setState({ loading: false });
@@ -323,11 +316,11 @@ class index extends Component {
             this.props.navigation.goBack();
           }}
           title={getLocalizedText(this.props.lang, Lang.editProfile)}
-          icon_rigth={'ellipsis-v'}
-          iconType={'FontAwesome5'}
-          onpress_rigth={() => {
-            this.setState({onModal: true});
-          }}
+          // icon_rigth={'ellipsis-v'}
+          // iconType={'FontAwesome5'}
+          // onpress_rigth={() => {
+          //   this.setState({onModal: true});
+          // }}
         />
 
         <View>
@@ -429,10 +422,17 @@ class index extends Component {
               modalVisible={this.state.onModal}
               onModalClosed={() => this.setState({ onModal: false })}
               labelBtn="Select"
-              onLang={this.toggleModal}  // In case you want to do something when button is pressed
-              onSelectLang={this.actionLang}  // Function to switch languages
+              onLang={this.toggleModal}
+              onSelectLang={this.actionLang}
           />
         </View>
+
+        <LanguagePickerFix
+            langSwitch={Lang.langSwitch}
+            onLanguageChange={(index) => console.log('Language changed to:', index)}
+            buttonStyle={{ backgroundColor: '#f0f0f0' }}
+            style={{ marginBottom: 20 }}
+        />
       </ScrollView>
     );
   }

@@ -26,7 +26,6 @@ function Chatbot({ navigation, user, token, lang, impersonating, patient_token }
     const scrollRef = useRef();
     const soundRef = useRef(null);
 
-    const titleText = getLocalizedText(lang, langChatbot.title);
     const sendText = getLocalizedText(lang, langChatbot.send);
 
     // Helper to inspect formData
@@ -225,7 +224,7 @@ function Chatbot({ navigation, user, token, lang, impersonating, patient_token }
             <HeaderFix
                 icon_left={'left'}
                 onpress_left={() => navigation.goBack()}
-                title={titleText}
+                title={getLocalizedText(lang, langChatbot.title)}
             />
 
             <ScrollView

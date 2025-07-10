@@ -27,7 +27,7 @@ import BleManager from 'react-native-ble-manager';
 import Lang from '../../../assets/language/menu/lang_record';
 import LangHome from '../../../assets/language/screen/lang_home';
 import Lang_pressuremap from "../../../assets/language/menu/lang_pressuremap";
-import { getLocalizedText, getLangKeysSize } from '../../../assets/language/langUtils';
+import { getLocalizedText } from '../../../assets/language/langUtils';
 
 var RNFS = require('react-native-fs');
 
@@ -386,9 +386,7 @@ class index extends React.PureComponent {
           text: 'OK',
           onPress: () => {
             this.props.navigation.navigate('Device', {
-              name: this.props.lang
-                ? LangHome.addDeviceButton.thai
-                : LangHome.addDeviceButton.eng,
+              name: getLocalizedText(this.state.lang, LangHome.addDeviceButton),
             });
           },
         },
@@ -572,57 +570,64 @@ class index extends React.PureComponent {
   render() {
     this.canVibration(this.state.shouldVibrate, this.state.switch);
     return (
-      <View style={{ flex: 1, backgroundColor: 'white' }}>
-        <HeaderFix
-          icon_left={'left'}
-          onpress_left={() => {
-            this.props.navigation.goBack();
-          }}
-          title={this.props.navigation.getParam('name', '')}
-        />
+        <View style={{ flex: 1, backgroundColor: 'white' }}>
+          <HeaderFix
+              icon_left={'left'}
+              onpress_left={() => {
+                this.props.navigation.goBack();
+              }}
+              title={this.props.navigation.getParam('name', '')}
+          />
 
+          <ScrollView
+              contentContainerStyle={{ flexGrow: 1 }}
+              showsVerticalScrollIndicator={false}
+          >
+            {/* Spacer to push content down */}
+            <View style={{flex: 1}} />
 
-        <ScrollView
-            contentContainerStyle={{ flexGrow: 1 }}
-            showsVerticalScrollIndicator={false}
-        >
-        <View style={{ flex: 4, height: '100%', padding: 15, marginTop: 130 }}>
-          <Text>kPa .</Text>
-          <View>
-            <SvgContourBasic
-              leftsensor={this.state.leftData}
-              rightsensor={this.state.rightData}
-            />
-          </View>
-        </View>
+            {/* Main content container - minimal styling to avoid SVG issues */}
+            <View style={{flex: 2, paddingHorizontal: 15}}>
+              <Text style={{fontSize: 16, color: '#666', marginBottom: 15}}>kPa .</Text>
+              <View>
+                <SvgContourBasic
+                    leftsensor={this.state.leftData}
+                    rightsensor={this.state.rightData}
+                />
+              </View>
+            </View>
 
-        <View
-          style={{
-            flex: 1,
-            height: '100%',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <Col>
-            <ButtonFix
-              action={true}
-              rounded={true}
-              title={this.state.textAction}
-              onPress={() => this.actionRecording()}
-            />
-          </Col>
-          <Grid style={{ padding: 15 }}>
-            {/* <Col>
+            {/* Spacer to center the content */}
+            <View style={{flex: 1}} />
+
+            {/* Bottom button container */}
+            <View
+                style={{
+                  paddingHorizontal: 15,
+                  paddingBottom: 30,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+              <Col>
+                <ButtonFix
+                    action={true}
+                    rounded={true}
+                    title={this.state.textAction}
+                    onPress={() => this.actionRecording()}
+                />
+              </Col>
+              <Grid style={{ padding: 15 }}>
+                {/* <Col>
               <ButtonFix
                 rounded={true}
                 title={'Dashboard'}
                 onPress={() => this.actionDashboard()}
               />
             </Col> */}
-          </Grid>
+              </Grid>
+            </View>
+          </ScrollView>
         </View>
-        </ScrollView>
-      </View>
     );
   }
 }

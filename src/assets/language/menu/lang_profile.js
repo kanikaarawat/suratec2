@@ -21,9 +21,9 @@ const male = {eng: 'Male', thai: 'ชาย', japanese: '男'}
 const female = {eng: 'Female', thai: 'หญิง', japanese: '女性'}
 const other = {eng: 'Other', thai: 'อื่น', japanese: '他の'}
 const langSwitch = {
-    eng: '🇹🇭 ภาษาไทย ',
-    thai: '🇯🇵 日本語',
-    japanese: '🇬🇧 English',
+    eng: '🇬🇧 English',
+    thai: '🇹🇭 ภาษาไทย ',
+    japanese: '🇯🇵 日本語',
 }
 
 

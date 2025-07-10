@@ -30,13 +30,25 @@ export default function ExerciseWorkOut({ navigation }) {
     const lang = useSelector(state => state.lang);
     const localizedTitle = getLocalizedText(lang, langTraining.exerciseWorkOut) || 'Exercise Work Out';
 
+    const getLocalizedExerciseTitle = (exerciseTitle) => {
+        // Try to get localized title from langTraining.exercises.exerciseTitles
+        const exerciseTitleObj = langTraining.exercises?.exerciseTitles?.[exerciseTitle];
+        if (exerciseTitleObj) {
+            return getLocalizedText(lang, exerciseTitleObj);
+        }
+        // Fallback to original title if no translation found
+        return exerciseTitle;
+    };
+
     if (selectedExercise) {
+        const localizedExerciseTitle = getLocalizedExerciseTitle(selectedExercise.title);
+
         return (
             <View style={{ flex: 1 }}>
                 <HeaderFix
                     icon_left={'left'}
                     onpress_left={() => setSelectedExercise(null)}
-                    title={selectedExercise.title}
+                    title={localizedExerciseTitle}
                 />
                 <WebView
                     source={{ uri: `${selectedExercise.video}?autoplay=1&controls=1` }}

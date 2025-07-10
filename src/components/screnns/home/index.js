@@ -31,7 +31,7 @@ import HeaderFix from '../../common/HeaderFix';
 import messaging from '@react-native-firebase/messaging';
 
 import LangAlert from '../../../assets/language/alert/lang_alert';
-import getLocalizedText from '../../../assets/language/langUtils';
+import {getLocalizedText} from '../../../assets/language/langUtils';
 import API, {IMAGE_URL} from '../../../config/Api';
 
 var RNFS = require('react-native-fs');
@@ -45,6 +45,7 @@ import Modal, {
 import RefreshComponent from '../../common/RefreshComponent';
 
 const screenWidth = Math.round(Dimensions.get('window').width) * 0.25;
+
 class index extends Component {
   constructor() {
     super();
@@ -52,6 +53,7 @@ class index extends Component {
       count: 0,
       show: false,
       peripherals: new Map(),
+      showExitIcon: false,
     };
     this.handleBackButtonClick = this.handleBackButtonClick.bind(this);
   }
@@ -59,13 +61,14 @@ class index extends Component {
   actionProfile = () => {
     this.props.navigation.navigate('Profile');
   };
+
   actionLogout = async () => {
-    //await AsyncStorage.clear();
-    console.log('ActinLogot');
+    console.log('ActionLogout');
     this.actionDisconnectBle();
     this.props.resetUser();
     this.props.navigation.navigate('Auth');
   };
+
   checkExitOrLogout = async () => {
     const backup = await AsyncStorage.getItem('doctor_user');
     const backupToken = await AsyncStorage.getItem('doctor_token');
@@ -73,7 +76,7 @@ class index extends Component {
     if (backup && backupToken) {
       const user = JSON.parse(backup);
       this.props.addUser(user, backupToken);
-      this.props.setImpersonation(false); // <-- Clear flag
+      this.props.setImpersonation(false);
       await AsyncStorage.removeItem('doctor_user');
       await AsyncStorage.removeItem('doctor_token');
       this.props.navigation.navigate('PatientList');
@@ -82,7 +85,6 @@ class index extends Component {
       this.props.setImpersonation(false);
     }
   };
-
 
   actionDisconnectBle = async () => {
     if (typeof this.props.rightDevice !== 'undefined') {
@@ -93,13 +95,14 @@ class index extends Component {
     }
     this.props.addRightDevice(undefined);
     this.props.addLeftDevice(undefined);
-    
   };
 
   async componentDidMount() {
     console.log('HOME !!!');
     console.log(this.props.user);
     console.log(this.state, 'here we go');
+
+    // Check doctor impersonation state
     AsyncStorage.getItem('doctor_user').then(backup => {
       if (backup) {
         this.setState({ showExitIcon: true });
@@ -107,11 +110,14 @@ class index extends Component {
         this.setState({ showExitIcon: false });
       }
     });
+
     await messaging().requestPermission();
     const enabled = await messaging().hasPermission();
+
+    // Add back button handler
     BackHandler.addEventListener(
-      'hardwareBackPress',
-      this.handleBackButtonClick,
+        'hardwareBackPress',
+        this.handleBackButtonClick,
     );
 
     NetInfo.addEventListener(this.handleConnectivityChange);
@@ -125,47 +131,78 @@ class index extends Component {
         PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
       ]).then(() => {
         if (
-          !this.props.user.age &&
-          !this.props.user.weight &&
-          !this.props.user.height
+            !this.props.user.age &&
+            !this.props.user.weight &&
+            !this.props.user.height
         ) {
           this.setState({show: true});
         }
       });
     } else {
       if (
-        !this.props.user.age &&
-        !this.props.user.weight &&
-        !this.props.user.height
+          !this.props.user.age &&
+          !this.props.user.weight &&
+          !this.props.user.height
       ) {
         this.setState({show: true});
       }
     }
   }
 
+  componentWillUnmount() {
+    BackHandler.removeEventListener('hardwareBackPress', this.handleBackButtonClick);
+  }
+
   handleBackButtonClick = async () => {
-    console.log(this.props.navigation.dangerouslyGetParent().state.index);
-    let index = this.props.navigation.dangerouslyGetParent().state.index;
-    if (index === 0) {
+    try {
+      const parent = this.props.navigation.dangerouslyGetParent();
+
+      if (!parent || parent.state.index === 0) {
+        Alert.alert(
+            '',
+            getLocalizedText(this.props.lang, LangAlert.closeApp),
+            [
+              {
+                text: getLocalizedText(this.props.lang, LangAlert.yes),
+                onPress: () => {
+                  this.actionDisconnectBle();
+                  setTimeout(() => {
+                    BackHandler.exitApp();
+                  }, 1000);
+                },
+              },
+              {
+                text: getLocalizedText(this.props.lang, LangAlert.no),
+                onPress: () => console.log('NO Pressed'),
+              },
+            ],
+            {cancelable: false},
+        );
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.log('Back button error:', error);
       Alert.alert(
-        '',
+          '',
           getLocalizedText(this.props.lang, LangAlert.closeApp),
-        [
-          {
-            text: getLocalizedText(this.props.lang, LangAlert.yes),
-            onPress: () => {
-              this.actionDisconnectBle();
-              setTimeout(() => {
-                BackHandler.exitApp();
-              }, 1000);
+          [
+            {
+              text: getLocalizedText(this.props.lang, LangAlert.yes),
+              onPress: () => {
+                this.actionDisconnectBle();
+                setTimeout(() => {
+                  BackHandler.exitApp();
+                }, 1000);
+              },
             },
-          },
-          {
-            text: getLocalizedText(this.props.lang, LangAlert.no),
-            onPress: () => console.log('NO Pressed'),
-          },
-        ],
-        {cancelable: false},
+            {
+              text: getLocalizedText(this.props.lang, LangAlert.no),
+              onPress: () => console.log('NO Pressed'),
+            },
+          ],
+          {cancelable: false},
       );
       return true;
     }
@@ -181,133 +218,120 @@ class index extends Component {
       res.forEach(r => {
         console.log(r.path);
         RNFS.readFile(r.path)
-          .then(text => {
-            let data = JSON.parse(
-              '[' + text.substring(0, text.length - 1) + ']',
-            );
-            var content = {
-              data: data,
-              id_customer: data[0].id_customer,
-              id_device: '',
-              type: 1, // for medical
-            };
-            fetch(`${API}/addjson`, {
-              method: 'POST',
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(content),
-            })
-              .then(resp => resp.json())
-              .then(resp => {
-                if (resp.status != 'ผิดพลาด') {
-                  console.log(`Clear : ${r.path}`);
-                  RNFS.unlink(r.path);
+            .then(text => {
+              let data = JSON.parse(
+                  '[' + text.substring(0, text.length - 1) + ']',
+              );
+              var content = {
+                data: data,
+                id_customer: data[0].id_customer,
+                id_device: '',
+                type: 1, // for medical
+              };
+              fetch(`${API}/addjson`, {
+                method: 'POST',
+                headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(content),
+              })
+                  .then(resp => resp.json())
+                  .then(resp => {
+                    if (resp.status != 'ผิดพลาด') {
+                      console.log(`Clear : ${r.path}`);
+                      RNFS.unlink(r.path);
 
-                  fetch(`${API}member/getUserDashboardStatic`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      id: this.props.user.id_customer,
-                      // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
-                    }),
-                  })
-                  .then(resp1 => {
-                        console.log('============API Response============');
-                        return  resp1.json();
-                      })
-                    .then(resp1 => {
-                      
-                      fetch(`${API}member/get_user_data`, {
+                      fetch(`${API}member/getUserDashboardStatic`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                           id: this.props.user.id_customer,
-                          ...resp1
-                          // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
                         }),
                       })
-                        .then(res => {
-                          console.log('============API Response============');
-                          return console.log(res), res.json();
-                        })
-                        .then(res => {
-                          console.log(res, 'responseFromAPU');
+                          .then(resp1 => {
+                            console.log('============API Response============');
+                            return  resp1.json();
+                          })
+                          .then(resp1 => {
 
-                        })
-                        .catch(err => {
-                          console.log(err);
-                          this.setState({ isLoading: false });
-                          Toast.show('Something went wrong. Please Try again!!!');
-                        });
+                            fetch(`${API}member/get_user_data`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                id: this.props.user.id_customer,
+                                ...resp1
+                              }),
+                            })
+                                .then(res => {
+                                  console.log('============API Response============');
+                                  return console.log(res), res.json();
+                                })
+                                .then(res => {
+                                  console.log(res, 'responseFromAPI');
+                                })
+                                .catch(err => {
+                                  console.log(err);
+                                  this.setState({ isLoading: false });
+                                  Toast.show('Something went wrong. Please Try again!!!');
+                                });
+                          })
+                          .catch(err => {
+                            console.log(err);
+                            this.setState({ isLoading: false });
+                            Toast.show('Something went wrong. Please Try again!!!');
+                          });
                     }
-
-                    )
-                    .catch(err => {
-                      console.log(err);
-                      this.setState({ isLoading: false });
-                      Toast.show('Something went wrong. Please Try again!!!');
-                    });
-                }
-              });
-          })
-          .catch(e => {});
+                  });
+            })
+            .catch(e => {});
       });
     });
   }
 
   popup = () => (
-    <Modal
-      width={0.9}
-      visible={this.state.show}
-      rounded
-      actionsBordered
-      onTouchOutside={() => {
-        this.setState({show: false});
-      }}
-      modalTitle={
-        <ModalTitle
-          title="Warning - Please complete your profile"
-          align="left"
-        />
-      }
-      footer={
-        <ModalFooter>
-          <ModalButton
-            text="Later"
-            bordered
-            onPress={() => {
-              this.setState({show: false});
-            }}
-            key="button-1"
-          />
-          <ModalButton
-            text="OK"
-            bordered
-            onPress={() => {
-              this.setState({show: false});
-              this.actionProfile();
-            }}
-            key="button-2"
-          />
-        </ModalFooter>
-      }>
-      <ModalContent style={{backgroundColor: '#fff'}}>
-        <Text>some function will dosen't work</Text>
-      </ModalContent>
-    </Modal>
+      <Modal
+          width={0.9}
+          visible={this.state.show}
+          rounded
+          actionsBordered
+          onTouchOutside={() => {
+            this.setState({show: false});
+          }}
+          modalTitle={
+            <ModalTitle
+                title="Warning - Please complete your profile"
+                align="left"
+            />
+          }
+          footer={
+            <ModalFooter>
+              <ModalButton
+                  text="Later"
+                  bordered
+                  onPress={() => {
+                    this.setState({show: false});
+                  }}
+                  key="button-1"
+              />
+              <ModalButton
+                  text="OK"
+                  bordered
+                  onPress={() => {
+                    this.setState({show: false});
+                    this.actionProfile();
+                  }}
+                  key="button-2"
+              />
+            </ModalFooter>
+          }>
+        <ModalContent style={{backgroundColor: '#fff'}}>
+          <Text>Some functions will not work properly</Text>
+        </ModalContent>
+      </Modal>
   );
 
   render() {
-    <NavigationEvents
-        onDidFocus={async () => {
-          const backup = await AsyncStorage.getItem('doctor_user');
-          this.setState({ showExitIcon: !!backup });
-          console.log('[Home] Exit Icon:', !!backup);
-        }}
-    />
-
     let img = 'user.png';
     if (this.props.user) {
       if (this.props.user.image === '' || this.props.user.image === undefined) {
@@ -322,93 +346,98 @@ class index extends Component {
     }
 
     return (
-      <View style={{backgroundColor: 'white', flex: 1}}>
-        {this.popup()}
-        <ScrollView
-          contentContainerStyle={{height: Dimensions.get('window').height}}>
-          
-          <View style={styles.oval}>
-            <TouchableOpacity
-                style={[
-                  {
-                    position: 'absolute',
-                    right: screenWidth * 0.2,
-                    top: screenWidth * 0.55,
-                  },
-                  !this.props.impersonating && {
-                    borderWidth: 1.2,
-                    borderColor: '#fff',
-                    padding: 2,
-                    borderRadius: screenWidth / 2,
-                  },
-                ]}
-                onPress={() => {
-                  this.checkExitOrLogout();
-                }}
-            >
-              <Image
-                  style={{width: 30, height: 30}}
-                  source={
-                    this.props.impersonating
-                        ? require('../../../assets/image/menu/exit.png')
-                        : require('../../../assets/image/icons/logout.png')
-                  }
-              />
-            </TouchableOpacity>
-            {this.props.user && (
-              <View
-                style={{
-                  top: -10,
-                  alignContent: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  alignItems: 'center',
-                }}>
-                <TouchableOpacity onPress={() => this.actionProfile()}>
-                  <Image
-                    style={{
-                      width: screenWidth - 20,
-                      height: screenWidth - 20,
-                      borderWidth: 1,
+        <View style={{backgroundColor: 'white', flex: 1}}>
+          <NavigationEvents
+              onDidFocus={async () => {
+                const backup = await AsyncStorage.getItem('doctor_user');
+                this.setState({ showExitIcon: !!backup });
+                console.log('[Home] Exit Icon:', !!backup);
+              }}
+          />
+
+          {this.popup()}
+          <ScrollView
+              contentContainerStyle={{height: Dimensions.get('window').height}}>
+
+            <View style={styles.oval}>
+              <TouchableOpacity
+                  style={[
+                    {
+                      position: 'absolute',
+                      right: screenWidth * 0.2,
+                      top: screenWidth * 0.55,
+                    },
+                    !this.props.impersonating && {
+                      borderWidth: 1.2,
                       borderColor: '#fff',
                       padding: 2,
                       borderRadius: screenWidth / 2,
-                    }}
-                    // resizeMode="contain"
-                    source={{
-                      uri: this.props.user.image,
+                    },
+                  ]}
+                  onPress={() => {
+                    this.checkExitOrLogout();
+                  }}
+              >
+                <Image
+                    style={{width: 30, height: 30}}
+                    source={
+                      this.props.impersonating
+                          ? require('../../../assets/image/menu/exit.png')
+                          : require('../../../assets/image/icons/logout.png')
+                    }
+                />
+              </TouchableOpacity>
+              {this.props.user && (
+                  <View
+                      style={{
+                        top: -10,
+                        alignContent: 'center',
+                        justifyContent: 'center',
+                        textAlign: 'center',
+                        alignItems: 'center',
+                      }}>
+                    <TouchableOpacity onPress={() => this.actionProfile()}>
+                      <Image
+                          style={{
+                            width: screenWidth - 20,
+                            height: screenWidth - 20,
+                            borderWidth: 1,
+                            borderColor: '#fff',
+                            padding: 2,
+                            borderRadius: screenWidth / 2,
+                          }}
+                          source={{
+                            uri: this.props.user.image,
+                          }}
+                      />
+                      <Image
+                          onPress={() => this.actionProfile()}
+                          style={{
+                            width: 35,
+                            height: 35,
+                            position: 'absolute',
+                            top: -10,
+                            right: -5,
+                          }}
+                          source={require('../../../assets/image/icons/pencil.png')}
+                      />
+                    </TouchableOpacity>
+                    <Text
+                        styles={{color: 'black', height: 30, marginTop: 10, fontSize: 20}}
+                        type={'bold'}>
+                      {this.props.user.fname} {this.props.user.lname}
+                    </Text>
+                    <Text styles={{color: 'black', fontWeight: '700', height: 40, fontSize: 15}}>
+                      {this.props.user.email}
+                    </Text>
+                  </View>
+              )}
+            </View>
 
-                      // uri: IMAGE_URL + img
-                    }}
-                  />
-                  <Image
-                    onPress={() => this.actionProfile()}
-                    style={{
-                      width: 35,
-                      height: 35,
-                      position: 'absolute',
-                      top: -10,
-                      right: -5,
-                    }}
-                    source={require('../../../assets/image/icons/pencil.png')}
-                  />
-                </TouchableOpacity>
-                <Text
-                  styles={{color: 'black', height: 30, marginTop: 10, fontSize: 20}}
-                  type={'bold'}>
-                  {this.props.user.fname} {this.props.user.lname}
-                </Text>
-                <Text styles={{color: 'black', fontWeight: '700', height: 40, fontSize: 15}}>
-                  {this.props.user.email}
-                </Text>
-              </View>
-            )}
-          </View>
+            <ListItem navigation={this.props.navigation} />
+          </ScrollView>
 
-          <ListItem navigation={this.props.navigation} />
-        </ScrollView>
-
-      </View>
+        </View>
     );
   }
 }

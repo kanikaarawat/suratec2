@@ -39,6 +39,7 @@ import { TabHeading } from 'native-base';
 import BalanceLang from '../../../assets/language/menu/lang_balance';
 import Lang from '../../../assets/language/menu/lang_record';
 import LangHome from '../../../assets/language/screen/lang_home';
+import {getLocalizedText} from '../../../assets/language/langUtils';
 
 const RNFS = require('react-native-fs');
 
@@ -361,25 +362,19 @@ class index extends Component {
     }
     if (100 - persent >= 80) {
       return {
-        txt: this.state.lang
-          ? BalanceLang.goodBalance.thai
-          : BalanceLang.goodBalance.eng,
+        txt: getLocalizedText(this.state.lang, BalanceLang.goodBalance),
         status: 'Good',
         balance: Math.round(100 - persent),
       };
     } else if (100 - persent >= 40) {
       return {
-        txt: this.state.lang
-          ? BalanceLang.mediumBalance.thai
-          : BalanceLang.mediumBalance.eng,
+        txt: getLocalizedText(this.state.lang, BalanceLang.goodBalance),
         status: 'Medium',
         balance: Math.round(100 - persent),
       };
     } else {
       return {
-        txt: this.state.lang
-          ? BalanceLang.badBalance.thai
-          : BalanceLang.badBalance.eng,
+        txt: getLocalizedText(this.state.lang, BalanceLang.badBalance),
         status: 'Bad',
         balance: Math.round(100 - persent),
       };
@@ -405,9 +400,7 @@ class index extends Component {
           text: 'OK',
           onPress: () => {
             this.props.navigation.navigate('Product', {
-              name: this.props.lang
-                ? LangHome.addDeviceButton.thai
-                : LangHome.addDeviceButton.eng,
+              name: getLocalizedText(this.state.lang, LangHome.addDeviceButton),
             });
           },
         },
@@ -437,9 +430,7 @@ class index extends Component {
           text: 'OK',
           onPress: () => {
             this.props.navigation.navigate('Product', {
-              name: this.props.lang
-                ? LangHome.addDeviceButton.thai
-                : LangHome.addDeviceButton.eng,
+              name: getLocalizedText(this.state.lang, LangHome.addDeviceButton),
             });
           },
         },
@@ -513,9 +504,7 @@ class index extends Component {
           text: 'OK',
           onPress: () => {
             this.props.navigation.navigate('Product', {
-              name: this.props.lang
-                ? LangHome.addDeviceButton.thai
-                : LangHome.addDeviceButton.eng,
+              name: getLocalizedText(this.state.lang, LangHome.addDeviceButton),
             });
           },
         },
@@ -827,21 +816,21 @@ class index extends Component {
         // console.log(res);
         if (res.status === 'สำเร็จ') {
           AlertFix.alertBasic(
-            this.props.lang ? Lang.successTitle.thai : Lang.successTitle.eng,
-            this.props.lang ? Lang.successBody.thai : Lang.successBody.eng,
+              getLocalizedText(this.state.lang, Lang.successTitle),
+              getLocalizedText(this.state.lang, Lang.successBody),
           );
           deleteFile(this.fileStamp_n);
         } else {
           AlertFix.alertBasic(
-            this.props.lang ? Lang.errorTitle.thai : Lang.errorTitle.eng,
-            this.props.lang ? Lang.errorBody1.thai : Lang.errorBody1.eng,
+              getLocalizedText(this.state.lang, Lang.errorTitle),
+              getLocalizedText(this.state.lang, Lang.errorBody1),
           );
         }
       })
       .catch(error => {
         AlertFix.alertBasic(
-          this.props.lang ? Lang.errorTitle.thai : Lang.errorTitle.eng,
-          this.props.lang ? Lang.errorBody2.thai : Lang.errorBody2.eng,
+            getLocalizedText(this.state.lang, Lang.errorTitle),
+            getLocalizedText(this.state.lang, Lang.errorBody2),
         );
       });
   };
@@ -873,9 +862,7 @@ class index extends Component {
           text: 'OK',
           onPress: () => {
             this.props.navigation.navigate('Product', {
-              name: this.props.lang
-                ? LangHome.addDeviceButton.thai
-                : LangHome.addDeviceButton.eng,
+              name: getLocalizedText(this.state.lang, LangHome.addDeviceButton),
             });
           },
         },
@@ -996,9 +983,7 @@ class index extends Component {
           text: 'OK',
           onPress: () => {
             this.props.navigation.navigate('Product', {
-              name: this.props.lang
-                ? LangHome.addDeviceButton.thai
-                : LangHome.addDeviceButton.eng,
+              name: getLocalizedText(this.state.lang, LangHome.addDeviceButton),
             });
           },
         },

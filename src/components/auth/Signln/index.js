@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  StyleSheet, KeyboardAvoidingView, Platform, ScrollView
+  StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Modal
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AccessToken, LoginManager } from 'react-native-fbsdk';
@@ -12,6 +12,7 @@ import AlertFix from '../../common/AlertsFix';
 import messaging from '@react-native-firebase/messaging';
 import API from '../../../config/Api';
 import Lang from '../../../assets/language/auth/lang_singln';
+import LanguagePickerFix from '../../common/LanguagePickerFix';
 import {getLocalizedText, getLangKeysSize} from '../../../assets/language/langUtils';
 
 import { connect } from 'react-redux';
@@ -21,6 +22,7 @@ class SignIn extends Component {
     username: '',
     password: '',
     isFocused: null,
+    langPickerVisible: false, // Add this for modal visibility
   };
 
   async componentDidMount() {
@@ -107,7 +109,6 @@ class SignIn extends Component {
       console.log('USER ID:', userInfo.id_customer);
       console.log('SECURITY TOKEN:', data.data);
 
-
       if (userInfo.role === 'mod_employee') {
         const jumpToPatientList = NavigationActions.navigate({
           routeName: 'App',
@@ -126,14 +127,36 @@ class SignIn extends Component {
     }
   };
 
-  actionLang = () => {
-    const nextLang = (this.props.lang + 1) % getLangKeysSize();
-    this.props.edit_Lang(nextLang);
+  // Updated language selection method for modal
+  selectLanguage = (langIndex) => {
+    this.props.edit_Lang(langIndex);
+    this.setState({ langPickerVisible: false });
+  };
+
+  // Dynamically get all available languages from lang_singln.js
+  getLanguageOptions = () => {
+    const langKeys = Object.keys(Lang.langSwitch);
+    return langKeys.map((key, index) => ({
+      label: Lang.langSwitch[key],
+      value: index,
+      key: key
+    }));
+  };
+
+  // Get current language display text dynamically
+  getCurrentLanguageText = () => {
+    const { lang } = this.props;
+    const langKeys = Object.keys(Lang.langSwitch);
+    const currentLangKey = langKeys[lang];
+    return Lang.langSwitch[currentLangKey] || Lang.langSwitch[langKeys[0]]; // fallback to first language
   };
 
   render() {
     const { lang } = this.props;
-    const { username, password, isFocused } = this.state;
+    const { username, password, isFocused, langPickerVisible } = this.state;
+
+    // Dynamically get language options from lang_singln.js
+    const languageOptions = this.getLanguageOptions();
 
     return (
         <KeyboardAvoidingView
@@ -216,11 +239,10 @@ class SignIn extends Component {
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity onPress={this.actionLang} style={styles.langButton}>
-                <Text style={styles.langText}>
-                  {getLocalizedText(lang, Lang.langSwitch)}
-                </Text>
-              </TouchableOpacity>
+              <LanguagePickerFix
+                  langSwitch={Lang.langSwitch}
+                  style={{ marginTop: 30 }}
+              />
             </ScrollView>
           </LinearGradient>
         </KeyboardAvoidingView>
@@ -315,12 +337,70 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  langButton: { alignSelf: 'center', marginTop: 30, padding: 10 },
-  langText: {
-    color: '#FFF',
+
+  // Updated Language Picker Styles
+  languagePickerContainer: {
+    alignItems: 'center',
+    marginTop: 30,
+  },
+  languageButton: {
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#e0f7fa',
+    borderWidth: 1,
+    borderColor: '#00c3cc',
+  },
+  languageButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
+    color: '#00c3cc',
+    fontWeight: 'bold',
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 20,
+    width: 250,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#00c3cc',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  languageOption: {
+    paddingVertical: 12,
+    borderRadius: 6,
+    marginVertical: 2,
+  },
+  languageOptionSelected: {
+    backgroundColor: '#00c3cc',
+  },
+  languageOptionText: {
+    fontSize: 18,
+    fontWeight: 'normal',
+    textAlign: 'center',
+    color: '#00c3cc',
+  },
+  languageOptionTextSelected: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  modalCloseButton: {
+    marginTop: 10,
+  },
+  modalCloseText: {
+    color: '#00c3cc',
+    textAlign: 'center',
+    fontSize: 16,
   },
 });
 

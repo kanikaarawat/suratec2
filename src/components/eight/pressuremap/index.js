@@ -26,6 +26,7 @@ import BleManager from 'react-native-ble-manager';
 
 import Lang from '../../../assets/language/menu/lang_record';
 import LangHome from '../../../assets/language/screen/lang_home';
+import {getLocalizedText} from '../../../assets/language/langUtils';
 
 var RNFS = require('react-native-fs');
 
@@ -384,9 +385,7 @@ class index extends React.PureComponent {
           text: 'OK',
           onPress: () => {
             this.props.navigation.navigate('Device', {
-              name: this.props.lang
-                ? LangHome.addDeviceButton.thai
-                : LangHome.addDeviceButton.eng,
+              name: getLocalizedText(this.state.lang, LangHome.addDeviceButton),
             });
           },
         },
@@ -549,7 +548,7 @@ class index extends React.PureComponent {
               .catch(e => {});
           });
         });
-    alert(this.props.lang ? Lang.alert.thai : Lang.alert.eng);
+    alert(getLocalizedText(this.state.lang, Lang.alert));
   }
 
   actionDashboard = () => {
@@ -567,53 +566,48 @@ class index extends React.PureComponent {
   render() {
     this.canVibration(this.state.shouldVibrate, this.state.switch);
     return (
-      <View style={{flex: 1, backgroundColor: 'white'}}>
-        <HeaderFix
-          icon_left={'left'}
-          onpress_left={() => {
-            this.props.navigation.goBack();
-          }}
-          title={this.props.navigation.getParam('name', '')}
-        />
+        <View style={{flex: 1, backgroundColor: 'white'}}>
+          <HeaderFix
+              icon_left={'left'}
+              onpress_left={() => {
+                this.props.navigation.goBack();
+              }}
+              title={this.props.navigation.getParam('name', '')}
+          />
 
-        {/*<NotificationsState />*/}
+          {/*<NotificationsState />*/}
 
-        <View style={{flex: 4, height: '100%', padding: 15}}>
-          <Text>kPa .</Text>
-          <View>
+          {/* Spacer to push content down */}
+          <View style={{flex: 1}} />
+
+          {/* Main content container - minimal styling to avoid SVG issues */}
+          <View style={{flex: 2, paddingHorizontal: 15}}>
+            <Text style={{fontSize: 16, color: '#666', marginBottom: 15}}>kPa .</Text>
             <SvgContourBasic
-              leftsensor={this.state.leftData}
-              rightsensor={this.state.rightData}
+                leftsensor={this.state.leftData}
+                rightsensor={this.state.rightData}
+            />
+          </View>
+
+          {/* Spacer to center the content */}
+          <View style={{flex: 1}} />
+
+          {/* Bottom button container */}
+          <View
+              style={{
+                paddingHorizontal: 15,
+                paddingBottom: 30,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+            <ButtonFix
+                action={true}
+                rounded={true}
+                title={this.state.textAction}
+                onPress={() => this.actionRecording()}
             />
           </View>
         </View>
-
-        <View
-          style={{
-            flex: 1,
-            height: '100%',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          {/* <Grid style={{padding: 15}}> */}
-          {/* <Col> */}
-          <ButtonFix
-            action={true}
-            rounded={true}
-            title={this.state.textAction}
-            onPress={() => this.actionRecording()}
-          />
-          {/* </Col> */}
-          {/* <Col>
-              <ButtonFix
-                rounded={true}
-                title={'Dashboard 8'}
-                onPress={() => this.actionDashboard()}
-              />
-            </Col> */}
-          {/* </Grid> */}
-        </View>
-      </View>
     );
   }
 }
