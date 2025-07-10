@@ -6,6 +6,8 @@ import Text from '../../common/TextFix';
 import ButtonFix from '../../common/ButtonFix'
 import DropDownPicker from 'react-native-dropdown-picker';
 import InputFix from '../../common/InputFix'
+import Lang from '../../../assets/language/menu/lang_profile';
+import {getLocalizedText} from '../../../assets/language/langUtils';
 // let genderList = [
 //     { label: 'Male', value: 0},
 //     { label: 'Female', value: 1},
@@ -108,7 +110,7 @@ export default class card_profile extends Component {
                         <Text styles={{ padding: 15, paddingTop: 5, paddingBottom: 5 }}>{this.props.labelTel}</Text>
                         <InputFix value={this.props.inputValueTel} rounded={true} secure={false} placeholder={''} onChangeText={this.props.inputTel} keyboardType={'decimal-pad'} />
 
-                        <ButtonFix styles={{ marginBottom: 30, marginTop: 20 }} rounded={true} title={'Update'} onPress={this.props.onUpdate} />
+                        <ButtonFix styles={{ marginBottom: 30, marginTop: 20 }} rounded={true} title={getLocalizedText(this.props.lang, Lang.updateLabel)} onPress={this.props.onUpdate} />
                         {/* <ButtonFix action={true} rounded={true} title={'Log Out'} onPress={this.props.onLogout} /> */}
 
                         {/* <View style={{ height: '3%' }}></View> */}

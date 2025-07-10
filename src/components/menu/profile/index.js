@@ -22,6 +22,7 @@ import API from '../../../config/Api';
 import UI from '../../../config/styles/CommonStyles';
 
 import Lang from '../../../assets/language/menu/lang_profile';
+import {getLocalizedText, getLangKeysSize} from '../../../assets/language/langUtils';
 import LangModal from './lang_model';
 
 import * as ImagePicker from 'react-native-image-picker';
@@ -62,9 +63,15 @@ class index extends Component {
         : `https://api1.suratec.co.th/pic/${img_path}`;
   };
 
-  actionLang = () => {
-    this.props.lang == 1 ? this.props.edit_Lang(0) : this.props.edit_Lang(1);
-    this.setState({onModal: false});
+  // Toggle language selection modal visibility
+  toggleModal = () => {
+    this.setState({ onModal: !this.state.onModal });
+  };
+
+  // Handle language selection
+  actionLang = (selectedLang) => {
+    this.props.edit_Lang(selectedLang);  // Update the language in Redux
+    this.setState({ onModal: false });  // Close the modal after selecting the language
   };
 
   actionUpdate = () => {
@@ -315,7 +322,7 @@ class index extends Component {
           onpress_left={() => {
             this.props.navigation.goBack();
           }}
-          title={this.props.lang ? 'แก้ไขโปรไฟล์' : 'Edit Profile'}
+          title={getLocalizedText(this.props.lang, Lang.editProfile)}
           icon_rigth={'ellipsis-v'}
           iconType={'FontAwesome5'}
           onpress_rigth={() => {
@@ -373,61 +380,42 @@ class index extends Component {
           </TouchableOpacity>
 
           <CardProfile
-            labelFirstName={
-              this.props.lang
-                ? Lang.firstNamelabel.thai
-                : Lang.firstNamelabel.eng
-            }
+            labelFirstName={getLocalizedText(this.props.lang, Lang.firstNamelabel)}
             inputValueFirstName={this.state.fname}
             inputFirstName={txt => {
               this.setState({fname: txt});
             }}
-            labelLastName={
-              this.props.lang ? Lang.LastNamelabel.thai : Lang.LastNamelabel.eng
-            }
+            labelLastName={getLocalizedText(this.props.lang, Lang.LastNamelabel)}
             inputValueLastName={this.state.lname}
             inputLastName={txt => {
               this.setState({lname: txt});
             }}
-            labelEmail={
-              this.props.lang ? Lang.Emaillabel.thai : Lang.Emaillabel.eng
-            }
+            labelEmail={getLocalizedText(this.props.lang, Lang.Emaillabel)}
             inputValueEmail={this.state.email}
             inputEmail={txt => {
               this.setState({email: txt});
             }}
-            labelGender={
-              this.props.lang ? Lang.genderlabel.thai : Lang.genderlabel.eng
-            }
+            labelGender={getLocalizedText(this.props.lang, Lang.genderlabel)}
             inputValueGender={this.state.sex}
             inputGender={txt => {
-              console.log('sex', txt);
               this.setState({sex: txt});
             }}
-            labelWeigth={
-              this.props.lang ? Lang.weightLabel.thai : Lang.weightLabel.eng
-            }
+            labelWeigth={getLocalizedText(this.props.lang, Lang.weightLabel)}
             inputValueWeigth={this.state.weigth}
             inputWeigth={txt => {
               this.validateNumber('weigth', txt);
             }}
-            labelHeight={
-              this.props.lang ? Lang.heigthLabel.thai : Lang.heigthLabel.eng
-            }
+            labelHeight={getLocalizedText(this.props.lang, Lang.heigthLabel)}
             inputValueHeight={this.state.heigth}
             inputHeigth={txt => {
               this.validateNumber('heigth', txt);
             }}
-            labelAge={this.props.lang ? Lang.ageLabel.thai : Lang.ageLabel.eng}
+            labelAge={getLocalizedText(this.props.lang, Lang.ageLabel)}
             inputValueAge={this.state.age}
             inputAge={txt => {
               this.validateNumber('age', txt);
             }}
-            labelTel={
-              this.props.lang
-                ? Lang.emergencyLabel.thai
-                : Lang.emergencyLabel.eng
-            }
+            labelTel={getLocalizedText(this.props.lang, Lang.emergencyLabel)}
             inputValueTel={this.state.tel}
             inputTel={txt => {
               this.setState({tel: txt});
@@ -437,13 +425,12 @@ class index extends Component {
           />
 
           <LangModal
-            title={this.props.lang ? Lang.langTitle.thai : Lang.langTitle.eng}
-            modalVisible={this.state.onModal}
-            onModalClosed={() => {
-              this.setState({onModal: false});
-            }}
-            labelBtn={this.props.lang ? 'English' : 'ภาษาไทย'}
-            onLang={() => this.actionLang()}
+              title="Select Language"
+              modalVisible={this.state.onModal}
+              onModalClosed={() => this.setState({ onModal: false })}
+              labelBtn="Select"
+              onLang={this.toggleModal}  // In case you want to do something when button is pressed
+              onSelectLang={this.actionLang}  // Function to switch languages
           />
         </View>
       </ScrollView>

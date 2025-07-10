@@ -13,6 +13,7 @@ import HeaderFix from '../../common/HeaderFix';
 import MultiSelectCheckbox from '../../MultiSelectCheckbox';
 import { useSelector } from 'react-redux';
 import langAssessment from '../../../assets/language/menu/lang_assessmentTests';
+import {getLocalizedText} from '../../../assets/language/langUtils';
 
 
 const FallRiskScreen = ({ navigation }) => {
@@ -20,18 +21,14 @@ const FallRiskScreen = ({ navigation }) => {
     const [selectedOptions, setSelectedOptions] = useState([]);
     const user = useSelector(state => state?.user);
     const lang = useSelector(state => state?.lang);
-    const langKey = lang === 1 ? 'thai' : 'eng';
-    const localizedTitle = langAssessment.fallRiskScreening?.[langKey] || 'Fall Risk Screening';
-
-
-
+    const localizedTitle = getLocalizedText(lang, langAssessment.fallRiskScreening);
 
     const options = [
-        'Injury',
-        '≥ 2 fall last year',
-        'Frailty',
-        'Lying on the floor/\nunable to get up',
-        'Loss of consciousness/suspected syncope',
+        getLocalizedText(lang, langAssessment.injury),
+        getLocalizedText(lang, langAssessment.fallLastYear),
+        getLocalizedText(lang, langAssessment.frailty),
+        getLocalizedText(lang, langAssessment.lyingOnFloor),
+        getLocalizedText(lang, langAssessment.lossOfConsciousness),
     ];
 
     const handleCheckboxChange = option => {
@@ -46,11 +43,11 @@ const FallRiskScreen = ({ navigation }) => {
         const payload = {
             user_id: user?.id_customer,
             q1: select === 'yes' ? '1' : '0',
-            q1_1: selectedOptions.includes('Injury') ? '1' : '0',
-            q1_2: selectedOptions.includes('≥ 2 fall last year') ? '1' : '0',
-            q1_3: selectedOptions.includes('Frailty') ? '1' : '0',
-            q1_4: selectedOptions.includes('Lying on the floor/\nunable to get up') ? '1' : '0',
-            q1_5: selectedOptions.includes('Loss of consciousness/suspected syncope') ? '1' : '0',
+            q1_1: selectedOptions.includes(options[0]) ? '1' : '0',
+            q1_2: selectedOptions.includes(options[1]) ? '1' : '0',
+            q1_3: selectedOptions.includes(options[2]) ? '1' : '0',
+            q1_4: selectedOptions.includes(options[3]) ? '1' : '0',
+            q1_5: selectedOptions.includes(options[4]) ? '1' : '0',
         };
 
         fetch('https://api1.suratec.co.th/member/get_add_data', {
@@ -62,7 +59,7 @@ const FallRiskScreen = ({ navigation }) => {
             .then(result => {
                 console.log('result-', result?.status);
                 if (result?.status === 200) {
-                    Alert.alert('Success', 'Form Submitted Successfully', [
+                    Alert.alert('Success', getLocalizedText(lang, langAssessment.formSubmitSuccess), [
                         {
                             text: 'OK',
                             onPress: () => {
@@ -71,12 +68,12 @@ const FallRiskScreen = ({ navigation }) => {
                         },
                     ]);
                 } else {
-                    Alert.alert('Failed', 'Something went wrong.');
+                    Alert.alert('Failed', getLocalizedText(lang, langAssessment.formSubmitFail));
                 }
             })
             .catch(error => {
                 console.log('error', error);
-                Alert.alert('Error', 'Submission Failed');
+                Alert.alert('Error', getLocalizedText(lang, langAssessment.submissionFailed));
             });
     };
 
@@ -94,7 +91,7 @@ const FallRiskScreen = ({ navigation }) => {
                 showsVerticalScrollIndicator={false}
             >
             <Text style={[styles.text, { marginTop: '10%', textAlign: 'center' }]}>
-                FALL PAST 12 MONTHS?
+                {getLocalizedText(lang, langAssessment.fallPast12Months)}
             </Text>
 
             <View style={styles.buttonRow}>
@@ -105,7 +102,7 @@ const FallRiskScreen = ({ navigation }) => {
                     <Text
                         style={[styles.optionText, select === 'yes' && styles.textSelected]}
                     >
-                        YES
+                        {getLocalizedText(lang, langAssessment.Yes)}
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -115,7 +112,7 @@ const FallRiskScreen = ({ navigation }) => {
                     <Text
                         style={[styles.optionText, select === 'no' && styles.textSelected]}
                     >
-                        NO
+                        {getLocalizedText(lang, langAssessment.No)}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -123,7 +120,7 @@ const FallRiskScreen = ({ navigation }) => {
             {select === 'yes' && (
                 <>
                     <Text style={[styles.text, { marginTop: '10%', textAlign: 'center' }]}>
-                        Assess Fall Severity :
+                        {getLocalizedText(lang, langAssessment.assessFallSeverity)}
                     </Text>
                     <MultiSelectCheckbox
                         options={options}
@@ -141,7 +138,7 @@ const FallRiskScreen = ({ navigation }) => {
                         onSubmit();
                     }}
                 >
-                    <Text style={styles.submitText}>Submit</Text>
+                    <Text style={styles.submitText}>{getLocalizedText(lang, langAssessment.submit)}</Text>
                 </TouchableOpacity>
             </View>
             </ScrollView>

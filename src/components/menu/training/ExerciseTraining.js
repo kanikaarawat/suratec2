@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 
 const { width } = Dimensions.get('window');
 import langTraining from '../../../assets/language/menu/lang_training';
+import {getLocalizedText} from '../../../assets/language/langUtils';
 
 class ExerciseTraining extends Component {
     handleNavigate = route => {
@@ -13,8 +14,6 @@ class ExerciseTraining extends Component {
     };
 
     render() {
-        const langKey = this.props.lang === 1 ? 'thai' : 'eng';
-        const localizedTitle = langTraining.exerciseTraining?.[langKey] || 'Exercise Training';
 
         return (
             <View style={styles.container}>
@@ -23,14 +22,14 @@ class ExerciseTraining extends Component {
                     onpress_left={() => {
                         this.props.navigation.goBack();
                     }}
-                    title={localizedTitle}
+                    title={getLocalizedText(this.props.lang, langTraining.title)}
                 />
                 <ScrollView contentContainerStyle={styles.scrollContainer}>
                     <TouchableOpacity
                         style={[styles.card, { backgroundColor: '#d2f6fb' }]}
                         onPress={() => this.handleNavigate('LowRiskExercise')}>
                         <Text style={[styles.cardText, { color: '#007b8a' }]}>
-                            {langTraining.lowRiskProgramCard?.[langKey]}
+                            {getLocalizedText(this.props.lang, langTraining.lowRiskProgramCard)}
                         </Text>
                     </TouchableOpacity>
 
@@ -38,7 +37,7 @@ class ExerciseTraining extends Component {
                         style={[styles.card, { backgroundColor: '#fef8cb' }]}
                         onPress={() => this.handleNavigate('ModerateRiskExercise')}>
                         <Text style={[styles.cardText, { color: '#027b57' }]}>
-                            {langTraining.moderateRiskProgramCard?.[langKey]}
+                            {getLocalizedText(this.props.lang, langTraining.moderateRiskProgramCard)}
                         </Text>
                     </TouchableOpacity>
 
@@ -46,7 +45,7 @@ class ExerciseTraining extends Component {
                         style={[styles.card, { backgroundColor: '#fff' }]}
                         onPress={() => this.handleNavigate('ExerciseWorkOut')}>
                         <Text style={[styles.cardText, { color: '#00a4cc' }]}>
-                            {langTraining.exerciseWorkOut?.[langKey]}
+                            {getLocalizedText(this.props.lang, langTraining.exerciseWorkOut)}
                         </Text>
                     </TouchableOpacity>
 

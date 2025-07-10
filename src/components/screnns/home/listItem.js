@@ -11,6 +11,7 @@ import {
 import Items from './item';
 import { Body, Card, CardItem, Icon, Right, Left, Thumbnail } from 'native-base';
 import Lang from '../../../assets/language/screen/lang_home';
+import { getLocalizedText } from '../../../assets/language/langUtils';
 import UI from '../../../config/styles/CommonStyles';
 import Text from '../../common/TextFix';
 import { connect } from 'react-redux';
@@ -30,197 +31,6 @@ class listItem extends Component {
     // Vibration.vibrate(DURATION);
   };
 
-  // render() {
-  //   return (
-  //     <View
-  //       style={{
-  //         backgroundColor: '#fff',
-  //         justifyContent: 'center',
-  //         alignItems: 'center',
-  //         padding: 10,
-  //       }}>
-  //       <View
-  //         style={{
-  //           width: '96%',
-  //           alignSelf: 'center',
-  //           flexDirection: 'row',
-  //           justifyContent: 'center',
-  //           alignItems: 'center',
-  //           marginHorizontal: 5,
-  //         }}>
-  //         <Items
-  //           text={
-  //             this.props.lang
-  //               ? Lang.addDeviceButton.thai
-  //               : Lang.addDeviceButton.eng
-  //           }
-  //           source={require('../../../assets/image/menu/add.png')}
-  //           onPress={() => {
-  //             this.props.navigation.navigate('Product', {
-  //               name: this.props.lang
-  //                 ? Lang.addDeviceButton.thai
-  //                 : Lang.addDeviceButton.eng,
-  //             });
-  //           }}
-  //         />
-  //         <Items
-  //           text={this.props.lang ? Lang.dashboard.thai : Lang.dashboard.eng}
-  //           source={require('../../../assets/image/dashboard.png')}
-  //           onPress={() => {
-  //             this.props.navigation.navigate('Dashboard');
-  //           }}
-  //         />
-  //         <Items
-  //           text={
-  //             this.props.lang
-  //               ? Lang.pressureMapButton.thai
-  //               : Lang.pressureMapButton.eng
-  //           }
-  //           source={require('../../../assets/image/menu/pressure.png')}
-  //           onPress={() => {
-  //             this.props.navigation.navigate(
-  //               this.props.eightSensor ? 'PressureMapEight' : 'PressureMap',
-  //               {
-  //                 name: this.props.lang
-  //                   ? Lang.pressureMapButton.thai
-  //                   : Lang.pressureMapButton.eng,
-  //               },
-  //             );
-  //           }}
-  //         />
-  //       </View>
-  //       <View
-  //         style={{
-  //           width: '96%',
-  //           alignSelf: 'center',
-  //           flexDirection: 'row',
-  //           justifyContent: 'center',
-  //           alignItems: 'center',
-  //           marginHorizontal: 5,
-  //         }}>
-  //         <Items
-  //           text={
-  //             this.props.lang
-  //               ? Lang.gaitAnalysisButton.thai
-  //               : Lang.gaitAnalysisButton.eng
-  //           }
-  //           source={require('../../../assets/image/menu/gail.png')}
-  //           onPress={() => {
-  //             this.props.navigation.navigate(
-  //               this.props.eightSensor ? 'GailAnalysisEight' : 'GailAnalysis',
-  //               {
-  //                 name: this.props.lang
-  //                   ? Lang.gaitAnalysisButton.thai
-  //                   : Lang.gaitAnalysisButton.eng,
-  //               },
-  //             );
-  //           }}
-  //         />
-  //
-  //         <Items
-  //           text={
-  //             this.props.lang
-  //               ? Lang.trainningModeButton.thai
-  //               : Lang.trainningModeButton.eng
-  //           }
-  //           source={require('../../../assets/image/menu/training.png')}
-  //           onPress={() => {
-  //             this.props.navigation.navigate(
-  //               this.props.eightSensor ? 'TrainingEight' : 'Training',
-  //               {
-  //                 name: this.props.lang
-  //                   ? Lang.trainningModeButton.thai
-  //                   : Lang.trainningModeButton.eng,
-  //               },
-  //             );
-  //           }}
-  //         />
-  //
-  //         <Items
-  //           text={
-  //             this.props.lang
-  //               ? Lang.footsBalanceButton.thai
-  //               : Lang.footsBalanceButton.eng
-  //           }
-  //           source={require('../../../assets/image/menu/balance.png')}
-  //           onPress={() => {
-  //             console.log(" this.props.eightSensor", this.props.eightSensor)
-  //             if (this.props.eightSensor) {
-  //               this.props.navigation.navigate(
-  //                 'FootsBalanceEight',
-  //                 {
-  //                   name: this.props.lang
-  //                     ? Lang.footsBalanceButton.thai
-  //                     : Lang.footsBalanceButton.eng,
-  //                 },
-  //               );
-  //             } else {
-  //               this.props.navigation.navigate(
-  //                 'FootsBalance',
-  //                 {
-  //                   name: this.props.lang
-  //                     ? Lang.footsBalanceButton.thai
-  //                     : Lang.footsBalanceButton.eng,
-  //                 },
-  //               );
-  //             }
-  //
-  //             // this.props.navigation.navigate(
-  //             //   this.props.eightSensor ? 'FootsBalanceEight' : 'FootsBalance',
-  //             //   {
-  //             //     name: this.props.lang
-  //             //       ? Lang.footsBalanceButton.thai
-  //             //       : Lang.footsBalanceButton.eng,
-  //             //   },
-  //             // );
-  //           }}
-  //         />
-  //       </View>
-  //       <View
-  //         style={{
-  //           width: '96%',
-  //           alignSelf: 'center',
-  //           flexDirection: 'row',
-  //           justifyContent: 'center',
-  //           alignItems: 'center',
-  //           marginHorizontal: 5,
-  //         }}>
-  //         <Items
-  //           text={'Foot Photo'}
-  //           source={require('../../../assets/image/camimg.png')}
-  //           resizeMode="contain"
-  //           onPress={() => {
-  //             this.props.navigation.navigate('Footscreen');
-  //           }}
-  //         />
-  //
-  //         <Items
-  //           text={'Monofilament'}
-  //           source={require('../../../assets/image/Monofilament.png')}
-  //           onPress={() => {
-  //             this.props.navigation.navigate('Try', {
-  //               name: this.props.lang
-  //                 ? Lang.dailyDataButton.thai
-  //                 : Lang.dailyDataButton.eng,
-  //             });
-  //           }}
-  //         />
-  //
-  //         <Items
-  //           text={'Foot Pain Location'}
-  //           source={require('../../../assets/image/FootPainLocation.png')}
-  //           onPress={() => {
-  //             this.props.navigation.navigate('MonofilamentNew', {
-  //               name: this.props.lang
-  //                 ? Lang.dailyDataButton.thai
-  //                 : Lang.dailyDataButton.eng,
-  //             });
-  //           }}
-  //         />
-  //       </View>
-  //     </View>
-  //   );
-  // }
 
     render() {
         return (
@@ -243,31 +53,31 @@ class listItem extends Component {
                         marginHorizontal: 5,
                     }}>
                     <Items
-                        text={this.props.lang ? Lang.addDeviceButton.thai : Lang.addDeviceButton.eng}
+                        text={getLocalizedText(this.props.lang, Lang.addDeviceButton)}
                         source={require('../../../assets/image/menu/add.png')}
                         onPress={() => {
                             this.props.navigation.navigate('Product', {
-                                name: this.props.lang ? Lang.addDeviceButton.thai : Lang.addDeviceButton.eng,
+                                name: getLocalizedText(this.props.lang, Lang.addDeviceButton),
                             });
                         }}
                     />
                     <Items
-                        text={this.props.lang ? Lang.dashboard.thai : Lang.dashboard.eng}
+                        text={getLocalizedText(this.props.lang, Lang.dashboard)}
                         source={require('../../../assets/image/dashboard.png')}
                         onPress={() => {
                             this.props.navigation.navigate('Dashboard', {
-                                name: this.props.lang ? Lang.dashboard.thai : Lang.dashboard.eng,
+                                name: getLocalizedText(this.props.lang, Lang.dashboard),
                             });
                         }}
                     />
                     <Items
-                        text={this.props.lang ? Lang.pressureMapButton.thai : Lang.pressureMapButton.eng}
+                        text={getLocalizedText(this.props.lang, Lang.pressureMapButton)}
                         source={require('../../../assets/image/menu/pressure.png')}
                         onPress={() => {
                             this.props.navigation.navigate(
                                 this.props.eightSensor ? 'PressureMapEight' : 'PressureMap',
                                 {
-                                    name: this.props.lang ? Lang.pressureMapButton.thai : Lang.pressureMapButton.eng,
+                                    name: getLocalizedText(this.props.lang, Lang.pressureMapButton),
                                 },
                             );
                         }}
@@ -285,32 +95,32 @@ class listItem extends Component {
                         marginHorizontal: 5,
                     }}>
                     <Items
-                        text={this.props.lang ? Lang.assessmentTests.thai : Lang.assessmentTests.eng}
+                        text={getLocalizedText(this.props.lang, Lang.assessmentTests)}
                         source={require('../../../assets/image/menu/assessment_icon.png')}
                         onPress={() => {
                             this.props.navigation.navigate('FallRiskScreen', {
-                                name: this.props.lang ? Lang.assessmentTests.thai : Lang.assessmentTests.eng,
+                                name: getLocalizedText(this.props.lang, Lang.assessmentTests),
                             });
                         }}
                     />
                     <Items
-                        text={this.props.lang ? Lang.gaitAnalysisButton.thai : Lang.gaitAnalysisButton.eng}
+                        text={getLocalizedText(this.props.lang, Lang.gaitAnalysisButton)}
                         source={require('../../../assets/image/menu/gail.png')}
                         onPress={() => {
                             this.props.navigation.navigate(
                                 this.props.eightSensor ? 'GailAnalysisEight' : 'GailAnalysis',
                                 {
-                                    name: this.props.lang ? Lang.gaitAnalysisButton.thai : Lang.gaitAnalysisButton.eng,
+                                    name: getLocalizedText(this.props.lang, Lang.gaitAnalysisButton),
                                 },
                             );
                         }}
                     />
                     <Items
-                        text={this.props.lang ? Lang.exerciseTraining.thai : Lang.exerciseTraining.eng}
+                        text={getLocalizedText(this.props.lang, Lang.exerciseTraining)}
                         source={require('../../../assets/image/menu/training.png')}
                         onPress={() => {
                             this.props.navigation.navigate('ExerciseTraining', {
-                                name: this.props.lang ? Lang.exerciseTraining.thai : Lang.exerciseTraining.eng,
+                                name: getLocalizedText(this.props.lang, Lang.exerciseTraining),
                             });
                         }}
                     />
@@ -328,26 +138,26 @@ class listItem extends Component {
                         marginHorizontal: 5,
                     }}>
                     <Items
-                        text={this.props.lang ? Lang.footsBalanceButton.thai : Lang.footsBalanceButton.eng}
+                        text={getLocalizedText(this.props.lang, Lang.footsBalanceButton)}
                         source={require('../../../assets/image/menu/balance.png')}
                         onPress={() => {
                             if (this.props.eightSensor) {
                                 this.props.navigation.navigate('FootsBalanceEight', {
-                                    name: this.props.lang ? Lang.footsBalanceButton.thai : Lang.footsBalanceButton.eng,
+                                    name: getLocalizedText(this.props.lang, Lang.footsBalanceButton),
                                 });
                             } else {
                                 this.props.navigation.navigate('FootsBalance', {
-                                    name: this.props.lang ? Lang.footsBalanceButton.thai : Lang.footsBalanceButton.eng,
+                                    name: getLocalizedText(this.props.lang, Lang.footsBalanceButton),
                                 });
                             }
                         }}
                     />
                     <Items
-                        text={this.props.lang ? Lang.shoeRecommend.thai : Lang.shoeRecommend.eng}
+                        text={getLocalizedText(this.props.lang, Lang.shoeRecommend)}
                         source={require('../../../assets/image/menu/shoe_icon.png')}
                         onPress={() => {
                             this.props.navigation.navigate('ShoeRecommend', {
-                                name: this.props.lang ? Lang.shoeRecommend.thai : Lang.shoeRecommend.eng,
+                                name: getLocalizedText(this.props.lang, Lang.shoeRecommend),
                             });
                         }}
                     />
@@ -371,7 +181,7 @@ class listItem extends Component {
 }
 
 const mapStateToProps = state => {
-  return {
+    return {
     lang: state.lang,
     eightSensor: state.eightSensor,
   };

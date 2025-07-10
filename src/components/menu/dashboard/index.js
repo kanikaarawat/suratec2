@@ -33,7 +33,7 @@ import exerciseImg     from '../../../assets/image/dashboard/exercise.png';
 import stanceStandImg  from '../../../assets/image/dashboard/stanceStand.png';
 import stanceWalkImg   from '../../../assets/image/dashboard/stanceWalk.png';
 import LangDashboard from '../../../assets/language/menu/lang_dashboard';
-
+import {getLocalizedText} from '../../../assets/language/langUtils';
 var RNFS = require('react-native-fs');
 
 const {height, width} = Dimensions.get('window');
@@ -472,19 +472,12 @@ class index extends Component {
             if (res.summary) {
                 this.setState({ dashboardSummaryText: res.summary });
             } else {
-                this.setState({
-                    dashboardSummaryText: this.props.lang
-                        ? LangDashboard.noSummary.thai
-                        : LangDashboard.noSummary.eng,
-                });
+                this.setState({dashboardSummaryText: getLocalizedText(this.props.lang, LangDashboard.noSummary)});
             }
         } catch (err) {
             console.error('Error fetching dashboard summary:', err);
             this.setState({
-                dashboardSummaryText: this.props.lang
-                    ? LangDashboard.error.thai
-                    : LangDashboard.error.eng,
-            });
+                dashboardSummaryText: getLocalizedText(this.props.lang, LangDashboard.error)});
         }
     };
 
@@ -657,12 +650,8 @@ class index extends Component {
                       this.props.navigation.setParams({
                           name:
                               index === 0
-                                  ? this.props.lang
-                                      ? LangDashboard.dashboard.thai
-                                      : LangDashboard.dashboard.eng
-                                  : this.props.lang
-                                      ? LangDashboard.summary.thai
-                                      : LangDashboard.summary.eng,
+                                  ? getLocalizedText(this.props.lang, LangDashboard.dashboard)
+                                  : getLocalizedText(this.props.lang, LangDashboard.summary)
                       });
                   }}
               >
@@ -1896,7 +1885,7 @@ class index extends Component {
 }
 
 const mapStateToProps = state => {
-    const langKey = state.lang === 1 ? 'thai' : 'eng';
+    const langKey = state.lang;
 
     const effectiveUser = state.impersonating && state.patient_id
         ? { ...state.user, id_customer: state.patient_id, security_token: state.patient_token }
@@ -1910,7 +1899,7 @@ const mapStateToProps = state => {
         user: effectiveUser,
         token: effectiveToken,
         lang: state.lang,
-        exerciseTrainingLabel: LangDashboard.exerciseTraining?.[langKey] || 'Exercise Training',
+        exerciseTrainingLabel: getLocalizedText(state.lang, LangDashboard.exerciseTraining) || 'Exercise Training',
     };
 };
 

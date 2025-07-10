@@ -21,16 +21,18 @@ const lang_dashboard = {
     noSummary: {
         eng: 'No summary available for today.',
         thai: 'ไม่มีสรุปสำหรับวันนี้',
+        japanese: '本日の概要はありません。',
     },
     error: {
         eng: 'Unable to load summary. Please check your connection.',
         thai: 'ไม่สามารถโหลดสรุปได้ กรุณาตรวจสอบการเชื่อมต่อของคุณ',
+        japanese: '概要を読み込めません。接続を確認してください。',
     },
 };
-const dashboard = {thai: 'แผงควบคุม', eng: 'Dashboard'};
-const summary = {thai: 'สรุป', eng: 'Summary'};
-const noSummary = {thai: 'ไม่มีบทสรุป', eng: 'No Summary'};
-const exerciseTraining = { eng: 'Exercise Training', thai: 'การฝึกออกกำลังกาย' }
+const dashboard = {thai: 'แผงควบคุม', eng: 'Dashboard', japanese: 'ダッシュボード'};
+const summary = {thai: 'สรุป', eng: 'Summary', japanese: 'まとめ'};
+const noSummary = {thai: 'ไม่มีบทสรุป', eng: 'No Summary', japanese: '概要なし'};
+const exerciseTraining = { eng: 'Exercise Training', thai: 'การฝึกออกกำลังกาย', japanese: '運動トレーニング' }
 
 
 export default {

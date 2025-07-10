@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import HeaderFix from '../../common/HeaderFix';
 import shoeLang from '../../../assets/language/menu/lang_shoe';
+import {getLocalizedText} from "../../../assets/language/langUtils";
 import { connect } from 'react-redux';
 
 export default connect(state => ({ lang: state.lang }))(function ShoeRecommendScreen({ navigation, lang }) {
@@ -101,12 +102,12 @@ export default connect(state => ({ lang: state.lang }))(function ShoeRecommendSc
             <HeaderFix
                 icon_left={'left'}
                 onpress_left={() => navigation.goBack()}
-                title={lang ? shoeLang.title.thai : shoeLang.title.eng}
+                title={getLocalizedText(lang, shoeLang.title)}
             />
 
             <View style={styles.searchSortRow}>
                 <TextInput
-                    placeholder={lang ? shoeLang.searchPlaceholder.thai : shoeLang.searchPlaceholder.eng}
+                    placeholder={getLocalizedText(lang, shoeLang.searchPlaceholder)}
                     value={searchText}
                     onChangeText={setSearchText}
                     style={styles.searchInput}
@@ -116,11 +117,11 @@ export default connect(state => ({ lang: state.lang }))(function ShoeRecommendSc
                     setPendingFilters(filters);
                     setFilterVisible(true);
                 }} style={styles.sortBtn}>
-                    <Text style={styles.sortText}>{lang ? shoeLang.filter.thai : shoeLang.filter.eng}</Text>
+                    <Text style={styles.sortText}>{getLocalizedText(lang, shoeLang.filter)}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setSortAscending(!sortAscending)} style={styles.sortBtn}>
                     <Text style={styles.sortText}>
-                        {sortAscending ? (lang ? `⬆️ ${shoeLang.price.thai}` : `⬆️ ${shoeLang.price.eng}`) : (lang ? `⬇️ ${shoeLang.price.thai}` : `⬇️ ${shoeLang.price.eng}`)}
+                        {sortAscending ? (`⬆️ ${getLocalizedText(lang, shoeLang.price)}`) : (`⬇️ ${getLocalizedText(lang, shoeLang.price)}`)}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -145,23 +146,23 @@ export default connect(state => ({ lang: state.lang }))(function ShoeRecommendSc
                 }}
                 disabled={selectedShoes.length === 0}
             >
-                <Text style={styles.addButtonText}>{lang ? shoeLang.add.thai : shoeLang.add.eng}</Text>
+                <Text style={styles.addButtonText}>{getLocalizedText(lang, shoeLang.add)}</Text>
             </TouchableOpacity>
 
             {/* Filter Modal */}
             <Modal visible={filterVisible} animationType="slide" transparent onRequestClose={() => setFilterVisible(false)}      >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modal}>
-                        <Text style={styles.modalTitle}>{lang ? shoeLang.filterOptions.thai : shoeLang.filterOptions.eng}</Text>
+                        <Text style={styles.modalTitle}>{getLocalizedText(lang, shoeLang.filterOptions)}</Text>
                         <ScrollView contentContainerStyle={styles.modalContent}>
                             {['group', 'subgroup', 'type'].map((key, index) => (
                                 <View key={index} style={styles.filterSection}>
                                     <Text style={styles.filterHeader}>
                                         {key === 'group'
-                                            ? (lang ? shoeLang.group.thai : shoeLang.group.eng)
+                                            ? getLocalizedText(lang, shoeLang.group)
                                             : key === 'subgroup'
-                                                ? (lang ? shoeLang.subgroup.thai : shoeLang.subgroup.eng)
-                                                : (lang ? shoeLang.productType.thai : shoeLang.productType.eng)}
+                                                ? getLocalizedText(lang, shoeLang.subgroup)
+                                                : getLocalizedText(lang, shoeLang.productType)}
                                     </Text>
                                     <View style={styles.tagContainer}>
                                         {uniqueValues(
@@ -207,7 +208,7 @@ export default connect(state => ({ lang: state.lang }))(function ShoeRecommendSc
                                 onPress={() => setPendingFilters({ group: [], subgroup: [], type: [] })}
                                 style={[styles.closeBtn, { backgroundColor: '#ccc' }]}
                             >
-                                <Text style={styles.closeText}>{lang ? shoeLang.reset.thai : shoeLang.reset.eng}</Text>
+                                <Text style={styles.closeText}>{getLocalizedText(lang, shoeLang.reset)}</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -217,7 +218,7 @@ export default connect(state => ({ lang: state.lang }))(function ShoeRecommendSc
                                 }}
                                 style={styles.closeBtn}
                             >
-                                <Text style={styles.closeText}>{lang ? shoeLang.apply.thai : shoeLang.apply.eng}</Text>
+                                <Text style={styles.closeText}>{getLocalizedText(lang, shoeLang.apply)}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

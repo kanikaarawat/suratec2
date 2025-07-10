@@ -30,10 +30,8 @@ import {connect} from 'react-redux';
 import HeaderFix from '../../common/HeaderFix';
 import messaging from '@react-native-firebase/messaging';
 
-// import LangAlert from '../../../assets/language/alert/lang_alert';
-
 import LangAlert from '../../../assets/language/alert/lang_alert';
-
+import getLocalizedText from '../../../assets/language/langUtils';
 import API, {IMAGE_URL} from '../../../config/Api';
 
 var RNFS = require('react-native-fs');
@@ -151,10 +149,10 @@ class index extends Component {
     if (index === 0) {
       Alert.alert(
         '',
-        this.props.lang ? LangAlert.closeApp.thai : LangAlert.closeApp.eng,
+          getLocalizedText(this.props.lang, LangAlert.closeApp),
         [
           {
-            text: this.props.lang ? LangAlert.yes.thai : LangAlert.yes.eng,
+            text: getLocalizedText(this.props.lang, LangAlert.yes),
             onPress: () => {
               this.actionDisconnectBle();
               setTimeout(() => {
@@ -163,7 +161,7 @@ class index extends Component {
             },
           },
           {
-            text: this.props.lang ? LangAlert.no.thai : LangAlert.no.eng,
+            text: getLocalizedText(this.props.lang, LangAlert.no),
             onPress: () => console.log('NO Pressed'),
           },
         ],

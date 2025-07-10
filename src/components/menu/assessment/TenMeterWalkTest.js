@@ -18,6 +18,7 @@ import { NativeModules, NativeEventEmitter } from 'react-native';
 import HeaderFix from '../../common/HeaderFix';
 import API from '../../../config/Api';
 import langAssessment from '../../../assets/language/menu/lang_assessmentTests';
+import {getLocalizedText} from '../../../assets/language/langUtils';
 
 
 const BleManagerModule = NativeModules.BleManager;
@@ -28,7 +29,7 @@ class TenMeterWalkTest extends Component {
         super(props);
         this.state = {
             isConnected: true,
-            textAction: 'Start',
+            textAction: getLocalizedText(this.props.lang, langAssessment.startText),
             countDownTimer: 10,
         };
 
@@ -186,17 +187,15 @@ class TenMeterWalkTest extends Component {
     };
 
     render() {
-        const langKey = this.props.lang === 1 ? 'thai' : 'eng';
-        const localizedTitle = langAssessment.tenMeterWalkTest?.[langKey] || '10-meter walk test';
 
         return (
             <View style={styles.container}>
                 <HeaderFix
                     icon_left="left"
                     onpress_left={() => this.props.navigation.goBack()}
-                    title={localizedTitle}
-                    rightText="finish"
-                    onpress_right={() => Alert.alert('Test Complete')}
+                    title={getLocalizedText(this.props.lang, langAssessment.tenMeterWalkTest)}
+                    rightText={getLocalizedText(this.props.lang, langAssessment.finish)}
+                    onpress_right={() => Alert.alert(getLocalizedText(this.props.lang, langAssessment.testComplete))}
                 />
 
                 <ScrollView
@@ -211,14 +210,14 @@ class TenMeterWalkTest extends Component {
                         source={require('../../../assets/image/dynamic/tenmeter.png')}
                         style={styles.image}
                     />
-                    <Text style={styles.title}>Walking</Text>
-                    <Text style={styles.description}>Walk straight for 10 meters.</Text>
+                    <Text style={styles.title}>{getLocalizedText(this.props.lang, langAssessment.walking)}</Text>
+                    <Text style={styles.description}>{getLocalizedText(this.props.lang, langAssessment.walkStraight)}</Text>
                 </View>
 
                 <TouchableOpacity
                     style={styles.button}
                     onPress={this.handleStart}
-                    disabled={this.state.textAction !== 'Start'}>
+                    disabled={this.state.textAction !== getLocalizedText(this.props.lang, langAssessment.startText)}>
                     <Text style={styles.buttonText}>{this.state.textAction}</Text>
                 </TouchableOpacity>
                 </ScrollView>

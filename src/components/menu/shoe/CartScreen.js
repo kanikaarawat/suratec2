@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import HeaderFix from '../../common/HeaderFix';
 import shoeLang from '../../../assets/language/menu/lang_shoe';
+import {getLocalizedText} from "../../../assets/language/langUtils";
 import { connect } from 'react-redux';
 
 const UK_SIZES = ['5', '6', '7', '8', '9', '10', '11', '12'];
@@ -63,8 +64,8 @@ const CartScreen = ({ route, navigation, lang }) => {
         const missingSize = cartItems.some((item) => !item.size);
         if (missingSize) {
             Alert.alert(
-                lang ? shoeLang.missingSize.thai : shoeLang.missingSize.eng,
-                lang ? shoeLang.pleaseSelectSize.thai : shoeLang.pleaseSelectSize.eng
+                getLocalizedText(lang, shoeLang.missingSize),
+                getLocalizedText(lang, shoeLang.pleaseSelectSize)
             );
             return;
         }
@@ -88,7 +89,7 @@ const CartScreen = ({ route, navigation, lang }) => {
                         style={styles.sizeBox}
                     >
                         <Text style={{ fontSize: 13, color: item.size ? '#000' : '#888' }}>
-                            {item.size ? `${lang ? shoeLang.uk.thai : shoeLang.uk.eng} ${item.size}` : (lang ? shoeLang.selectSize.thai : shoeLang.selectSize.eng)}
+                            {item.size ? `${getLocalizedText(lang, shoeLang.uk)} ${item.size}` : getLocalizedText(lang, shoeLang.selectSize)}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -126,13 +127,13 @@ const CartScreen = ({ route, navigation, lang }) => {
             behavior={Platform.select({ ios: 'padding', android: undefined })}
             style={styles.container}
         >
-            <HeaderFix icon_left="left" onpress_left={() => navigation.goBack()} title={lang ? shoeLang.cart.thai : shoeLang.cart.eng} />
+            <HeaderFix icon_left="left" onpress_left={() => navigation.goBack()} title={getLocalizedText(lang, shoeLang.cart)} />
 
             <View style={styles.tableHeader}>
-                <Text style={[styles.headerText, { flex: 2 }]}>{lang ? shoeLang.product.thai : shoeLang.product.eng}</Text>
-                <Text style={styles.headerText}>{lang ? shoeLang.price.thai : shoeLang.price.eng}</Text>
-                <Text style={styles.headerText}>{lang ? shoeLang.qty.thai : shoeLang.qty.eng}</Text>
-                <Text style={styles.headerText}>{lang ? shoeLang.remove.thai : shoeLang.remove.eng}</Text>
+                <Text style={[styles.headerText, { flex: 2 }]}>{getLocalizedText(lang, shoeLang.product)}</Text>
+                <Text style={styles.headerText}>{getLocalizedText(lang, shoeLang.price)}</Text>
+                <Text style={styles.headerText}>{getLocalizedText(lang, shoeLang.qty)}</Text>
+                <Text style={styles.headerText}>{getLocalizedText(lang, shoeLang.remove)}</Text>
             </View>
 
             <FlatList
@@ -142,15 +143,15 @@ const CartScreen = ({ route, navigation, lang }) => {
                 ListFooterComponent={
                     cartItems.length > 0 ? (
                         <View style={styles.noteSection}>
-                            <Text style={styles.noteLabel}>{lang ? shoeLang.addNote.thai : shoeLang.addNote.eng}</Text>
+                            <Text style={styles.noteLabel}>{getLocalizedText(lang, shoeLang.addNote)}</Text>
                             <TextInput
                                 style={styles.noteInput}
-                                placeholder={lang ? shoeLang.notePlaceholder.thai : shoeLang.notePlaceholder.eng}
+                                placeholder={getLocalizedText(lang, shoeLang.notePlaceholder)}
                                 placeholderTextColor="#aaa"
                                 value={note}
                                 onChangeText={setNote}
                             />
-                            <Text style={styles.total}>{lang ? shoeLang.total.thai : shoeLang.total.eng}: ฿{calculateTotal().toFixed(2)}</Text>
+                            <Text style={styles.total}>{getLocalizedText(lang, shoeLang.total)}: ฿{calculateTotal().toFixed(2)}</Text>
                         </View>
                     ) : null
                 }
@@ -159,7 +160,7 @@ const CartScreen = ({ route, navigation, lang }) => {
 
             {cartItems.length > 0 && (
                 <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
-                    <Text style={styles.confirmText}>{lang ? shoeLang.confirm.thai : shoeLang.confirm.eng}</Text>
+                    <Text style={styles.confirmText}>{getLocalizedText(lang, shoeLang.confirm)}</Text>
                 </TouchableOpacity>
             )}
 
@@ -169,11 +170,11 @@ const CartScreen = ({ route, navigation, lang }) => {
                     <View style={styles.modalBox}>
                         {UK_SIZES.map((size) => (
                             <TouchableOpacity key={size} onPress={() => updateSize(size)} style={styles.modalItem}>
-                                <Text style={styles.modalItemText}>{lang ? shoeLang.uk.thai : shoeLang.uk.eng} {size}</Text>
+                                <Text style={styles.modalItemText}>{getLocalizedText(lang, shoeLang.uk)} {size}</Text>
                             </TouchableOpacity>
                         ))}
                         <TouchableOpacity onPress={() => setSizeModal({ visible: false, index: null })}>
-                            <Text style={[styles.modalItemText, { color: 'red', marginTop: 10 }]}>{lang ? shoeLang.cancel.thai : shoeLang.cancel.eng}</Text>
+                            <Text style={[styles.modalItemText, { color: 'red', marginTop: 10 }]}>{getLocalizedText(lang, shoeLang.cancel)}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -183,7 +184,7 @@ const CartScreen = ({ route, navigation, lang }) => {
             <Modal transparent visible={showPopup} animationType="fade">
                 <View style={styles.popupOverlay}>
                     <View style={styles.popupBox}>
-                        <Text style={styles.popupText}>{lang ? shoeLang.orderConfirmed.thai : shoeLang.orderConfirmed.eng}</Text>
+                        <Text style={styles.popupText}>{getLocalizedText(lang, shoeLang.orderConfirmed)}</Text>
                     </View>
                 </View>
             </Modal>

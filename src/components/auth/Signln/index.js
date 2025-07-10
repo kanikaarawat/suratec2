@@ -12,6 +12,7 @@ import AlertFix from '../../common/AlertsFix';
 import messaging from '@react-native-firebase/messaging';
 import API from '../../../config/Api';
 import Lang from '../../../assets/language/auth/lang_singln';
+import {getLocalizedText, getLangKeysSize} from '../../../assets/language/langUtils';
 
 import { connect } from 'react-redux';
 
@@ -49,10 +50,12 @@ class SignIn extends Component {
   };
 
   actionSignIn = async (username, password) => {
+    const langKey = ['eng', 'thai', 'japanese'][this.props.lang] || 'eng';
+
     if (!username || !password) {
       AlertFix.alertBasic(
-          this.props.lang ? Lang.alertErrorTitle.thai : Lang.alertErrorTitle.eng,
-          this.props.lang ? Lang.alertErrorBody2.thai : Lang.alertErrorBody2.eng,
+          Lang.alertErrorTitle?.[langKey] || 'Error',
+          Lang.alertErrorBody2?.[langKey] || 'Please enter username and password'
       );
       return;
     }
@@ -69,8 +72,8 @@ class SignIn extends Component {
 
       if (data.status === 'ผิดพลาด') {
         AlertFix.alertBasic(
-            this.props.lang ? Lang.alertErrorTitle.thai : Lang.alertErrorTitle.eng,
-            this.props.lang ? Lang.alertErrorBody1.thai : Lang.alertErrorBody1.eng,
+            Lang.alertErrorTitle?.[langKey] || 'Error',
+            Lang.alertErrorBody1?.[langKey] || 'Please enter username and password'
         );
         return;
       }
@@ -124,7 +127,8 @@ class SignIn extends Component {
   };
 
   actionLang = () => {
-    this.props.edit_Lang(this.props.lang === 1 ? 0 : 1);
+    const nextLang = (this.props.lang + 1) % getLangKeysSize();
+    this.props.edit_Lang(nextLang);
   };
 
   render() {
@@ -149,21 +153,21 @@ class SignIn extends Component {
                     style={styles.logo}
                 />
                 <Text style={styles.title}>
-                  {lang ? Lang.titleName.thai : Lang.titleName.eng}
+                  {getLocalizedText(lang, Lang.titleName)}
                 </Text>
               </View>
 
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>
-                    {lang ? Lang.signIn.thai : Lang.signIn.eng}
+                    {getLocalizedText(lang, Lang.signIn)}
                   </Text>
                   <View style={styles.divider} />
                 </View>
 
                 <View style={styles.inputContainer}>
                   <Text style={styles.inputLabel}>
-                    {lang ? Lang.fieldUsername.thai : Lang.fieldUsername.eng}
+                    {getLocalizedText(lang, Lang.fieldUsername)}
                   </Text>
                   <TextInput
                       value={username}
@@ -174,14 +178,14 @@ class SignIn extends Component {
                       ]}
                       onFocus={() => this.setState({ isFocused: 'username' })}
                       onBlur={() => this.setState({ isFocused: null })}
-                      placeholder={lang ? Lang.usernamePlaceholder.thai : Lang.usernamePlaceholder.eng}
+                      placeholder={getLocalizedText(lang, Lang.usernamePlaceholder)}
                       placeholderTextColor="#888"
                   />
                 </View>
 
                 <View style={styles.inputContainer}>
                   <Text style={styles.inputLabel}>
-                    {lang ? Lang.fieldPassword.thai : Lang.fieldPassword.eng}
+                    {getLocalizedText(lang, Lang.fieldPassword)}
                   </Text>
                   <TextInput
                       value={password}
@@ -193,7 +197,7 @@ class SignIn extends Component {
                       ]}
                       onFocus={() => this.setState({ isFocused: 'password' })}
                       onBlur={() => this.setState({ isFocused: null })}
-                      placeholder={lang ? Lang.passwordPlaceholder.thai : Lang.passwordPlaceholder.eng}
+                      placeholder={getLocalizedText(lang, Lang.passwordPlaceholder)}
                       placeholderTextColor="#888"
                   />
                 </View>
@@ -207,14 +211,14 @@ class SignIn extends Component {
                     }}
                 >
                   <Text style={styles.buttonText}>
-                    {lang ? Lang.titleBtn.thai : Lang.titleBtn.eng}
+                    {getLocalizedText(lang, Lang.signIn)}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               <TouchableOpacity onPress={this.actionLang} style={styles.langButton}>
                 <Text style={styles.langText}>
-                  {lang ? 'English' : 'ภาษาไทย'}
+                  {getLocalizedText(lang, Lang.langSwitch)}
                 </Text>
               </TouchableOpacity>
             </ScrollView>

@@ -101,7 +101,7 @@ class index extends React.PureComponent {
   measurePressure = sensor => {
     for (let i = 0; i < sensor.length; i++) {
       if (this.calMeasurePressure(sensor[i]) > this.state.notiAlarm) {
-        Vibration.vibrate(100);
+        // Vibration.vibrate(100);
         return;
       }
     }
@@ -576,7 +576,7 @@ class index extends React.PureComponent {
           title={this.props.navigation.getParam('name', '')}
         />
 
-        <NotificationsState />
+        {/*<NotificationsState />*/}
 
         <View style={{flex: 4, height: '100%', padding: 15}}>
           <Text>kPa .</Text>

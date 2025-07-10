@@ -5,6 +5,7 @@ import { StyleSheet, Dimensions, View, Text, ScrollView, TouchableOpacity } from
 import HeaderFix from '../../common/HeaderFix';
 import { useSelector } from 'react-redux';
 import langTraining from '../../../assets/language/menu/lang_training';
+import {getLocalizedText} from "../../../assets/language/langUtils";
 
 const { width } = Dimensions.get('window');
 
@@ -13,7 +14,6 @@ export default function LowRiskExercise({ navigation }) {
     const [selectedWeek, setSelectedWeek] = React.useState('1');
     const lang = useSelector(state => state.lang);
     const langKey = lang === 1 ? 'thai' : 'eng';
-    const localizedTitle = langTraining.lowRiskProgram?.[langKey] || 'Low Risk Program';
 
     return (
         <View style={styles.container}>
@@ -21,7 +21,7 @@ export default function LowRiskExercise({ navigation }) {
             <HeaderFix
                 icon_left="left"
                 onpress_left={() => navigation.goBack()}
-                title={localizedTitle}
+                title={getLocalizedText(lang, langTraining.lowRiskProgram)}
             />
 
             {/* Month / Week “Pills” */}

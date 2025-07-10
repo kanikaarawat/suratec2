@@ -12,6 +12,7 @@ import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import HeaderFix from '../../common/HeaderFix';
 import Toast from 'react-native-simple-toast';
 import langChatbot from '../../../assets/language/menu/lang_chatbot';
+import {getLocalizedText} from '../../../assets/language/langUtils';
 
 const { width } = Dimensions.get('window');
 const audioRecorderPlayer = new AudioRecorderPlayer();
@@ -25,9 +26,8 @@ function Chatbot({ navigation, user, token, lang, impersonating, patient_token }
     const scrollRef = useRef();
     const soundRef = useRef(null);
 
-    const langKey = lang === 1 ? 'thai' : 'eng';
-    const titleText = langChatbot.title[langKey];
-    const sendText = langChatbot.send[langKey];
+    const titleText = getLocalizedText(lang, langChatbot.title);
+    const sendText = getLocalizedText(lang, langChatbot.send);
 
     // Helper to inspect formData
     const debugFormData = (formData) => {
@@ -74,7 +74,7 @@ function Chatbot({ navigation, user, token, lang, impersonating, patient_token }
         try {
             // debugFormData(formData);
 
-            const res = await fetch('https://www.surasole.com/api/voice-chat/', {
+            const res = await fetch('https://app.surasole.com/api/voice-chat/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'multipart/form-data' },
                 body: formData,
@@ -268,7 +268,7 @@ function Chatbot({ navigation, user, token, lang, impersonating, patient_token }
                 <View style={styles.inputRow}>
                     <TextInput
                         style={styles.inputBox}
-                        placeholder="Ask anything"
+                        placeholder={getLocalizedText(lang, langChatbot.askAnything)}
                         placeholderTextColor="#A0A0A0"
                         value={input}
                         onChangeText={setInput}

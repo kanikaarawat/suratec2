@@ -12,17 +12,17 @@ import {
 import HeaderFix from '../../common/HeaderFix';
 import { useSelector } from 'react-redux';
 import langAssessment from '../../../assets/language/menu/lang_assessmentTests';
+import {getLocalizedText} from '../../../assets/language/langUtils';
 
 const StandEyes = ({ navigation, type }) => {
     const [seconds, setSeconds] = useState(10);
     const [isActive, setIsActive] = useState(false);
     const lang = useSelector(state => state?.lang);
-    const langKey = lang === 1 ? 'thai' : 'eng';
-    const localizedTitle =
-        type === 'open'
-            ? langAssessment.standOpenEyes?.[langKey]
-            : langAssessment.standEyesClosed?.[langKey];
-
+    const langKey = ['eng', 'thai', 'japanese'][lang] || 'eng';  // Dynamic language key
+    const localizedTitle = type === 'open' ? getLocalizedText(lang, langAssessment.standOpenEyes) : getLocalizedText(lang, langAssessment.standEyesClosed);
+    const balanceInstruction = type === 'open'
+        ? getLocalizedText(lang, langAssessment.balanceInstructionOpen)
+        : getLocalizedText(lang, langAssessment.balanceInstructionClosed);
 
     useEffect(() => {
         let timer = null;
@@ -76,13 +76,11 @@ const StandEyes = ({ navigation, type }) => {
                 />
 
                 <Text style={[styles.text, { marginTop: '5%' }]}>
-                    Stand upright for 10 seconds.
+                    {getLocalizedText(lang, langAssessment.standText)}
                 </Text>
 
-                <Text style={[styles.text, { marginTop: '8%' }]}>NOTE :</Text>
-                <Text style={styles.text}>
-                    Stand up straight with your eyes {type === 'open' ? 'open' : 'closed'} and try to keep your balance.
-                </Text>
+                <Text style={[styles.text, { marginTop: '8%' }]}>{getLocalizedText(lang, langAssessment.noteText)}</Text>
+                <Text style={styles.text}>{balanceInstruction}</Text>
 
                 <TouchableOpacity
                     style={[
@@ -92,7 +90,7 @@ const StandEyes = ({ navigation, type }) => {
                     disabled={isActive}
                     onPress={handleStart}
                 >
-                    <Text style={styles.buttonText}>{'Start'}</Text>
+                    <Text style={styles.buttonText}>{getLocalizedText(lang, langAssessment.startText)}</Text>
                 </TouchableOpacity>
             </View>
             </ScrollView>

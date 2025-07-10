@@ -5,6 +5,7 @@ import HeaderFix from '../../common/HeaderFix';
 import UI from '../../../config/styles/CommonStyles';
 import { useSelector } from 'react-redux';
 import langTraining from '../../../assets/language/menu/lang_training';
+import {getLocalizedText} from "../../../assets/language/langUtils";
 
 const { width } = Dimensions.get('window');
 
@@ -27,8 +28,7 @@ const exercises = [
 export default function ExerciseWorkOut({ navigation }) {
     const [selectedExercise, setSelectedExercise] = React.useState(null);
     const lang = useSelector(state => state.lang);
-    const langKey = lang === 1 ? 'thai' : 'eng';
-    const localizedTitle = langTraining.exerciseWorkOut?.[langKey] || 'Exercise Work Out';
+    const localizedTitle = getLocalizedText(lang, langTraining.exerciseWorkOut) || 'Exercise Work Out';
 
     if (selectedExercise) {
         return (
@@ -60,7 +60,7 @@ export default function ExerciseWorkOut({ navigation }) {
                         key={index}
                         style={styles.button}
                         onPress={() => setSelectedExercise(item)}>
-                        <Text style={styles.buttonText}>{item.title}</Text>
+                        <Text style={styles.buttonText}>{getLocalizedText(lang, langTraining.exercises.exerciseTitles[item.title] || item.title)}</Text>
                     </TouchableOpacity>
                 ))}
             </ScrollView>

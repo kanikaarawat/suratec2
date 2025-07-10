@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationActions } from 'react-navigation';
 import langPatientList from '../../../assets/language/auth/lang_patientList';
+import {getLocalizedText} from '../../../assets/language/langUtils';
 
 const PatientList = ({ navigation, user, token, addUser, setImpersonation, setPatientId, setPatientToken, lang, impersonating }) => {
     const [selectedId, setSelectedId] = useState(null);
@@ -14,13 +15,12 @@ const PatientList = ({ navigation, user, token, addUser, setImpersonation, setPa
     const [loading, setLoading] = useState(false);
     const [appState, setAppState] = useState(AppState.currentState);
     const [error, setError] = useState(null);
-    const langKey = lang === 1 ? 'thai' : 'eng';
-    const titleText = langPatientList.title[langKey];
-    const selectPatient = langPatientList.selectPatient[langKey];
-    const searchPatients = langPatientList.searchPatients[langKey];
-    const name = langPatientList.name[langKey];
-    const username = langPatientList.username[langKey];
-    const role = langPatientList.role[langKey];
+    const titleText = getLocalizedText(lang, langPatientList.title);
+    const selectPatient = getLocalizedText(lang, langPatientList.selectPatient);
+    const searchPatients = getLocalizedText(lang, langPatientList.searchPatients);
+    const name = getLocalizedText(lang, langPatientList.name);
+    const username = getLocalizedText(lang, langPatientList.username);
+    const role = getLocalizedText(lang, langPatientList.role);
     const EXIT_FLAG = 'doctor_left_on_patientlist';
 
     const setExitFlag   = () => AsyncStorage.setItem(EXIT_FLAG, '1');

@@ -26,6 +26,8 @@ import BleManager from 'react-native-ble-manager';
 
 import Lang from '../../../assets/language/menu/lang_record';
 import LangHome from '../../../assets/language/screen/lang_home';
+import Lang_pressuremap from "../../../assets/language/menu/lang_pressuremap";
+import { getLocalizedText, getLangKeysSize } from '../../../assets/language/langUtils';
 
 var RNFS = require('react-native-fs');
 
@@ -78,7 +80,7 @@ class index extends React.PureComponent {
 
   state = {
     switch: false,
-    textAction: 'Record',
+    textAction: getLocalizedText(this.props.lang, Lang_pressuremap.recordButton),
     ps_x: 0,
     ps_y: 0,
     loading: false,
@@ -552,7 +554,7 @@ class index extends React.PureComponent {
             .catch(e => { });
         });
       });
-    alert(this.props.lang ? Lang.alert.thai : Lang.alert.eng);
+    alert(getLocalizedText(this.props.lang, Lang.alert));
   }
 
   actionDashboard = () => {

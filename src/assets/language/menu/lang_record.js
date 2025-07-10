@@ -1,11 +1,11 @@
-const alert = { thai: 'หยุดทำการบันทึก', eng: 'Stop record' }
-const successTitle = { thai: 'สำเร็จ', eng: 'Success' }
-const successBody = { thai: 'บันทึกข้อมูลสำเร็จ', eng: 'Save complete' }
-const appointSuccess = { thai: 'บันทึกข้อมูลสำเร็จ', eng: 'An Appointment has been created' }
-const appointFailed = { thai: 'บันทึกข้อมูลสำเร็จ', eng: 'Failed to creat an appointment. Please try again' }
-const errorTitle = { thai: 'ผิดพลาด', eng: 'Error' }
-const errorBody1 = {thai: 'ส่งข้อมูลไม่สำเร็จ', eng: 'error (data transmission error'}
-const errorBody2 = { thai: 'มีข้อผิดพลาดในการจัดการ', eng: 'Data management error' }
+const alert = { thai: 'หยุดทำการบันทึก', eng: 'Stop record', japanese: '記録を停止する' }
+const successTitle = { thai: 'สำเร็จ', eng: 'Success', japanese: '成功' }
+const successBody = { thai: 'บันทึกข้อมูลสำเร็จ', eng: 'Save complete', japanese: '保存が完了しました' }
+const appointSuccess = { thai: 'บันทึกข้อมูลสำเร็จ', eng: 'An Appointment has been created', japanese: '予約が作成されました' }
+const appointFailed = { thai: 'บันทึกข้อมูลสำเร็จ', eng: 'Failed to creat an appointment. Please try again', japanese: '予約を作成できませんでした。もう一度お試しください。' }
+const errorTitle = { thai: 'ผิดพลาด', eng: 'Error', japanese: 'エラー' }
+const errorBody1 = {thai: 'ส่งข้อมูลไม่สำเร็จ', eng: 'error (data transmission error', japanese: 'エラー（データ転送エラー）'}
+const errorBody2 = { thai: 'มีข้อผิดพลาดในการจัดการ', eng: 'Data management error', japanese: 'データ管理エラー' }
 
 export default {
     alert,
