@@ -738,8 +738,8 @@ class index extends Component {
     const list = Array.isArray(this.state.bleList) ? this.state.bleList : [...this.state.bleList.values()];
     
     const btnScanTitle = this.state.scanning
-      ? 'Scaning for devices...'
-      : 'Scan Bluetooth';
+      ? getLocalizedText(this.props.lang, Lang.scanningForDevices)
+      : getLocalizedText(this.props.lang, Lang.scanBluetooth);
 
     return (
       <View style={styles.container}>
@@ -756,7 +756,7 @@ class index extends Component {
             {list.length == 0 && (
               <View style={{ flex: 1, margin: 20 }}>
                 <Text style={{ textAlign: 'center', alignSelf: 'center' }}>
-                  No Device List
+                  {getLocalizedText(this.props.lang, Lang.noDeviceList)}
                 </Text>
               </View>
             )}

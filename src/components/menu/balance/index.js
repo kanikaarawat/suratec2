@@ -40,6 +40,7 @@ import {TabHeading} from 'native-base';
 import BalanceLang from '../../../assets/language/menu/lang_balance';
 import Lang from '../../../assets/language/menu/lang_record';
 import LangHome from '../../../assets/language/screen/lang_home';
+import {getLocalizedText} from "../../../assets/language/langUtils";
 
 var RNFS = require('react-native-fs');
 
@@ -377,7 +378,7 @@ class index extends Component {
       typeof this.props.rightDevice === 'undefined' &&
       typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
@@ -408,7 +409,7 @@ class index extends Component {
       typeof this.props.rightDevice === 'undefined' &&
       typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
@@ -481,7 +482,7 @@ class index extends Component {
       typeof this.props.rightDevice === 'undefined' &&
       typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
@@ -500,11 +501,11 @@ class index extends Component {
       var start = initTime;
       let lastLtime = initTime;
       let lastRtime = initTime;
-      
+
       let count = 10;
       var timer = setInterval(() => {
         if(this.state.countDownTimer >= 1) {
-          
+
           var timer2 = setInterval(()=>{
             var time = new Date();
             if(Math.floor((time - start) / 1000) < 11){
@@ -547,7 +548,7 @@ class index extends Component {
                 );
               }
             }
-           
+
           },100);
 
           setTimeout(() => {
@@ -556,7 +557,7 @@ class index extends Component {
 
           this.setState({countDownTimer:parseInt(this.state.countDownTimer) - 1})
         }
-      
+
       }, 1000);
 
       setTimeout(() => {
@@ -666,7 +667,7 @@ class index extends Component {
                   .then(resp => resp.json())
                   .then(resp => {
                     console.log(resp,content,"response");
-                    if (resp.status != 'ผิดพลาด') {      
+                    if (resp.status != 'ผิดพลาด') {
                       console.log(`Clear : ${r.path}`);
                       RNFS.unlink(r.path);
                     }
@@ -726,12 +727,12 @@ class index extends Component {
   };
 
   handleStartLeftLegCalibration = () => {
-  
+
     if (
       typeof this.props.rightDevice === 'undefined' &&
       typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
@@ -745,7 +746,7 @@ class index extends Component {
     } else {
       this.setState({showButton:false});
       this.handleSaveData(true,'Stop');
-    
+
     let progMargin = 20;
     let totalCount = 0;
     let actualValue = 0;
@@ -755,14 +756,14 @@ class index extends Component {
       var start = initTime;
       let lastLtime = initTime;
       let lastRtime = initTime;
-      
+
       var count = 5;
- 
+
     // this.actionRecording();
     var timer = setInterval(() => {
 
       if(count >= 1) {
-          
+
         var timer2 = setInterval(()=>{
           var time = new Date();
           if(Math.floor((time - start) / 1000) < 6){
@@ -782,7 +783,7 @@ class index extends Component {
               },
               id_customer: this.props.user.id_customer,
             };
-            
+
             try {
                 RNFS.appendFile(
                 RNFS.CachesDirectoryPath +
@@ -806,7 +807,7 @@ class index extends Component {
               );
             }
           }
-         
+
         },100);
 
         setTimeout(() => {
@@ -815,11 +816,11 @@ class index extends Component {
 
         count = count - 1;
       }
-  
+
       if (totalCount == 5) {
         actualValue = 0;
         progMargin = 20;
-        
+
       }else
       if (totalCount < 5) {
         totalCount = totalCount + 1;
@@ -830,7 +831,7 @@ class index extends Component {
         });
 
       }
-    
+
     }, 1000);
 
     setTimeout( ()=> {
@@ -838,7 +839,7 @@ class index extends Component {
       this.handleSaveData(true,'Record');
       this.sendDataToSetverCalibration('L');
     clearInterval(timer);
-   
+
     }, 6000);
 
     }
@@ -849,7 +850,7 @@ class index extends Component {
       typeof this.props.rightDevice === 'undefined' &&
       typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
@@ -863,7 +864,7 @@ class index extends Component {
     } else {
       this.setState({showButton:false});
       this.handleSaveData(true,'Stop');
-    
+
     let progMargin = 20;
     let totalCount = 0;
     let actualValue = 0;
@@ -873,13 +874,13 @@ class index extends Component {
       var start = initTime;
       let lastLtime = initTime;
       let lastRtime = initTime;
-      
+
       var count = 5;
- 
+
     var timer = setInterval(() => {
 
       if(count >= 1) {
-          
+
         var timer2 = setInterval(()=>{
           var time = new Date();
           if(Math.floor((time - start) / 1000) < 6){
@@ -891,7 +892,7 @@ class index extends Component {
                 sensor: this.lsensor,
                 swing: this.leftSwingTime,
                 stance: this.leftStanceTime,
-              },  
+              },
               right: {
                 sensor: this.rsensor,
                 swing: this.rightSwingTime,
@@ -899,7 +900,7 @@ class index extends Component {
               },
               id_customer: this.props.user.id_customer,
             };
-            
+
             try {
                 RNFS.appendFile(
                 RNFS.CachesDirectoryPath +
@@ -923,7 +924,7 @@ class index extends Component {
               );
             }
           }
-         
+
         },100);
 
         setTimeout(() => {
@@ -932,11 +933,11 @@ class index extends Component {
 
         count = count - 1;
       }
-  
+
       if (totalCount == 5) {
         actualValue = 0;
         progMargin = 20;
-        
+
       }else
       if (totalCount < 5) {
         totalCount = totalCount + 1;
@@ -947,7 +948,7 @@ class index extends Component {
         });
 
       }
-    
+
     }, 1000);
 
     setTimeout( ()=> {
@@ -955,7 +956,7 @@ class index extends Component {
       this.handleSaveData(true,'Record');
       this.sendDataToSetverCalibration('R');
     clearInterval(timer);
-   
+
     }, 6000);
 
     }
@@ -1006,7 +1007,7 @@ class index extends Component {
                   flexDirection: 'column',
                   justifyContent: 'space-evenly',
                   marginHorizontal: 20,
-                
+
                 }}>
                 <View style={{justifyContent:"center",alignItems:"center" }}>
                 <RNText
@@ -1014,7 +1015,7 @@ class index extends Component {
                     Start calibration of SURASOLE
                   </RNText>
                 <Image source={require('../../../assets/image/start.png')} style={{height:400,width:400,resizeMode:"center"}}/>
-                  
+
                   <RNText
                     style={{
                       fontSize: 20,
@@ -1027,7 +1028,7 @@ class index extends Component {
                 </View>
                 <View style={{justifyContent:"center",alignItems:"center"}}>
                 <TouchableOpacity
-                  onPress={() => 
+                  onPress={() =>
                   {
                     if(this.props.user.height != null && this.props.user.height != 0){
                       this.setState({calibrationPhase:1})
@@ -1042,8 +1043,8 @@ class index extends Component {
                           onPress: () => this.setState({calibrationPhase:1}),
                           style: 'cancel',
                         }])
-                     
-                    }                     
+
+                    }
                   } }
                   style={{
                     alignItems: 'center',
@@ -1064,14 +1065,14 @@ class index extends Component {
                   flexDirection: 'column',
                   justifyContent: 'space-evenly',
                   marginHorizontal: 20,
-                
+
                 }}>
                 <View style={{}}>
                 <RNText
                     style={{fontSize: 20, color: '#00A2A2', fontWeight: '700',textAlign:"left"}}>
                     Please Keep your left foot off from the ground
                   </RNText>
-                <Image source={require('../../../assets/image/left_leg_up.png')} 
+                <Image source={require('../../../assets/image/left_leg_up.png')}
                 style={{height:400,width:400,resizeMode:"center",alignSelf:"center"}}/>
                 <View
                       style={{
@@ -1092,7 +1093,7 @@ class index extends Component {
                       />
                     </View>
                     {this.state.percentageCompleted != 0 &&  <RNText
-                    style={{    
+                    style={{
                       fontSize: 20,
                       color: '#00A2A2',
                       fontWeight: '700',
@@ -1100,8 +1101,8 @@ class index extends Component {
                     }}>
                      left foot calibrating...
                   </RNText>}
-                 
-                 
+
+
                 </View>
                 {this.state.showButton && <View style={{justifyContent:"center",alignItems:"center"}}>
                 <TouchableOpacity
@@ -1122,7 +1123,7 @@ class index extends Component {
                   </RNText>
                 </TouchableOpacity>
                 </View>}
-                
+
               </View>
               )) ||
               (this.state.calibrationPhase == 2 && (
@@ -1134,14 +1135,14 @@ class index extends Component {
                   flexDirection: 'column',
                   justifyContent: 'space-evenly',
                   marginHorizontal: 20,
-                
+
                 }}>
                 <View style={{}}>
                 <RNText
                     style={{fontSize: 20, color: '#00A2A2', fontWeight: '700',textAlign:"left"}}>
                     Please Keep your right foot off from the ground
                   </RNText>
-                <Image source={require('../../../assets/image/right_leg_up.png')} 
+                <Image source={require('../../../assets/image/right_leg_up.png')}
                 style={{height:400,width:400,resizeMode:"center",alignSelf:"center"}}/>
                 <View
                       style={{
@@ -1170,8 +1171,8 @@ class index extends Component {
                     }}>
                   right foot calibrating...
                   </RNText>}
-                 
-                 
+
+
                 </View>
                 {this.state.showButton &&  <View style={{justifyContent:"center",alignItems:"center"}}>
                 <TouchableOpacity
@@ -1192,7 +1193,7 @@ class index extends Component {
                   </RNText>
                 </TouchableOpacity>
                 </View>}
-               
+
               </View>
               )) ||
               (this.state.calibrationPhase == 3 && (
@@ -1366,7 +1367,7 @@ class index extends Component {
                   <ButtonFix
                         action
                         rounded
-                        title={this.state.textAction}
+                        title={getLocalizedText(this.props.lang, Lang.record)}
                         onPress={this.actionRecording}
                     />
                   </View>

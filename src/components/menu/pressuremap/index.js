@@ -381,7 +381,7 @@ class index extends React.PureComponent {
       typeof this.props.rightDevice === 'undefined' &&
       typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, Lang_pressuremap.warning), getLocalizedText(this.props.lang, Lang_pressuremap.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
@@ -612,7 +612,7 @@ class index extends React.PureComponent {
                 <ButtonFix
                     action={true}
                     rounded={true}
-                    title={this.state.textAction}
+                    title={getLocalizedText(this.props.lang, Lang_pressuremap.recordButton)}
                     onPress={() => this.actionRecording()}
                 />
               </Col>

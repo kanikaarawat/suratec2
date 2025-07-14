@@ -373,7 +373,8 @@ class index extends Component {
           </TouchableOpacity>
 
           <CardProfile
-            labelFirstName={getLocalizedText(this.props.lang, Lang.firstNamelabel)}
+              lang={this.props.lang}
+              labelFirstName={getLocalizedText(this.props.lang, Lang.firstNamelabel)}
             inputValueFirstName={this.state.fname}
             inputFirstName={txt => {
               this.setState({fname: txt});

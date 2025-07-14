@@ -30,6 +30,7 @@ import BleManager from 'react-native-ble-manager';
 
 import Lang from '../../../assets/language//menu/lang_record';
 import LangHome from '../../../assets/language/screen/lang_home';
+import { getLocalizedText } from '../../../assets/language/langUtils';
 import {set} from 'lodash';
 
 var RNFS = require('react-native-fs');
@@ -241,17 +242,16 @@ class index extends Component {
 
   actionRecording = async () => {
     if (
-      typeof this.props.rightDevice === 'undefined' &&
-      typeof this.props.leftDevice === 'undefined'
+        typeof this.props.rightDevice === 'undefined' &&
+        typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, Lang.warning),
+          getLocalizedText(this.props.lang, Lang.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
             this.props.navigation.navigate('Device', {
-              name: this.props.lang
-                ? LangHome.addDeviceButton.thai
-                : LangHome.addDeviceButton.eng,
+              name: getLocalizedText(this.props.lang, LangHome.addDeviceButton),
             });
           },
         },
@@ -403,7 +403,7 @@ class index extends Component {
               .catch(e => {});
           });
         });
-    alert(this.props.lang ? Lang.alert.thai : Lang.alert.eng);
+    alert(getLocalizedText(this.props.lang, Lang.alert));
   }
 
   actionUpdate = data => {
@@ -437,21 +437,21 @@ class index extends Component {
         console.log(res);
         if (res.status === 'สำเร็จ') {
           AlertFix.alertBasic(
-            this.props.lang ? Lang.successTitle.thai : Lang.successTitle.eng,
-            this.props.lang ? Lang.successBody.thai : Lang.successBody.eng,
+              getLocalizedText(this.props.lang, Lang.successTitle),
+              getLocalizedText(this.props.lang, Lang.successBody),
           );
           deleteFile(this.fileStamp_n);
         } else {
           AlertFix.alertBasic(
-            this.props.lang ? Lang.errorTitle.thai : Lang.errorTitle.eng,
-            this.props.lang ? Lang.errorBody1.thai : Lang.errorBody1.eng,
+              getLocalizedText(this.props.lang, Lang.errorTitle),
+              getLocalizedText(this.props.lang, Lang.errorBody1),
           );
         }
       })
       .catch(error => {
         AlertFix.alertBasic(
-          this.props.lang ? Lang.errorTitle.thai : Lang.errorTitle.eng,
-          this.props.lang ? Lang.errorBody2.thai : Lang.errorBody2.eng,
+            getLocalizedText(this.props.lang, Lang.errorTitle),
+            getLocalizedText(this.props.lang, Lang.errorBody2),
         );
       });
   };

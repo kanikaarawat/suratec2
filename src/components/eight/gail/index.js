@@ -31,6 +31,7 @@ import BleManager from 'react-native-ble-manager';
 import Lang from '../../../assets/language//menu/lang_record';
 import LangHome from '../../../assets/language/screen/lang_home';
 import {set} from 'lodash';
+import {getLocalizedText} from "../../../assets/language/langUtils";
 
 var RNFS = require('react-native-fs');
 
@@ -273,10 +274,11 @@ class index extends Component {
 
   actionRecording = async () => {
     if (
-      typeof this.props.rightDevice === 'undefined' &&
-      typeof this.props.leftDevice === 'undefined'
+        typeof this.props.rightDevice === 'undefined' &&
+        typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, Lang.warning),
+          getLocalizedText(this.props.lang, Lang.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {

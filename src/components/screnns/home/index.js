@@ -44,8 +44,6 @@ import Modal, {
 } from 'react-native-modals';
 import RefreshComponent from '../../common/RefreshComponent';
 
-const screenWidth = Math.round(Dimensions.get('window').width) * 0.25;
-
 class index extends Component {
   constructor() {
     super();
@@ -54,6 +52,7 @@ class index extends Component {
       show: false,
       peripherals: new Map(),
       showExitIcon: false,
+      screenData: Dimensions.get('window'), // Track current dimensions
     };
     this.handleBackButtonClick = this.handleBackButtonClick.bind(this);
   }
@@ -97,10 +96,21 @@ class index extends Component {
     this.props.addLeftDevice(undefined);
   };
 
+  // Handle orientation changes with safety check
+  updateScreenData = (screenData) => {
+    if (screenData?.window?.width && screenData?.window?.height) {
+      this.setState({ screenData: screenData.window });
+    }
+  };
+
   async componentDidMount() {
     console.log('HOME !!!');
     console.log(this.props.user);
     console.log(this.state, 'here we go');
+
+    // Listen for orientation changes with proper event handling
+    const dimensionSubscription = Dimensions.addEventListener('change', this.updateScreenData);
+    this.dimensionListener = dimensionSubscription;
 
     // Check doctor impersonation state
     AsyncStorage.getItem('doctor_user').then(backup => {
@@ -151,6 +161,11 @@ class index extends Component {
 
   componentWillUnmount() {
     BackHandler.removeEventListener('hardwareBackPress', this.handleBackButtonClick);
+
+    // Clean up dimension listener properly
+    if (this.dimensionListener?.remove) {
+      this.dimensionListener.remove();
+    }
   }
 
   handleBackButtonClick = async () => {
@@ -332,6 +347,16 @@ class index extends Component {
   );
 
   render() {
+    const { screenData } = this.state;
+
+    // Safety check to prevent NaN values
+    const safeWidth = screenData?.width || Dimensions.get('window').width || 375;
+    const safeHeight = screenData?.height || Dimensions.get('window').height || 812;
+
+    // Use the smaller dimension for consistent profile image size in both orientations
+    const smallerDimension = Math.min(safeWidth, safeHeight);
+    const screenWidth = Math.round(smallerDimension) * 0.25;
+
     let img = 'user.png';
     if (this.props.user) {
       if (this.props.user.image === '' || this.props.user.image === undefined) {
@@ -349,6 +374,12 @@ class index extends Component {
         <View style={{backgroundColor: 'white', flex: 1}}>
           <NavigationEvents
               onDidFocus={async () => {
+                // Update screen dimensions when focusing - with safety check
+                const currentDimensions = Dimensions.get('window');
+                if (currentDimensions?.width && currentDimensions?.height) {
+                  this.setState({ screenData: currentDimensions });
+                }
+
                 const backup = await AsyncStorage.getItem('doctor_user');
                 this.setState({ showExitIcon: !!backup });
                 console.log('[Home] Exit Icon:', !!backup);
@@ -357,9 +388,13 @@ class index extends Component {
 
           {this.popup()}
           <ScrollView
-              contentContainerStyle={{height: Dimensions.get('window').height}}>
+              style={{flex: 1}}
+              contentContainerStyle={{
+                minHeight: safeHeight,
+                flexGrow: 1,
+              }}>
 
-            <View style={styles.oval}>
+            <View style={[styles.oval, { height: safeHeight * 0.35 }]}>
               <TouchableOpacity
                   style={[
                     {
@@ -423,11 +458,11 @@ class index extends Component {
                       />
                     </TouchableOpacity>
                     <Text
-                        styles={{color: 'black', height: 30, marginTop: 10, fontSize: 20}}
+                        styles={{color: 'white', height: 30, marginTop: 10, fontSize: 20}}
                         type={'bold'}>
                       {this.props.user.fname} {this.props.user.lname}
                     </Text>
-                    <Text styles={{color: 'black', fontWeight: '700', height: 40, fontSize: 15}}>
+                    <Text styles={{color: 'white', fontWeight: '700', height: 40, fontSize: 15}}>
                       {this.props.user.email}
                     </Text>
                   </View>
@@ -446,7 +481,6 @@ const styles = StyleSheet.create({
   oval: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: '35%',
     borderBottomLeftRadius: 70,
     borderBottomRightRadius: 70,
     borderBottomWidth: 30,

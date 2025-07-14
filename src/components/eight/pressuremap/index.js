@@ -7,7 +7,7 @@ import {
   NativeEventEmitter,
   Platform,
   Vibration,
-  Alert,
+  Alert, ScrollView,
 } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,6 +27,7 @@ import BleManager from 'react-native-ble-manager';
 import Lang from '../../../assets/language/menu/lang_record';
 import LangHome from '../../../assets/language/screen/lang_home';
 import {getLocalizedText} from '../../../assets/language/langUtils';
+import Lang_pressuremap from "../../../assets/language/menu/lang_pressuremap";
 
 var RNFS = require('react-native-fs');
 
@@ -380,7 +381,7 @@ class index extends React.PureComponent {
       typeof this.props.rightDevice === 'undefined' &&
       typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, Lang_pressuremap.warning), getLocalizedText(this.props.lang, Lang_pressuremap.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
@@ -577,6 +578,10 @@ class index extends React.PureComponent {
 
           {/*<NotificationsState />*/}
 
+          <ScrollView
+              contentContainerStyle={{ flexGrow: 1 }}
+              showsVerticalScrollIndicator={false}
+          >
           {/* Spacer to push content down */}
           <View style={{flex: 1}} />
 
@@ -603,10 +608,11 @@ class index extends React.PureComponent {
             <ButtonFix
                 action={true}
                 rounded={true}
-                title={this.state.textAction}
+                title={getLocalizedText(this.props.lang, Lang_pressuremap.recordButton)}
                 onPress={() => this.actionRecording()}
             />
           </View>
+          </ScrollView>
         </View>
     );
   }

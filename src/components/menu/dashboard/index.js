@@ -438,7 +438,7 @@ class index extends Component {
     fetchDashboardSummary = async () => {
         const { id_customer, security_token } = this.props.user;
         const { token } = this.props;
-        const lang_mode = this.props.lang ? 1 : 0;
+        const lang_mode = this.props.lang || 0;
 
         console.log('🔁 Dashboard Summary');
         console.log('User ID:', id_customer);

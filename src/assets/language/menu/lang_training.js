@@ -1,7 +1,7 @@
 const title = {
-    eng: 'Walk Training',
-    thai: 'โหมดฝึกเดิน',
-    japanese: '歩行トレーニング'
+    eng: 'Exercise Training',
+    thai: 'การฝึกออกกำลังกาย',
+    japanese: '運動トレーニング'
 };
 
 const notificationTitle = {

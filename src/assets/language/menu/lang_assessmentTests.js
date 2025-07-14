@@ -1,5 +1,22 @@
 const fallRiskScreening = {thai: 'การคัดกรองความเสี่ยงจากการล้ม', eng: 'Fall Risk Screening', japanese: '転倒リスクスクリーニング'}
 const tenMeterWalkTest = {thai: 'ทดสอบการเดิน 10 เมตร', eng: '10-meter walk test', japanese: '10メートル歩行テスト'}
+const success = {
+    eng: 'Success',
+    thai: 'สำเร็จ',
+    japanese: '成功'
+}
+
+const failed = {
+    eng: 'Failed',
+    thai: 'ล้มเหลว',
+    japanese: '失敗'
+}
+
+const error = {
+    eng: 'Error',
+    thai: 'ข้อผิดพลาด',
+    japanese: 'エラー'
+}
 const formSubmitSuccess = {eng: 'Form Submitted Successfully', thai: 'ส่งแบบฟอร์มสำเร็จแล้ว', japanese: 'フォームが正常に送信されました'}
 const formSubmitFail = {eng: 'Something went wrong.', thai: 'มีบางอย่างผิดพลาด', japanese: '何か問題が発生しました。'}
 const submissionFailed = {eng: 'Submission Failed', thai: 'การส่งล้มเหลว', japanese: '送信に失敗しました'}
@@ -94,6 +111,9 @@ export default {
     formSubmitSuccess,
     formSubmitFail,
     submissionFailed,
+    success,
+    failed,
+    error,
     fallPast12Months,
     Yes,
     No,

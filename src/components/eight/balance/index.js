@@ -395,7 +395,7 @@ class index extends Component {
       typeof this.props.rightDevice === 'undefined' &&
       typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
@@ -425,7 +425,7 @@ class index extends Component {
       typeof this.props.rightDevice === 'undefined' &&
       typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
@@ -499,7 +499,7 @@ class index extends Component {
       typeof this.props.rightDevice === 'undefined' &&
       typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
@@ -857,7 +857,7 @@ class index extends Component {
       typeof this.props.rightDevice === 'undefined' &&
       typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
@@ -978,7 +978,7 @@ class index extends Component {
       typeof this.props.rightDevice === 'undefined' &&
       typeof this.props.leftDevice === 'undefined'
     ) {
-      Alert.alert('Warning !', 'Please Check Your Bluetooth Connect', [
+      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
         {
           text: 'OK',
           onPress: () => {
@@ -1416,7 +1416,7 @@ class index extends Component {
                 </TouchableOpacity>
               ))}
             </View>
-            <NotificationsState />
+            {/*<NotificationsState />*/}
             <View
               style={{
                 padding: 15,
@@ -1497,7 +1497,7 @@ class index extends Component {
                   <ButtonFix
                     action={true}
                     rounded={true}
-                    title={this.state.textAction}
+                    title={getLocalizedText(this.props.lang, Lang.record)}
                     onPress={() => this.actionRecording()}
                   />
 

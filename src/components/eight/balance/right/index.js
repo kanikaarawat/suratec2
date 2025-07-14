@@ -25,6 +25,7 @@ import CardStatusFix from '../../../common/CardStatusFix';
 import AlertFix from '../../../common/AlertsFix';
 import ScoreFix from '../../../common/ScoreFix';
 import API from '../../../../config/Api';
+import {getLocalizedText} from '../../../../assets/language/langUtils';
 
 import {
   FileManager,
@@ -546,10 +547,10 @@ class index extends Component {
           onpress_left={() => {
             this.props.navigation.dispatch(NavigationActions.back());
           }}
-          title={'Right Foot Balance'}
+          title={getLocalizedText(this.props.lang, BalanceLang.rightFootBalance)}
         />
 
-        <NotificationsState />
+        {/*<NotificationsState />*/}
 
         <View style={{padding: 15}}>
           <View style={{flex: 4, height: '100%'}}>

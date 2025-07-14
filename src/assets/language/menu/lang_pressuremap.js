@@ -4,6 +4,16 @@ const notificationText = {thai: 'เปิดใช้งานแจ้งเ�
 const recordButton = {thai: 'บันทึก', eng: 'Record', japanese: '記録'}
 const stopButton = {thai: 'หยุดบันทึก', eng: 'Stop', japanese: '停止'}
 const dashboardText = {thai: 'สรุปกิจกรรม', eng: 'Dashboard', japanese: 'ダッシュボード'}
+const bluetoothAlert = {
+    eng: 'Please Check Your Bluetooth Connect',
+    thai: 'กรุณาตรวจสอบการเชื่อมต่อบลูทูธ',
+    japanese: 'Bluetooth接続を確認してください'
+}
+const warning = {
+    eng: 'Warning !',
+    thai: 'คำเตือน !',
+    japanese: '警告 !'
+}
 
 export default {
     title,
@@ -11,5 +21,8 @@ export default {
     notificationText,
     recordButton,
     stopButton,
-    dashboardText
+    dashboardText,
+    warning,
+    bluetoothAlert,
+
 }

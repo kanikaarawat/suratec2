@@ -6,6 +6,17 @@ const appointFailed = { thai: 'บันทึกข้อมูลสำเร�
 const errorTitle = { thai: 'ผิดพลาด', eng: 'Error', japanese: 'エラー' }
 const errorBody1 = {thai: 'ส่งข้อมูลไม่สำเร็จ', eng: 'error (data transmission error', japanese: 'エラー（データ転送エラー）'}
 const errorBody2 = { thai: 'มีข้อผิดพลาดในการจัดการ', eng: 'Data management error', japanese: 'データ管理エラー' }
+const record = {eng: 'Record', thai: 'บันทึก', japanese: '記録'}
+const bluetoothAlert = {
+    eng: 'Please Check Your Bluetooth Connect',
+    thai: 'กรุณาตรวจสอบการเชื่อมต่อบลูทูธ',
+    japanese: 'Bluetooth接続を確認してください'
+}
+const warning = {
+    eng: 'Warning !',
+    thai: 'คำเตือน !',
+    japanese: '警告 !'
+}
 
 export default {
     alert,
@@ -15,5 +26,8 @@ export default {
     errorTitle,
     appointFailed,
     appointSuccess,
-    errorBody1
+    errorBody1,
+    warning,
+    bluetoothAlert,
+    record,
 }

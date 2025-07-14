@@ -70,6 +70,29 @@ const badBalance = {
     japanese: 'バランスを失いました。転倒注意！'
 }
 
+const leftFootBalance = {
+    eng: 'Left Foot Balance',
+    thai: 'ความสมดุลของเท้าซ้าย',
+    japanese: '左足のバランス',
+}
+
+const rightFootBalance = {
+    eng: 'Right Foot Balance',
+    thai: 'ความสมดุลของเท้าขวา',
+    japanese: '右足のバランス',
+}
+
+const bluetoothAlert = {
+    eng: 'Please Check Your Bluetooth Connect',
+    thai: 'กรุณาตรวจสอบการเชื่อมต่อบลูทูธ',
+    japanese: 'Bluetooth接続を確認してください'
+}
+const warning = {
+    eng: 'Warning !',
+    thai: 'คำเตือน !',
+    japanese: '警告 !'
+}
+
 export default {
     title,
     notificationContent,
@@ -82,5 +105,9 @@ export default {
     dashBoardButton,
     goodBalance,
     mediumBalance,
-    badBalance
+    badBalance,
+    leftFootBalance,
+    rightFootBalance,
+    bluetoothAlert,
+    warning
 }

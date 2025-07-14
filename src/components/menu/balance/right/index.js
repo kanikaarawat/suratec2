@@ -38,6 +38,7 @@ import BleManager from 'react-native-ble-manager';
 import BalanceLang from '../../../../assets/language/menu/lang_balance';
 import Lang from '../../../../assets/language/menu/lang_record';
 import LangHome from '../../../../assets/language/screen/lang_home';
+import {getLocalizedText} from "../../../../assets/language/langUtils";
 
 var RNFS = require('react-native-fs');
 
@@ -544,10 +545,10 @@ class index extends Component {
           onpress_left={() => {
             this.props.navigation.dispatch(NavigationActions.back());
           }}
-          title={'Right Foot Balance'}
+          title={getLocalizedText(this.props.lang, BalanceLang.rightFootBalance)}
         />
 
-        <NotificationsState />
+        {/*<NotificationsState />*/}
 
         <View style={{padding: 15}}>
           <View style={{flex: 4, height: '100%'}}>

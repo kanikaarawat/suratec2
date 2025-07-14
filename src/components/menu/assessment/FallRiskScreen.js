@@ -59,7 +59,7 @@ const FallRiskScreen = ({ navigation }) => {
             .then(result => {
                 console.log('result-', result?.status);
                 if (result?.status === 200) {
-                    Alert.alert('Success', getLocalizedText(lang, langAssessment.formSubmitSuccess), [
+                    Alert.alert(getLocalizedText(lang, langAssessment.success), getLocalizedText(lang, langAssessment.formSubmitSuccess), [
                         {
                             text: 'OK',
                             onPress: () => {
@@ -68,12 +68,12 @@ const FallRiskScreen = ({ navigation }) => {
                         },
                     ]);
                 } else {
-                    Alert.alert('Failed', getLocalizedText(lang, langAssessment.formSubmitFail));
+                    Alert.alert(getLocalizedText(lang, langAssessment.failed), getLocalizedText(lang, langAssessment.formSubmitFail));
                 }
             })
             .catch(error => {
                 console.log('error', error);
-                Alert.alert('Error', getLocalizedText(lang, langAssessment.submissionFailed));
+                Alert.alert(getLocalizedText(lang, langAssessment.error), getLocalizedText(lang, langAssessment.submissionFailed));
             });
     };
 
