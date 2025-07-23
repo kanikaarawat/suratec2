@@ -25,7 +25,8 @@ export class item extends Component {
         <Thumbnail
           style={{
             backgroundColor: UI.color_Gradient[0],
-            tintColor: 'white',
+            // Remove tintColor by default, only apply if this.props.tintColor is set
+            ...(this.props.tintColor ? { tintColor: this.props.tintColor } : {}),
           }}
           width={60}
           height={60}

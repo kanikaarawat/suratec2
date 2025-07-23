@@ -57,6 +57,11 @@ import Legs from './src/components/screnns/Try/Legs';
 import MonofilamentNew from './src/components/screnns/Try/MonofilamentNew';
 import PatientList from './src/components/screnns/Try/PatientList';
 
+// Add these imports at the top with other menu screens
+import Gesture from './src/components/menu/gesture';
+import GestureAnalysisWrapper from './src/components/menu/gesture_analysis/GestureAnalysisWrapper';
+import VideoAnalysisScreen from './src/components/menu/gesture_analysis/VideoAnalysisScreen';
+
 // FAB Component
 import DraggableFAB from './src/components/common/DraggableFAB';
 
@@ -136,6 +141,9 @@ const AppStack = createStackNavigator(
         LeftFootsEight: withFAB(LeftFootsEightSensorScreen),
         RigthFootsEight: withFAB(RightFootsEightSensorScreen),
         DashboardEight: withFAB(DashboardEightSensorScreen),
+        Gesture: withFAB(Gesture),
+        GestureAnalysis: withFAB(GestureAnalysisWrapper),
+        VideoAnalysis: VideoAnalysisScreen,
         Chatbot: Chatbot, // <-- No FAB here
         PatientList: PatientList,   // no withFAB
     },

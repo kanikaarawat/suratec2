@@ -1,6 +1,4 @@
-//5.11.62
-
-import React, { Component,  useState, useEffect  } from 'react';
+import React, { Component } from 'react';
 import {
   View,
   ScrollView,
@@ -9,60 +7,65 @@ import {
   Image,
   Dimensions,
   TouchableOpacity,
+  BackHandler,
+  Platform,
 } from 'react-native';
 import { connect } from 'react-redux';
 import NetInfo from '@react-native-community/netinfo';
 import { writeFile } from 'react-native-fs';
 import XLSX from 'xlsx';
-
+import PagerView from 'react-native-pager-view';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import moment from 'moment';
+import { Spinner } from 'native-base';
 import HeaderFix from '../../common/HeaderFix';
-import CardsTagging from './cards_tagging';
-import CardsResult from './cards_result';
-import CardsSpecified from './cards_overspecified';
 import ButtonFix from '../../common/ButtonFix';
 import Toast from 'react-native-simple-toast';
-import moment from 'moment';
-
 import API from '../../../config/Api';
-import { result } from 'lodash';
 import LinearGradient from 'react-native-linear-gradient';
 import RadarChart from '../../common/RadarChartFix';
+// import FabChatbot from '../../common/FabChatbot';
 import RadarChartForDashboard from '../../common/RadarChartForDashboard';
-import Swiper from 'react-native-swiper';                          // 🔹 carousel
-import exerciseImg     from '../../../assets/image/dashboard/exercise.png';
-import stanceStandImg  from '../../../assets/image/dashboard/stanceStand.png';
-import stanceWalkImg   from '../../../assets/image/dashboard/stanceWalk.png';
-import LangDashboard from '../../../assets/language/menu/lang_dashboard';
-import {getLocalizedText} from '../../../assets/language/langUtils';
-var RNFS = require('react-native-fs');
+import DashboardLang from '../../../assets/language/menu/lang_dashboard';
 
-const {height, width} = Dimensions.get('window');
-const Dot = () => (
-  <View
-    style={{
-      width: 15,
-      height: 15,
-      borderRadius: 7.5,
-      borderWidth: 2,
-      borderColor: '#00A2A2',
-      backgroundColor: '#FFFFFF',
-      marginHorizontal: 4,
-    }}
-  />
-);
+const { height, width } = Dimensions.get('window');
 
-const ActiveDot = () =>
-    <View style={{
-        width: 15,
-        height: 15,
-        borderRadius: 7.5,
-        borderWidth: 2,
-        borderColor: '#00A2A2',
-        backgroundColor: '#00A2A2',
-        marginHorizontal: 4,
-    }} />;
+function detectSensorType(healthData) {
+  // Check for 8-point fields
+  const has8Point =
+    healthData?.peak_l6 !== undefined ||
+    healthData?.peak_l7 !== undefined ||
+    healthData?.peak_l8 !== undefined ||
+    healthData?.peak_r6 !== undefined ||
+    healthData?.peak_r7 !== undefined ||
+    healthData?.peak_r8 !== undefined;
 
-class index extends Component {
+  if (has8Point) {
+    return '8-point';
+  }
+
+  // Check for 5-point fields (optional, for clarity)
+  const has5Point =
+    healthData?.peak_l1 !== undefined &&
+    healthData?.peak_l2 !== undefined &&
+    healthData?.peak_l3 !== undefined &&
+    healthData?.peak_l4 !== undefined &&
+    healthData?.peak_l5 !== undefined &&
+    healthData?.peak_r1 !== undefined &&
+    healthData?.peak_r2 !== undefined &&
+    healthData?.peak_r3 !== undefined &&
+    healthData?.peak_r4 !== undefined &&
+    healthData?.peak_r5 !== undefined;
+
+  if (has5Point) {
+    return '5-point';
+  }
+
+  // Fallback
+  return 'unknown';
+}
+
+class DashboardScreen extends Component {
   constructor() {
     super();
     this.state = {
@@ -76,300 +79,236 @@ class index extends Component {
       isLoading: true,
       dataSpecified: [{ dateTime: '00:00:00', valueZone: '', valuePeak: '0' }],
       record: [],
-      xPosN: 50,
-      yPosN: 50,
-      focus: true,
       healthData: {},
       isConnected: null,
       spinner: false,
-      positionValue: [],
       dataShow: false,
-      dashboardSummaryText: '',
-      currentPageIndex: 0,
+      currentPage: 0,
+      isStaticDashboard: true,
+      hasCopData: false,
+      positionValue: [],
+      summaryText: 'Loading summary...',
+      summaryLoading: true,
     };
-    this.onPreLoad();
   }
 
-  excelFile = async () => {
-    await RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
-      res.forEach(r => {
-        RNFS.readFile(r.path)
-            .then(text => {
-              var excelData = JSON.parse(
-                  '[' + text.substring(0, text.length - 1) + ']',
-              );
-              var setJson = [];
-              Object.keys(excelData).forEach(function (index) {
-                let FL =
-                    (excelData[index].left.sensor[0] +
-                        excelData[index].left.sensor[1] +
-                        excelData[index].left.sensor[2]) /
-                    3;
-                let FR =
-                    (excelData[index].right.sensor[0] +
-                        excelData[index].right.sensor[1] +
-                        excelData[index].right.sensor[2]) /
-                    3;
-                let COP_X =
-                    FR +
-                    excelData[index].right.sensor[3] +
-                    excelData[index].right.sensor[4] -
-                    (FL +
-                        excelData[index].left.sensor[3] +
-                        excelData[index].left.sensor[4]);
-                let COP_Y =
-                    FL +
-                    FR -
-                    (excelData[index].right.sensor[4] +
-                        excelData[index].left.sensor[4]);
-                data = {
-                  Timestamp: moment(excelData[index].stamp).format(
-                      'MMMM Do YYYY, h:mm:ss:ms a',
-                  ),
-                  Left_1: excelData[index].left.sensor[0],
-                  Left_2: excelData[index].left.sensor[1],
-                  Left_3: excelData[index].left.sensor[2],
-                  Left_4: excelData[index].left.sensor[3],
-                  Left_5: excelData[index].left.sensor[4],
-                  Right_1: excelData[index].right.sensor[0],
-                  Right_2: excelData[index].right.sensor[1],
-                  Right_3: excelData[index].right.sensor[2],
-                  Right_4: excelData[index].right.sensor[3],
-                  Right_5: excelData[index].right.sensor[4],
-                  FL: FL,
-                  LX:
-                      excelData[index].left.sensor[2] -
-                      excelData[index].left.sensor[1],
-                  LY: FL - excelData[index].left.sensor[4],
-                  FR: FR,
-                  RX:
-                      excelData[index].right.sensor[1] -
-                      excelData[index].right.sensor[2],
-                  RY: excelData[index].right.sensor[4] - FR,
-                  COP_X: COP_X,
-                  COP_Y: COP_Y,
-                };
-                setJson.push(data);
-              });
-
-              ws = XLSX.utils.json_to_sheet(setJson);
-              ws = XLSX.utils.json_to_sheet(setJson);
-
-              wb = XLSX.utils.book_new();
-              XLSX.utils.book_append_sheet(wb, ws, 'Data Record');
-
-              wbout = XLSX.write(wb, { type: 'binary', bookType: 'xlsx' });
-              file =
-                  RNFS.ExternalCachesDirectoryPath + '/' + Date.now() + '.xlsx';
-              console.log(file);
-              writeFile(file, wbout, 'ascii')
-                  .then(r => {
-                    /* :) */
-                  })
-                  .catch(e => {
-                    /* :( */
-                  });
-            })
-            .catch(e => { });
+  componentDidMount() {
+    this.backHandler = BackHandler.addEventListener('hardwareBackPress', this.handleBackPress);
+    NetInfo.addEventListener(this.handleConnectivityChange);
+    this.handleFetchDashboardData();
+    
+    fetch(`${API}/record`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer: this.props.user.id_customer,
+      }),
+    })
+    .then(res => res.json())
+    .then(res => {
+      let dataSpecified = [];
+      res.forEach(e => {
+        let date = new Date(e.action.replace(' ', 'T'));
+        let { max, index } = this.findPeak([...e.left, ...e.right]);
+        dataSpecified.push({
+          dateTime: `${date.getHours().toString().slice(-2)}:${date
+            .getMinutes()
+            .toString()
+            .slice(-2)}:${date.getSeconds().toString().slice(-2)}`,
+          valueZone: index,
+          valuePeak: max,
+        });
       });
-    });
-    Toast.show('Excel Download File Success');
-  };
-
-  onPreLoad() {
-    RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
-      res.forEach(r => {
-        RNFS.readFile(r.path)
-            .then(text => {
-              let data = JSON.parse(
-                  '[' + text.substring(0, text.length - 1) + ']',
-              );
-              var content = {
-                data: data,
-                id_customer: data[0].id_customer,
-                id_device: '',
-                type: 1, // for medical
-              };
-              fetch(`${API}/addjson`, {
-                method: 'POST',
-                headers: {
-                  Accept: 'application/json',
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(content),
-              })
-                  .then(resp => resp.json())
-                  .then(resp => {
-                    if (resp.status != 'ผิดพลาด') {
-                      RNFS.unlink(r.path);
-                    }
-                  });
-            })
-            .catch(e => { });
-      });
+      let result = this.findDataResult(res);
+      let dataResult = [
+        {
+          nameZone: 'Toe',
+          valueWalk: result.value[0],
+          valueRun: result.max[0],
+        },
+        {
+          nameZone: 'Medial Metatarsal',
+          valueWalk: result.value[1],
+          valueRun: result.max[1],
+        },
+        {
+          nameZone: 'Lateral Metatarsal',
+          valueWalk: result.value[2],
+          valueRun: result.max[2],
+        },
+        {
+          nameZone: 'Medial Midfoot',
+          valueWalk: result.value[3],
+          valueRun: result.max[3],
+        },
+        {
+          nameZone: 'Heel',
+          valueWalk: result.value[4],
+          valueRun: result.max[4],
+        },
+      ];
+      this.setState({ record: res, dataSpecified, dataResult });
+    })
+    .catch(err => {
+      console.log(err);
     });
   }
 
-  actionUpdate = () => {
-    alert('Update !');
-  };
-
-  findMaxIndex(data) {
-    let index = 0;
-    let max = 0;
-    for (let i = 0; i < data.length; i++) {
-      if (data[i] > max) {
-        max = data[i];
-        index = i;
-      }
-    }
-    return index;
+  componentWillUnmount() {
+    this.backHandler?.remove();
+    this.netInfoSubscription?.();
   }
 
-  toKilo = value => {
-    return (5.6 * 10 ** -4 * Math.exp(value / 53.36) + 6.72) / 0.796;
+  handleBackPress = () => {
+    this.props.navigation.goBack();
+    return true;
   };
 
-  findPeak(data) {
-    let max = 0;
-    let index = 0;
-    for (let i = 0; i < data.length; i++) {
-      for (let j = 0; j < data[i].length; j++) {
-        if (data[i][j] > max) {
-          max = data[i][j];
-          index = j;
-        }
-      }
-    }
-    max = this.toKilo(max);
-    if (max.toFixed(2) <= 8.44) {
-      max = 0;
-    }
-    return { max: max.toFixed(2), index };
-  }
+  handleConnectivityChange = (state) => {
+    console.log(state.isConnected);
+    this.setState({ isConnected: state.isConnected });
+    console.log(`Internet Connection : ${this.state.isConnected}`);
+  };
 
-  findDataResult = data => {
-    let max = [0, 0, 0, 0, 0];
+  findPeak = (arr) => {
+    let max = Math.max(...arr);
+    let index = arr.indexOf(max);
+    return { max, index };
+  };
+
+  findDataResult = (data) => {
     let value = [0, 0, 0, 0, 0];
-    let a = 2.206;
-    let b = 0.0068;
-    let all = 0;
-    for (let i = 0; i < data.length; i++) {
-      for (let j = 0; j < data[i].left.length; j++) {
-        for (let k = 0; k < data[i].left[j].length; k++) {
-          if (data[i].left[j][k] > max[k]) {
-            max[k] = data[i].left[j][k];
-          }
-          if (data[i].right[j][k] > max[k]) {
-            max[k] = data[i].right[j][k];
-          }
-          value[k] += data[i].left[j][k] + data[i].right[j][k];
-        }
+    let max = [0, 0, 0, 0, 0];
+    
+    data.forEach(item => {
+      for (let i = 0; i < 5; i++) {
+        value[i] += item.left[i] + item.right[i];
+        max[i] = Math.max(max[i], item.left[i], item.right[i]);
       }
-      all += data[i].left.length;
+    });
+    
+    for (let i = 0; i < 5; i++) {
+      value[i] = (value[i] / (data.length * 2)).toFixed(1);
+      max[i] = max[i].toFixed(1);
     }
-    all === 0 ? (all = 1) : (all = all * 2);
-    value[0] = a * Math.exp(b * (value[0] / all));
-    value[1] = a * Math.exp(b * (value[1] / all));
-    value[2] = a * Math.exp(b * (value[2] / all));
-    value[3] = a * Math.exp(b * (value[3] / all));
-    value[4] = a * Math.exp(b * (value[4] / all));
-    max[0] = a * Math.exp(b * max[0]);
-    max[1] = a * Math.exp(b * max[1]);
-    max[2] = a * Math.exp(b * max[2]);
-    max[3] = a * Math.exp(b * max[3]);
-    max[4] = a * Math.exp(b * max[4]);
-    return {
-      value: [
-        value[0].toFixed(2),
-        value[1].toFixed(2),
-        value[2].toFixed(2),
-        value[3].toFixed(2),
-        value[4].toFixed(2),
-      ],
-      max: [
-        max[0].toFixed(2),
-        max[1].toFixed(2),
-        max[2].toFixed(2),
-        max[3].toFixed(2),
-        max[4].toFixed(2),
-      ],
-    };
+    
+    return { value, max };
   };
 
-    componentDidMount = () => {
-        NetInfo.addEventListener(this.handleConnectivityChange);
-
-        const { user, token } = this.props;
-        const { id_customer } = user;
-
-        console.log('🧾 Logged-in/Impersonated user details:', user);
-        console.log('🔐 Using token:', token);
-
-        // Call dashboard APIs
-        this.handleFetchDashboardData();
-        this.fetchDashboardSummary();
-
-        console.log('📤 Sending /record for user:', id_customer);
-
-        fetch(`${API}/record`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-                customer: id_customer,
-            }),
-        })
-            .then(response => response.json())
-            .then(res => {
-                console.log('📦 Parsed /record response:', res);
-
-                // Guard: Check if response is an array
-                if (!Array.isArray(res)) {
-                    console.warn('🚫 Expected array from /record, got:', res);
-                    return;
-                }
-
-                let dataSpecified = [];
-                res.forEach(e => {
-                    let date = new Date(e.action.replace(' ', 'T'));
-                    console.log('📅 Timestamp parsed:', date);
-
-                    let { max, index } = this.findPeak([...e.left, ...e.right]);
-                    dataSpecified.push({
-                        dateTime: `${date.getHours().toString().padStart(2, '0')}:${date
-                            .getMinutes()
-                            .toString()
-                            .padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`,
-                        valueZone: index,
-                        valuePeak: max,
-                    });
-                });
-
-                let result = this.findDataResult(res);
-                let dataResult = [
-                    { nameZone: 'Toe', valueWalk: result.value[0], valueRun: result.max[0] },
-                    { nameZone: 'Medial Metatarsal', valueWalk: result.value[1], valueRun: result.max[1] },
-                    { nameZone: 'Lateral Metatarsal', valueWalk: result.value[2], valueRun: result.max[2] },
-                    { nameZone: 'Medial Midfoot', valueWalk: result.value[3], valueRun: result.max[3] },
-                    { nameZone: 'Heel', valueWalk: result.value[4], valueRun: result.max[4] },
-                ];
-
-                this.setState({ record: res, dataSpecified, dataResult });
-            })
-            .catch(err => {
-                console.error('❌ Error fetching /record data:', err);
-            });
+  calculatePressurePercentage = (side, zone) => {
+    const { healthData } = this.state;
+    if (!healthData) return 0;
+    // Use dynamic sensor type detection
+    const sensorType = detectSensorType(healthData);
+    const toPressure = (rawValue) => {
+      return (0.42 * Math.exp(rawValue / 54.3)) + 5.2;
     };
+    if (sensorType === '5-point') {
+      if (side === 'left') {
+        switch (zone) {
+          case 'forefoot':
+            const forefootAvg = (
+              parseInt(healthData.peak_l1 || 0) + 
+              parseInt(healthData.peak_l2 || 0) + 
+              parseInt(healthData.peak_l3 || 0)
+            ) / 3;
+            return toPressure(forefootAvg);
+          case 'midfoot':
+            return toPressure(parseInt(healthData.peak_l4 || 0));
+          case 'heel':
+            return toPressure(parseInt(healthData.peak_l5 || 0));
+          default:
+            return 0;
+        }
+      } else {
+        switch (zone) {
+          case 'forefoot':
+            const forefootAvg = (
+              parseInt(healthData.peak_r1 || 0) + 
+              parseInt(healthData.peak_r2 || 0) + 
+              parseInt(healthData.peak_r3 || 0)
+            ) / 3;
+            return toPressure(forefootAvg);
+          case 'midfoot':
+            return toPressure(parseInt(healthData.peak_r4 || 0));
+          case 'heel':
+            return toPressure(parseInt(healthData.peak_r5 || 0));
+          default:
+            return 0;
+        }
+      }
+    } else if (sensorType === '8-point') {
+      if (side === 'left') {
+        switch (zone) {
+          case 'forefoot':
+            const forefootAvg = (
+              parseInt(healthData.peak_l1 || 0) + 
+              parseInt(healthData.peak_l2 || 0) + 
+              parseInt(healthData.peak_l3 || 0)
+            ) / 3;
+            return toPressure(forefootAvg);
+          case 'midfoot':
+            const midfootAvg = (
+              parseInt(healthData.peak_l4 || 0) + 
+              parseInt(healthData.peak_l5 || 0)
+            ) / 2;
+            return toPressure(midfootAvg);
+          case 'heel':
+            const heelAvg = (
+              parseInt(healthData.peak_l6 || 0) + 
+              parseInt(healthData.peak_l7 || 0) + 
+              parseInt(healthData.peak_l8 || 0)
+            ) / 3;
+            return toPressure(heelAvg);
+          default:
+            return 0;
+        }
+      } else {
+        switch (zone) {
+          case 'forefoot':
+            const forefootAvg = (
+              parseInt(healthData.peak_r1 || 0) + 
+              parseInt(healthData.peak_r2 || 0) + 
+              parseInt(healthData.peak_r3 || 0)
+            ) / 3;
+            return toPressure(forefootAvg);
+          case 'midfoot':
+            const midfootAvg = (
+              parseInt(healthData.peak_r4 || 0) + 
+              parseInt(healthData.peak_r5 || 0)
+            ) / 2;
+            return toPressure(midfootAvg);
+          case 'heel':
+            const heelAvg = (
+              parseInt(healthData.peak_r6 || 0) + 
+              parseInt(healthData.peak_r7 || 0) + 
+              parseInt(healthData.peak_r8 || 0)
+            ) / 3;
+            return toPressure(heelAvg);
+          default:
+            return 0;
+        }
+      }
+    } else {
+      // Unknown sensor type, fallback to 0
+      return 0;
+    }
+  };
+
+  renderPressureValue = (side, zone) => {
+    const pressure = this.calculatePressurePercentage(side, zone);
+    const percentage = ((pressure / 100) * 100).toFixed(0);
+    return `${percentage}%`;
+  };
 
   handleFetchDashboardData = async () => {
     const { id_customer } = this.props.user;
+    const { user, token } = this.props;
+    console.log('[DASHBOARD] Fetching user details for:', id_customer, 'Full user:', user, 'Token:', token);
     try {
       const response = await fetch(
-          `${API}/member/get_user_details?id=${id_customer}`,
-          { method: 'POST' },
+        `${API}/member/get_user_details?id=${id_customer}`,
+        { method: 'POST' },
       );
       const res = await response.json();
 
@@ -377,8 +316,35 @@ class index extends Component {
 
       if (res.message === 'User Details Successfully') {
         const user_details = res.user_details;
-        const xPos = JSON.parse(user_details.cop_x);
-        const yPos = JSON.parse(user_details.cop_y);
+        
+        // Check if COP data exists
+        const hasCopData = user_details.cop_x && user_details.cop_y && 
+                         (JSON.parse(user_details.cop_x).length > 0 || 
+                          JSON.parse(user_details.cop_y).length > 0);
+        
+        // Handle both stringified array and actual array cases
+        let xPos = [];
+        let yPos = [];
+        
+        if (typeof user_details.cop_x === 'string') {
+          try {
+            xPos = JSON.parse(user_details.cop_x);
+            yPos = JSON.parse(user_details.cop_y);
+          } catch (e) {
+            console.error('Error parsing cop_x/cop_y:', e);
+            // Fallback to manual calculation if parsing fails
+            xPos = this.calculateCOP_X(user_details);
+            yPos = this.calculateCOP_Y(user_details);
+          }
+        } else if (Array.isArray(user_details.cop_x)) {
+          xPos = user_details.cop_x;
+          yPos = user_details.cop_y;
+        } else {
+          // If data is not in expected format, calculate manually
+          xPos = this.calculateCOP_X(user_details);
+          yPos = this.calculateCOP_Y(user_details);
+        }
+
         const positionValue = xPos.map((x, index) => ({
           x_key: x,
           y_key: yPos[index],
@@ -388,1520 +354,757 @@ class index extends Component {
           healthData: user_details,
           positionValue,
           isLoading: false,
-          dataShow: false
+          dataShow: false,
+          hasCopData,
+          isStaticDashboard: user_details.data_type === '1',
         });
       } else {
-        this.setState({ dataShow: true, isLoading: false });
+        this.setState({ dataShow: true, isLoading: false, hasCopData: false });
       }
     } catch (error) {
       console.error(error);
-      this.setState({ isLoading: false, dataShow: true });
+      this.setState({ isLoading: false, dataShow: true, hasCopData: false });
     }
-    // console.log('this.props.user.id_customer', this.props.user.id_customer);
-    // fetch(`${API}member/get_user_details`, {
-    //   method: 'POST',
-    //   headers: {'Content-Type': 'application/json'},
-    //   body: {id: this.props.user.id_customer},
-    // })
-    //   // .then(res => {
-    //   //   console.log('============API Response============');
-    //   //   return console.log(res), res.json();
-    //   // })
-    //   .then(res => {
-    //     console.log(res, 'responseFromAPU');
-    //     if (res.status == 200) {
-    //       let user_details = res.user_details;
-    //       let xPos = JSON.parse(user_details.cop_x);
-    //       let yPos = JSON.parse(user_details.cop_y);
-    //       let actualArray = [];
-
-    //       xPos.map((data, index) => {
-    //         actualArray.push({x_key: xPos[index], y_key: yPos[index]});
-    //       });
-
-    //       this.setState({
-    //         healthData: user_details,
-    //         positionValue: actualArray,
-    //         isLoading: false,
-    //       });
-    //     } else {
-    //       this.setState({dataShow: true, isLoading: false});
-    //     }
-    //   })
-    //   .catch(err => {
-    //     console.log(err);
-    //     this.setState({isLoading: false, dataShow: true});
-    //     // Toast.show('Something went wrong. Please Try again!!!');
-    //   });
+    
+    // Fetch dashboard summary
+    this.fetchDashboardSummary();
   };
 
-    fetchDashboardSummary = async () => {
-        const { id_customer, security_token } = this.props.user;
-        const { token } = this.props;
-        const lang_mode = this.props.lang || 0;
+  fetchDashboardSummary = async () => {
+    try {
+      const { user, token, lang } = this.props;
+      const user_id = user.id_customer;
+      const lang_mode = lang === 1 ? 1 : 0; // 1 = Thai, 0 = English
+      const security_token = token;
+      console.log('[DASHBOARD] Fetching summary for user:', user_id, 'Token:', security_token);
+      const response = await fetch('https://www.surasole.com/api/dashboard/dashboard-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          security_token,
+          user_id,
+          lang_mode
+        }),
+      });
+      const data = await response.json();
+      console.log('Dashboard summary response:', data);
+      if (data && data.summary) {
+        this.setState({ summaryText: data.summary, summaryLoading: false });
+      } else {
+        this.setState({ summaryText: 'No summary available at this time.', summaryLoading: false });
+      }
+    } catch (error) {
+      this.setState({ summaryText: `Unable to load summary: ${error.message}`, summaryLoading: false });
+    }
+  };
 
-        console.log('🔁 Dashboard Summary');
-        console.log('User ID:', id_customer);
-        console.log('Security Token:', security_token);
-        console.log('Token:', token);
+  calculateCOP_X = (data) => {
+    // Simplified calculation for demonstration
+    // In a real app, you would use proper biomechanical formulas
+    const xPositions = [];
+    for (let i = 0; i < 10; i++) {
+      xPositions.push(Math.random() * 200 - 100); // Random values between -100 and 100
+    }
+    return xPositions;
+  };
 
-        // ✅ Add the check here
-        if (!id_customer || !security_token || !token) {
-            console.warn('🚨 Missing one of: id_customer, security_token, or token');
-            return;
+  calculateCOP_Y = (data) => {
+    // Simplified calculation for demonstration
+    const yPositions = [];
+    for (let i = 0; i < 10; i++) {
+      yPositions.push(Math.random() * 200 - 100); // Random values between -100 and 100
+    }
+    return yPositions;
+  };
+
+  renderMetricsRow = () => {
+    if (!this.state.hasCopData) return null;
+
+    return (
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, marginHorizontal: 20 }}>
+        <View style={{ flex: 1, alignItems: 'flex-start' }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>
+            {this.props.lang ? DashboardLang.cadenceText.thai : DashboardLang.cadenceText.eng}
+          </Text>
+          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#007bff', marginBottom: 0 }}>
+            {this.state.healthData.cadence || '0'}
+          </Text>
+          <Text style={{ fontSize: 14, color: '#6c757d', marginTop: -5 }}>
+            {this.props.lang ? 'ก้าว/นาที' : 'steps/min'}
+          </Text>
+        </View>
+        <View style={{ flex: 1, alignItems: 'flex-start' }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>
+            {this.props.lang ? DashboardLang.stepCountText.thai : DashboardLang.stepCountText.eng}
+          </Text>
+          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#007bff', marginBottom: 0 }}>
+            {this.state.healthData.step_count || '0'}
+          </Text>
+          <Text style={{ fontSize: 14, color: '#6c757d', marginTop: -5 }}>
+            {this.props.lang ? 'ก้าว' : 'steps'}
+          </Text>
+        </View>
+        <View style={{ flex: 1, alignItems: 'flex-start' }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>
+            {this.props.lang ? DashboardLang.gaitSpeedText.thai : DashboardLang.gaitSpeedText.eng}
+          </Text>
+          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#007bff', marginBottom: 0 }}>
+            {this.state.healthData.gait_speed || '0'}
+          </Text>
+          <Text style={{ fontSize: 14, color: '#6c757d', marginTop: -5 }}>
+            {this.props.lang ? 'ม./วินาที' : 'm/s'}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
+  renderBalanceMetricsCard = () => {
+    if (this.state.hasCopData) return null;
+  
+    return (
+      <LinearGradient
+        colors={['#005b50', '#0cfdd1']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          borderRadius: 24,
+          marginHorizontal: 12,
+          marginTop: 18,
+          padding: 2
+        }}
+      >
+        <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View style={{ flex: 1, paddingRight: 10 }}>
+              <View style={{ marginBottom: 10 }}>
+                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+                  Path Sway
+                </Text>
+                <Text style={{ fontSize: 24, color: '#007bff', textAlign: 'center' }}>
+                  {this.state.healthData.path_sway || '0'} cm
+                </Text>
+              </View>
+  
+              <View style={{ marginBottom: 10 }}>
+                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+                  ML Sway
+                </Text>
+                <Text style={{ fontSize: 24, color: '#007bff', textAlign: 'center' }}>
+                  {this.state.healthData.ml_sway || '0'} cm
+                </Text>
+              </View>
+  
+              <View style={{ marginBottom: 0 }}>
+                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+                  AP Sway
+                </Text>
+                <Text style={{ fontSize: 24, color: '#007bff', textAlign: 'center' }}>
+                  {this.state.healthData.ap_sway || '0'} cm
+                </Text>
+              </View>
+            </View>
+  
+            <View style={{ height: 1, backgroundColor: '#ccc', marginHorizontal: 10 }} />
+  
+            <View style={{ flex: 1, paddingLeft: 10 }}>
+              <View style={{ marginBottom: 10 }}>
+                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+                  Ellipse Area
+                </Text>
+                <Text style={{ fontSize: 24, color: '#007bff', textAlign: 'center' }}>
+                  {this.state.healthData.ellipse_area || '0'} cm²
+                </Text>
+              </View>
+  
+              <View style={{ marginBottom: 0 }}>
+                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+                  Velocity
+                </Text>
+                <Text style={{ fontSize: 24, color: '#007bff', textAlign: 'center' }}>
+                  {this.state.healthData.velocity || '0'} cm/sec
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </LinearGradient>
+    );
+  };
+
+  renderCopChart = () => {
+    if (!this.state.hasCopData) {
+      return (
+        <Image 
+          source={require('../../../assets/image/dashboard/cop_chart.jpg')} 
+          style={{ 
+            width: '100%', 
+            height: 120, 
+            resizeMode: 'contain',
+            marginBottom: 8
+          }} 
+        />
+      );
+    }
+  
+    // Normalize COP data to fit within the chart dimensions
+    const normalizedPoints = this.state.positionValue.map(point => {
+      const x = 50 + (point.x_key / 2000) * 40;
+      const y = 50 - (point.y_key / 2000) * 40;
+      return { x, y };
+    });
+
+    return (
+      <View style={{ width: '100%', height: 120, position: 'relative' }}>
+        <Image 
+          source={require('../../../assets/image/dashboard/cop_chart.jpg')} 
+          style={{ 
+            width: '100%', 
+            height: '100%', 
+            resizeMode: 'contain',
+            position: 'absolute'
+          }} 
+        />
+
+        <View style={{ position: 'absolute', width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+          {normalizedPoints.length > 1 && (
+            <View style={{ position: 'absolute', width: '80%', height: '80%', top: '10%', left: '10%' }}>
+              {normalizedPoints.slice(1).map((point, index) => {
+                const prevPoint = normalizedPoints[index];
+                const dx = point.x - prevPoint.x;
+                const dy = point.y - prevPoint.y;
+                const angle = Math.atan2(dy, dx);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                return (
+                  <View
+                    key={`line-${index}`}
+                    style={{
+                      position: 'absolute',
+                      left: `${prevPoint.x}%`,
+                      top: `${prevPoint.y}%`,
+                      width: `${distance}%`,
+                      height: 2,
+                      backgroundColor: '#00b2b2',
+                      transform: [
+                        { rotate: `${angle}rad` }
+                      ],
+                      transformOrigin: 'left center'
+                    }}
+                  />
+                );
+              })}
+            </View>
+          )}
+
+          {normalizedPoints.map((point, index) => (
+            <View 
+              key={`point-${index}`}
+              style={{
+                position: 'absolute',
+                left: `${point.x}%`,
+                top: `${point.y}%`,
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: index === normalizedPoints.length - 1 ? '#ff0000' : '#00b2b2',
+                zIndex: 2
+              }}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  renderStaticDashboard = () => {
+    const currentDate = moment().format('DD/MM/YYYY');
+    const currentTime = moment().format('h:mm A');
+    const { healthData, positionValue } = this.state;
+    // Calculate left/right foot values as before
+    const getHighestZone = (side) => {
+      const zones = ['forefoot', 'midfoot', 'heel'];
+      let maxZone = '';
+      let maxValue = 0;
+      zones.forEach(zone => {
+        const value = parseFloat(this.calculatePressurePercentage(side, zone));
+        if (value > maxValue) {
+          maxValue = value;
+          maxZone = zone;
         }
-
-        try {
-            const response = await fetch('https://www.surasole.com/api/dashboard/dashboard-summary', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    user_id: id_customer,
-                    lang_mode,
-                    security_token,
-                }),
-            });
-
-            const res = await response.json();
-            console.log('✅ Full response from dashboard-summary:', res);
-            console.log('res.summary: ', res.summary);
-
-            if (res.summary) {
-                this.setState({ dashboardSummaryText: res.summary });
-            } else {
-                this.setState({dashboardSummaryText: getLocalizedText(this.props.lang, LangDashboard.noSummary)});
-            }
-        } catch (err) {
-            console.error('Error fetching dashboard summary:', err);
-            this.setState({
-                dashboardSummaryText: getLocalizedText(this.props.lang, LangDashboard.error)});
-        }
+      });
+      return { zone: maxZone, value: maxValue };
     };
-
-
-
-
-    handleConnectivityChange = async status => {
-    console.log(status.isConnected);
-    await this.setState({ isConnected: status.isConnected });
-    console.log(`Internet Connection : ${this.state.isConnected}`);
-    // Toast.show(
-    //   this.state.isConnected
-    //     ? 'Internet Connection : ON'
-    //     : 'Internet Connection: OFF',
-    // );
+    const leftHighest = getHighestZone('left');
+    const rightHighest = getHighestZone('right');
+    const leftTotal = ['forefoot', 'midfoot', 'heel'].reduce((sum, zone) => sum + parseFloat(this.calculatePressurePercentage('left', zone)), 0);
+    const rightTotal = ['forefoot', 'midfoot', 'heel'].reduce((sum, zone) => sum + parseFloat(this.calculatePressurePercentage('right', zone)), 0);
+    const totalPressure = leftTotal + rightTotal;
+    const leftPercentage = totalPressure > 0 ? Math.round((leftTotal / totalPressure) * 100) : 50;
+    const rightPercentage = totalPressure > 0 ? Math.round((rightTotal / totalPressure) * 100) : 50;
+    return (
+      <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+        {/* Date and Time */}
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginHorizontal: 20, marginTop: 10, marginBottom: 5 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>{currentDate} {currentTime}</Text>
+        </View>
+        {/* Left and Right Foot Cards */}
+        <View style={{ flexDirection: 'row', marginTop: 10, marginHorizontal: 15 }}>
+          {/* Left Foot Card */}
+          <LinearGradient colors={['#005b50', '#0cfdd1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 24, marginRight: 10, padding: 5 }}>
+            <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16 }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>
+                {this.props.lang ? DashboardLang.leftFootText.thai : DashboardLang.leftFootText.eng}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'center' }}>
+                <Image source={require('../../../assets/image/dashboard/left_foot.png')} style={{ width: 80, height: 60, marginRight: 10 }} />
+                <View style={{ flexDirection: 'column' }}>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+                    {this.props.lang ? DashboardLang[`${leftHighest.zone}Text`]?.thai || leftHighest.zone : DashboardLang[`${leftHighest.zone}Text`]?.eng || leftHighest.zone}
+                  </Text>
+                  <Text style={{ fontSize: 16, color: '#007bff', textAlign: 'center' }}>{leftHighest.value.toFixed(1)}%</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                {['forefoot', 'midfoot', 'heel']
+                  .filter(zone => zone !== leftHighest.zone)
+                  .map((zone, index, arr) => (
+                    <React.Fragment key={zone}>
+                      {index > 0 && (
+                        <View style={{ height: 80, width: 1, backgroundColor: '#ccc', marginHorizontal: 10 }} />
+                      )}
+                      <View style={{ flex: 1, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
+                        <View style={{ flexDirection: 'column', alignItems: 'center' }}>
+                          <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#007bff' }}>
+                            {this.props.lang ? DashboardLang[`${zone}Text`]?.thai || zone : DashboardLang[`${zone}Text`]?.eng || zone}
+                          </Text>
+                          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>{this.renderPressureValue('left', zone)}</Text>
+                        </View>
+                      </View>
+                    </React.Fragment>
+                  ))}
+              </View>
+            </View>
+          </LinearGradient>
+          {/* Right Foot Card */}
+          <LinearGradient colors={['#005b50', '#0cfdd1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 24, marginLeft: 10, padding: 5 }}>
+            <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16 }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>
+                {this.props.lang ? DashboardLang.rightFootText.thai : DashboardLang.rightFootText.eng}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'center' }}>
+                <Image source={require('../../../assets/image/dashboard/right_foot.png')} style={{ width: 80, height: 60, marginRight: 10 }} />
+                <View style={{ flexDirection: 'column' }}>
+                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+                    {this.props.lang ? DashboardLang[`${rightHighest.zone}Text`]?.thai || rightHighest.zone : DashboardLang[`${rightHighest.zone}Text`]?.eng || rightHighest.zone}
+                  </Text>
+                  <Text style={{ fontSize: 16, color: '#007bff', textAlign: 'center' }}>{rightHighest.value.toFixed(1)}%</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                {['forefoot', 'midfoot', 'heel']
+                  .filter(zone => zone !== rightHighest.zone)
+                  .map((zone, index, arr) => (
+                    <React.Fragment key={zone}>
+                      {index > 0 && (
+                        <View style={{ height: 80, width: 1, backgroundColor: '#ccc', marginHorizontal: 10 }} />
+                      )}
+                      <View style={{ flex: 1, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
+                        <View style={{ flexDirection: 'column', alignItems: 'center' }}>
+                          <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#007bff' }}>
+                            {this.props.lang ? DashboardLang[`${zone}Text`]?.thai || zone : DashboardLang[`${zone}Text`]?.eng || zone}
+                          </Text>
+                          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>{this.renderPressureValue('right', zone)}</Text>
+                        </View>
+                      </View>
+                    </React.Fragment>
+                  ))}
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
+        {/* Pressure Percentage and Foot Balance Row */}
+        <View style={{ flexDirection: 'row', marginTop: 10, marginHorizontal: 15 }}>
+          {/* Pressure Percentage Card */}
+          <LinearGradient colors={['#005b50', '#0cfdd1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 24, marginRight: 10, padding: 5, height: 220 }}>
+            <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16, height: '100%' }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>
+                {this.props.lang ? DashboardLang.pressurePercentageText.thai : DashboardLang.pressurePercentageText.eng}
+              </Text>
+              <View style={{ flexDirection: 'row', height: 55, borderRadius: 12, marginBottom: 10, backgroundColor: '#e0e0e0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 }}>
+                <View style={{ flex: 50 / 100, backgroundColor: '#007bff', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 24 }}>{leftPercentage}%</Text>
+                </View>
+                <View style={{ flex: 50 / 100, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ color: '#007bff', fontWeight: 'bold', fontSize: 24 }}>{rightPercentage}%</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 0, marginTop: 10 }}>
+                <View style={{ alignSelf: 'flex-start', marginLeft: 0, paddingRight: 5 }}>
+                  <Text style={{ color: '#007bff', fontSize: 20 }}>
+                    {this.props.lang ? DashboardLang.leftText.thai : DashboardLang.leftText.eng}
+                  </Text>
+                </View>
+                <Text style={{ color: '#007bff', fontSize: 20, alignSelf: 'flex-end', marginRight: 0 }}>
+                  {this.props.lang ? DashboardLang.rightText.thai : DashboardLang.rightText.eng}
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+          {/* Foot Balance Card with Radar Chart */}
+          <LinearGradient colors={['#005C51', '#0CFFD3']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1, borderRadius: 24, marginLeft: 10, padding: 5, height: 220 }}>
+            <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16, height: '100%' }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>
+                {this.props.lang ? DashboardLang.footBalanceText.thai : DashboardLang.footBalanceText.eng}
+              </Text>
+              <View style={{ alignItems: 'center', marginTop: 10, flex: 1, justifyContent: 'center' }}>
+                <RadarChartForDashboard positionValue={positionValue} />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <Text style={{ fontSize: 16, color: '#007bff' }}>
+                  {this.props.lang ? DashboardLang.leftText.thai : DashboardLang.leftText.eng}
+                </Text>
+                <Text style={{ fontSize: 16, color: '#007bff' }}>
+                  {this.props.lang ? DashboardLang.rightText.thai : DashboardLang.rightText.eng}
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
+        {/* Metrics Card: Path Sway, ML Sway, AP Sway, Velocity, Ellipse */}
+        <View style={{ marginHorizontal: 15, marginTop: 10, marginBottom: 20, borderRadius: 16, borderWidth: 2, borderColor: '#007bff', backgroundColor: 'white', padding: 10, flexDirection: 'row', alignItems: 'center' }}>
+          {/* Left Column */}
+          <View style={{ flex: 1.2, paddingRight: 10 }}>
+            <View style={{ alignItems: 'center', marginBottom: 10 }}>
+              <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>
+                {this.props.lang ? DashboardLang.pathSwayText.thai : DashboardLang.pathSwayText.eng}
+              </Text>
+              <Text style={{ fontSize: 16, color: '#007bff' }}>{healthData.path_sway || '0'} cm</Text>
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>
+                  {this.props.lang ? DashboardLang.mlSwayText.thai : DashboardLang.mlSwayText.eng}
+                </Text>
+                <Text style={{ fontSize: 16, color: '#007bff' }}>{healthData.ml_sway || '0'} cm</Text>
+              </View>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>
+                  {this.props.lang ? DashboardLang.apSwayText.thai : DashboardLang.apSwayText.eng}
+                </Text>
+                <Text style={{ fontSize: 16, color: '#007bff' }}>{healthData.ap_sway || '0'} cm</Text>
+              </View>
+            </View>
+          </View>
+          {/* Divider */}
+          <View style={{ height: 70, width: 1, backgroundColor: '#007bff', opacity: 0.4, marginHorizontal: 10 }} />
+          {/* Right Column */}
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>
+              {this.props.lang ? DashboardLang.ellipseAreaText.thai : DashboardLang.ellipseAreaText.eng}
+            </Text>
+            <Text style={{ fontSize: 16, color: '#007bff', marginBottom: 10 }}>{healthData.ellipse_area || '0'}
+              <Text style={{ fontSize: 12, color: '#007bff' }}> cm</Text>
+            </Text>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>
+              {this.props.lang ? DashboardLang.velocityText.thai : DashboardLang.velocityText.eng}
+            </Text>
+            <Text style={{ fontSize: 16, color: '#007bff' }}>{healthData.velocity || '0'}
+              <Text style={{ fontSize: 12, color: '#007bff' }}> cm/sec</Text>
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+    );
   };
 
-  handleGetColorCode = val => {
-    let colorCode = '';
-
-    if (val < 240) {
-      colorCode = '#39bc50';
-    } else if (val < 355 || val > 240) {
-      colorCode = '#ffa202';
-    } else if (val > 355 || val < 600) {
-      colorCode = '#fe0d02';
-    }
-    return colorCode;
+  renderDynamicDashboard = () => {
+    const currentDate = moment().format('DD/MM/YYYY');
+    const currentTime = moment().format('h:mm A');
+    const { healthData, positionValue } = this.state;
+    // Calculate left/right pressure percentages for dynamic dashboard
+    const leftTotal = ['forefoot', 'midfoot', 'heel'].reduce((sum, zone) => sum + parseFloat(this.calculatePressurePercentage('left', zone)), 0);
+    const rightTotal = ['forefoot', 'midfoot', 'heel'].reduce((sum, zone) => sum + parseFloat(this.calculatePressurePercentage('right', zone)), 0);
+    const totalPressure = leftTotal + rightTotal;
+    const leftPercentage = totalPressure > 0 ? Math.round((leftTotal / totalPressure) * 100) : 50;
+    const rightPercentage = totalPressure > 0 ? Math.round((rightTotal / totalPressure) * 100) : 50;
+    return (
+      <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+        {/* Date and Time */}
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginHorizontal: 20, marginTop: 10, marginBottom: 5 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>{currentDate} {currentTime}</Text>
+        </View>
+        {/* Gait Speed, Cadence, Step Count Row */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, marginHorizontal: 15 }}>
+          <View style={{ flex: 1, alignItems: 'flex-start' }}>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>Cadence</Text>
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#007bff', marginBottom: 0 }}>{healthData.cadence || '0'}</Text>
+            <Text style={{ fontSize: 14, color: '#6c757d', marginTop: -5 }}>steps/min</Text>
+          </View>
+          <View style={{ flex: 1, alignItems: 'flex-start' }}>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>Step Count</Text>
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#007bff', marginBottom: 0 }}>{healthData.step_count || '0'}</Text>
+            <Text style={{ fontSize: 14, color: '#6c757d', marginTop: -5 }}>steps</Text>
+          </View>
+          <View style={{ flex: 1, alignItems: 'flex-start' }}>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>Gait Speed</Text>
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#007bff', marginBottom: 0 }}>{healthData.gait_speed || '0'}</Text>
+            <Text style={{ fontSize: 14, color: '#6c757d', marginTop: -5 }}>m/s</Text>
+          </View>
+        </View>
+        {/* Left and Right Foot Cards */}
+        <View style={{ flexDirection: 'row', marginTop: 10, marginHorizontal: 15 }}>
+          {/* Left Foot Card */}
+          <LinearGradient colors={['#005b50', '#0cfdd1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 24, marginRight: 10, padding: 5 }}>
+            <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16 }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>Left Foot</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'center' }}>
+                <Image source={require('../../../assets/image/dashboard/left_foot.png')} style={{ width: 80, height: 60, marginRight: 10 }} />
+                <View style={{ flexDirection: 'column' }}>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>{'forefoot'}</Text>
+                  <Text style={{ fontSize: 16, color: '#007bff', textAlign: 'center' }}>{this.renderPressureValue('left', 'forefoot')}</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                {['midfoot', 'heel'].map((zone, index) => (
+                  <React.Fragment key={zone}>
+                    {index > 0 && (
+                      <View style={{ height: 80, width: 1, backgroundColor: '#ccc', marginHorizontal: 10 }}
+                      />
+                    )}
+                    <View style={{ flex: 1, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
+                      <View style={{ flexDirection: 'column', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#007bff' }}>{zone.charAt(0).toUpperCase() + zone.slice(1)}</Text>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>{this.renderPressureValue('left', zone)}</Text>
+                      </View>
+                    </View>
+                  </React.Fragment>
+                ))}
+              </View>
+            </View>
+          </LinearGradient>
+          {/* Right Foot Card */}
+          <LinearGradient colors={['#005b50', '#0cfdd1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 24, marginLeft: 10, padding: 5 }}>
+            <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16 }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>Right Foot</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'center' }}>
+                <Image source={require('../../../assets/image/dashboard/right_foot.png')} style={{ width: 80, height: 60, marginRight: 10 }} />
+                <View style={{ flexDirection: 'column' }}>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>{'forefoot'}</Text>
+                  <Text style={{ fontSize: 16, color: '#007bff', textAlign: 'center' }}>{this.renderPressureValue('right', 'forefoot')}</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                {['midfoot', 'heel'].map((zone, index) => (
+                  <React.Fragment key={zone}>
+                    {index > 0 && (
+                      <View style={{ height: 80, width: 1, backgroundColor: '#ccc', marginHorizontal: 10 }}
+                      />
+                    )}
+                    <View style={{ flex: 1, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
+                      <View style={{ flexDirection: 'column', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#007bff' }}>{zone.charAt(0).toUpperCase() + zone.slice(1)}</Text>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>{this.renderPressureValue('right', zone)}</Text>
+                      </View>
+                    </View>
+                  </React.Fragment>
+                ))}
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
+        {/* Pressure Percentage and Foot Balance Row */}
+        <View style={{ flexDirection: 'row', marginTop: 10, marginHorizontal: 15 }}>
+          {/* Pressure Percentage Card */}
+          <LinearGradient colors={['#005b50', '#0cfdd1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 24, marginRight: 10, padding: 5, height: 220 }}>
+            <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16, height: '100%' }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>Pressure Percentage</Text>
+              <View style={{ flexDirection: 'row', height: 55, borderRadius: 12, marginBottom: 10, backgroundColor: '#e0e0e0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 }}>
+                <View style={{ flex: 50 / 100, backgroundColor: '#007bff', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 24 }}>{leftPercentage}%</Text>
+                </View>
+                <View style={{ flex: 50 / 100, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ color: '#007bff', fontWeight: 'bold', fontSize: 24 }}>{rightPercentage}%</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 0, marginTop: 10 }}>
+                <View style={{ alignSelf: 'flex-start', marginLeft: 0, paddingRight: 5 }}>
+                  <Text style={{ color: '#007bff', fontSize: 20 }}>
+                    {this.props.lang ? DashboardLang.leftText.thai : DashboardLang.leftText.eng}
+                  </Text>
+                </View>
+                <Text style={{ color: '#007bff', fontSize: 20, alignSelf: 'flex-end', marginRight: 0 }}>
+                  {this.props.lang ? DashboardLang.rightText.thai : DashboardLang.rightText.eng}
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+          {/* Foot Balance Card with COP Chart */}
+          <LinearGradient colors={['#005C51', '#0CFFD3']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1, borderRadius: 24, marginLeft: 10, padding: 5, height: 220 }}>
+            <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16, height: '100%' }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>Foot Balance</Text>
+              <View style={{ alignItems: 'center', marginTop: 10, flex: 1, justifyContent: 'center' }}>
+                {this.renderCopChart()}
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <Text style={{ fontSize: 16, color: '#007bff' }}>
+                  {this.props.lang ? DashboardLang.leftText.thai : DashboardLang.leftText.eng}
+                </Text>
+                <Text style={{ fontSize: 16, color: '#007bff' }}>
+                  {this.props.lang ? DashboardLang.rightText.thai : DashboardLang.rightText.eng}
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
+      </ScrollView>
+    );
   };
 
   render() {
+    const { isLoading, dataShow, healthData, currentPage } = this.state;
+    let dashboardType = healthData && healthData.data_type;
 
-      const healthData   = this.state.healthData ?? {};
-      const dataType     = parseInt(healthData.data_type, 10);   // '1' | '2'  ➜  1 | 2
-      const fallRisk     = parseInt(healthData.fall_risk, 10);   // '0'–'3' → number
-      // 0 when not yet loaded
+    // --- Pressure Percentage Calculation (NEW LOGIC) ---
+    function calculateTotalFootPressure(healthData, side) {
+      const sensorType = detectSensorType(healthData);
+      if (sensorType === '8-point') {
+        let sum = 0;
+        for (let i = 1; i <= 8; i++) {
+          sum += parseInt(healthData[`${side === 'left' ? 'peak_l' : 'peak_r'}${i}`] || 0);
+        }
+        return sum;
+      }
+      if (sensorType === '5-point') {
+        let sum = 0;
+        for (let i = 1; i <= 5; i++) {
+          sum += parseInt(healthData[`${side === 'left' ? 'peak_l' : 'peak_r'}${i}`] || 0);
+        }
+        return sum;
+      }
+      return 0;
+    }
+    let leftPercentage = 0;
+    let rightPercentage = 0;
+    if (healthData && Object.keys(healthData).length > 0) {
+      const leftPressure = calculateTotalFootPressure(healthData, 'left');
+      const rightPressure = calculateTotalFootPressure(healthData, 'right');
+      const total = leftPressure + rightPressure;
+      if (total > 0) {
+        leftPercentage = ((leftPressure / total) * 100).toFixed(0);
+        rightPercentage = ((rightPressure / total) * 100).toFixed(0);
+      }
+    }
+    // --- END Pressure Percentage Calculation ---
 
-      const fallRingColors =
-          fallRisk === 1
-              ? ['#16702B', '#5EC104']   // Low  – green
-              : fallRisk === 2
-                  ? ['#FFAC01', '#D1D501']   // Medium – yellow
-                  : fallRisk === 3
-                      ? ['#E60401', '#FD9801']   // High – red
-                      : ['#CFCFCF', '#A0A0A0'];  //  ← neutral grey fallback
-
-      const Pill = ({ left, right }) => (
-          <View style={{ flexDirection: 'row' }}>
-              {/* blue half */}
-              <LinearGradient
-                  colors={['#12449F', '#005CFF']}
-                  start={{ x: 1, y: 0 }}
-                  end={{ x: 0, y: 0 }}
-                  style={{
-                      width: 90,
-                      height: 30,
-                      borderTopLeftRadius: 10,
-                      borderBottomLeftRadius: 10,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                  }}>
-                  <Text
-                      style={{
-                          fontFamily: 'BaiJamjuree-Bold',
-                          fontSize: 15,
-                          lineHeight: 20,
-                          letterSpacing: -0.2,
-                          color: '#fff',
-                      }}>
-                      {(left ?? '--') + '%'}
-                  </Text>
-              </LinearGradient>
-
-              {/* green half */}
-              <LinearGradient
-                  colors={['#00862E', '#03CC48']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={{
-                      width: 90,
-                      height: 30,
-                      borderTopRightRadius: 10,
-                      borderBottomRightRadius: 10,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                  }}>
-                  <Text
-                      style={{
-                          fontFamily: 'BaiJamjuree-Bold',
-                          fontSize: 15,
-                          lineHeight: 20,
-                          letterSpacing: -0.2,
-                          color: '#fff',
-                      }}>
-                      {(right ?? '--') + '%'}
-                  </Text>
-              </LinearGradient>
-          </View>
-      );
-
-
-
-      return (
-        <View style={{ flex: 1, backgroundColor: 'white' }}>
-          <HeaderFix
+    return (
+      <View style={{ flex: 1, backgroundColor: '#f0f0f0' }}>
+        <PagerView style={{ flex: 1 }} initialPage={0} onPageSelected={e => this.setState({ currentPage: e.nativeEvent.position })}>
+          {/* First Page: Dashboard */}
+          <View key="1" style={{ flex: 1 }}>
+            <HeaderFix
               icon_left={'left'}
-              onpress_left={() => {
-                this.props.navigation.goBack();
-              }}
-              title={this.props.navigation.getParam('name', 'Dashboard')}
-          />
-          {this.state.isLoading ? (
-              <View
-                  style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator />
+              onpress_left={() => this.props.navigation.goBack()}
+              title={this.props.route?.params?.name || 'Dashboard'}
+            />
+            {/* Add FabChatbot to the first page
+            <FabChatbot onPress={() => this.props.navigation.navigate('Chatbot')} /> */}
+            {isLoading ? (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Spinner size="lg" color="#007bff" />
               </View>
-          ) : this.state.dataShow ? (
+            ) : dataShow ? (
               <View style={{ flex: 1 }}>
-                <View
-                    style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{textAlign:"center"}} >{'No data found. \n Press Back to record data or click Reload'}</Text>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ textAlign: 'center', fontSize: 16, color: '#6c757d' }}>
+                    {'No data found.\nPress Back to record data or click Reload'}
+                  </Text>
                 </View>
-                <View
-                    style={{
-                      width: '90%',
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      alignSelf: 'center',
-                      marginBottom: '10%',
-                    }}>
+                <View style={{ flexDirection: 'row', width: '90%', justifyContent: 'space-between', alignSelf: 'center', marginBottom: '10%' }}>
                   <TouchableOpacity
-                      onPress={() => {
-                        this.props.navigation.goBack();
-                      }}
-                      style={{
-                        width: '40%',
-                        height: 40,
-                        backgroundColor: '#f7545a',
-                        borderRadius: 20,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}>
-                    <Text style={{ color: '#fff' }}>Back</Text>
+                    onPress={() => this.props.navigation.goBack()}
+                    style={{ width: '40%', height: 40, backgroundColor: '#dc3545', borderRadius: 20, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 }}
+                  >
+                    <Text style={{ color: 'white', fontWeight: 'bold' }}>Back</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                      onPress={() => {
-                        this.handleFetchDashboardData();
-                      }}
-                      style={{
-                        width: '40%',
-                        height: 40,
-                        backgroundColor: '#71dff5',
-                        borderRadius: 20,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}>
-                    <Text style={{ color: '#fff' }}>Reload</Text>
+                    onPress={this.handleFetchDashboardData}
+                    style={{ width: '40%', height: 40, backgroundColor: '#17a2b8', borderRadius: 20, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 }}
+                  >
+                    <Text style={{ color: 'white', fontWeight: 'bold' }}>Reload</Text>
                   </TouchableOpacity>
                 </View>
               </View>
-          ) : (
-              <Swiper
-                  loop={false}
-                  dot={<Dot />}                 // ◯ white-inside
-                  activeDot={<ActiveDot />}     // ● filled
-                  paginationStyle={{ bottom: 25 }}
-                  onIndexChanged={(index) => {
-                      this.setState({ currentPageIndex: index });
+            ) : dashboardType == 1 ? (
+              this.renderStaticDashboard()
+            ) : dashboardType == 2 ? (
+              this.renderDynamicDashboard()
+            ) : null}
+            {/* Pagination Dots */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', position: 'absolute', bottom: 5, width: '100%' }}>
+              <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: currentPage === 0 ? '#007bff' : '#e0e0e0', marginHorizontal: 5 }} />
+              <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: currentPage === 1 ? '#007bff' : '#e0e0e0', marginHorizontal: 5 }} />
+            </View>
+          </View>
+         {/* Second Page - Summary */}
+         <View key="2" style={{ flex: 1, backgroundColor: '#eafffa' }}>
+           {/* Header matching Dashboard style */}
+           <HeaderFix
+             icon_left={'left'}
+             onpress_left={() => this.props.navigation.goBack()}
+             title={'Summary'}
+           />
 
-                      this.props.navigation.setParams({
-                          name:
-                              index === 0
-                                  ? getLocalizedText(this.props.lang, LangDashboard.dashboard)
-                                  : getLocalizedText(this.props.lang, LangDashboard.summary)
-                      });
-                  }}
-              >
-                {/* ──────────── PAGE 1 ──────────── */}
-                <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
-                  <View style={{ flex: 1, paddingTop: 8 }}>
+           {/* Content */}
+           <ScrollView contentContainerStyle={{ 
+             alignItems: 'center', 
+             paddingTop: 20,
+             paddingBottom: 80 
+           }}>
+             <Image 
+               source={require('../../../assets/image/dashboard/foot-legs.png')} 
+               style={{ 
+                 width: 200, 
+                 height: 350, 
+                 resizeMode: 'contain', 
+                 marginVertical: 30 
+               }} 
+             />
+             
+             <View style={{ width: '85%', backgroundColor: 'white', borderRadius: 16, padding: 20, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 }}>
+               {this.state.summaryLoading ? (
+                 <View style={{ paddingVertical: 10 }}>
+                   <Spinner size="sm" color="#007bff" />
+                   <Text style={{ fontSize: 14, color: '#6c757d', marginTop: 5 }}>Loading summary...</Text>
+                 </View>
+               ) : (
+                 <Text style={{ fontSize: 16, color: '#333', textAlign: 'left' }}>
+                   {this.state.summaryText}
+                 </Text>
+               )}
+             </View>
+           </ScrollView>
 
+           {/* FabChatbot
+           <FabChatbot onPress={() => this.props.navigation.navigate('Chatbot')} /> */}
 
-
-
-                          {/* ---------- ② PEAK-PRESSURE SUMMARY ---------- */}
-                    <LinearGradient
-                        colors={['#005C51', '#0CFFD3']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={{
-                          padding: 1,
-                          borderRadius: 10,
-                          marginHorizontal: 10,
-                        }}>
-                      <View
-                          style={{
-                            backgroundColor: '#fff',
-                            padding: 10,
-                            borderRadius: 10,
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                          }}>
-                        <Text
-                            style={{
-                              textAlign: 'center',
-                              fontSize: 18,
-                              color: '#00A2A2',
-                            }}>
-                          Peak Pressure Summary
-                        </Text>
-                        <View
-                            style={{
-                              marginVertical: 8,
-                              flexDirection: 'row',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              padding: 20,
-                              width: '100%',
-                            }}>
-                          <View
-                              style={{
-                                // width: '25%',
-                                padding: 5,
-                                flexDirection: 'row',
-                              }}>
-                            <LinearGradient
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                colors={['#FF1100', '#FBD500', '#FAFF00', '#1EB650']}
-                                style={{
-                                  borderRadius:11,
-                                  height: 187,
-                                  width: 24,
-                                  alignItems: 'center',
-                                }}
-                            />
-                            <View
-                                style={{
-                                  marginHorizontal: 0,
-                                  padding: 5,
-                                  flexDirection: 'column',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                }}>
-                              <Text
-                                  style={{
-                                    textAlign: 'center',
-                                    fontSize: 17,
-                                    color: '#00A2A2',
-                                  }}>
-                                High
-                              </Text>
-                              <Text
-                                  style={{
-                                    textAlign: 'center',
-                                    fontSize: 17,
-                                    color: '#00A2A2',
-                                  }}>
-                                Low
-                              </Text>
-                            </View>
-                          </View>
-                          <View
-                              style={{
-                                // width: '70%',
-                                position: 'absolute',
-                                right: -10,
-                                padding: 5,
-                              }}>
-                            <Image
-                                source={require('../../../assets/image/foot_dashboard.png')}
-                                style={{ height: 240, width: 240, resizeMode: 'contain' }}
-                            />
-                            {/* Left Leg */}
-                            {this.state.healthData.sensor_type == 1 ? (
-                                <>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 140,
-                                        borderRadius: 6,
-                                        top: 20,
-                                        paddingHorizontal: 5,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l2
-                                                  ? this.state.healthData.peak_l2
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_l1}
-                                    </Text>
-                                  </View>
-
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 133,
-                                        top: 80,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l2
-                                                  ? this.state.healthData.peak_l2
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_l2}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 189,
-                                        top: 100,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l3
-                                                  ? this.state.healthData.peak_l3
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {' '}
-                                      {this.state.healthData.peak_l3}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 172,
-                                        top: 150,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l4
-                                                  ? this.state.healthData.peak_l4
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_l4}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 150,
-                                        top: 200,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l5
-                                                  ? this.state.healthData.peak_l5
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_l5}
-                                    </Text>
-                                  </View>
-                                  {/* End of Left Leg */}
-                                  {/* Right Leg */}
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 85,
-                                        top: 20,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r1
-                                                  ? this.state.healthData.peak_r1
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r1}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 93,
-                                        top: 80,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r2
-                                                  ? this.state.healthData.peak_r2
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r2}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 33,
-                                        top: 100,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r3
-                                                  ? this.state.healthData.peak_r3
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r3}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 49,
-                                        top: 150,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r4
-                                                  ? this.state.healthData.peak_r4
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r4}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 75,
-                                        top: 200,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r5
-                                                  ? this.state.healthData.peak_r5
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r5}
-                                    </Text>
-                                  </View>
-                                </>
-                            ) : (
-                                <>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 144,
-                                        top: 20,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l1
-                                                  ? this.state.healthData.peak_l1
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_l1}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 189,
-                                        top: 43,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l2
-                                                  ? this.state.healthData.peak_l2
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_l2}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 133,
-                                        top: 80,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l3
-                                                  ? this.state.healthData.peak_l3
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_l3}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 163,
-                                        top: 80,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l4
-                                                  ? this.state.healthData.peak_l4
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_l4}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 189,
-                                        top: 100,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l5
-                                                  ? this.state.healthData.peak_l5
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_l5}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 150,
-                                        top: 150,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l6
-                                                  ? this.state.healthData.peak_l6
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_l6}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 177,
-                                        top: 150,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l7
-                                                  ? this.state.healthData.peak_l7
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_l7}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 150,
-                                        top: 200,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_l8
-                                                  ? this.state.healthData.peak_l8
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_l8}
-                                    </Text>
-                                  </View>
-                                  {/* End of Left Leg */}
-                                  {/* Right Leg */}
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 85,
-                                        top: 20,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r1
-                                                  ? this.state.healthData.peak_r1
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r1}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 37,
-                                        top: 40,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r2
-                                                  ? this.state.healthData.peak_r2
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r2}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 93,
-                                        top: 80,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r3
-                                                  ? this.state.healthData.peak_r3
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r3}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 65,
-                                        top: 80,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r4
-                                                  ? this.state.healthData.peak_r4
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r4}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 36,
-                                        top: 100,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r5
-                                                  ? this.state.healthData.peak_r5
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r5}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 87,
-                                        top: 150,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r6
-                                                  ? this.state.healthData.peak_r6
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r6}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 49,
-                                        top: 150,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r7
-                                                  ? this.state.healthData.peak_r7
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r7}
-                                    </Text>
-                                  </View>
-                                  <View
-                                      style={{
-                                        position: 'absolute',
-                                        right: 75,
-                                        top: 200,
-                                        paddingHorizontal: 5,
-                                        borderRadius: 6,
-                                      }}>
-                                    <Text
-                                        style={{
-                                          fontSize: 11,
-                                          color: this.handleGetColorCode(
-                                              this.state.healthData.peak_r8
-                                                  ? this.state.healthData.peak_r8
-                                                  : 0,
-                                          ),
-                                          fontWeight: '700',
-                                        }}>
-                                      {this.state.healthData.peak_r8}
-                                    </Text>
-                                  </View>
-                                </>
-                            )}
-
-                            {/* End of Right Leg */}
-                          </View>
-                        </View>
-                        </View>
-                        </LinearGradient>
-
-
-                      <View style={{ flex: 1 }}>
-                          {dataType === 2 ? (
-                          <>
-                              {/* ---------- ① FALL-RISK + CADENCE/STEP/SPEED ROW ---------- */}
-                      <View
-                          style={{
-                              flexDirection: 'row',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              marginHorizontal: 10,
-                              marginTop: 8,
-                              marginBottom: 12,
-                          }}>
-
-                          {/* ──────────────── Card A : Fall-Risk Prediction ──────────────── */}
-                          <LinearGradient
-                              colors={['#005C51', '#0CFFD3']}
-                              start={{ x: 0, y: 0 }}
-                              end={{ x: 1, y: 0 }}
-                              style={{
-                                  padding: 1,
-                                  borderRadius: 10,
-                                  width: '55%',
-                                  height: 222,
-                              }}>
-                              <View
-                                  style={{
-                                      flex: 1,
-                                      backgroundColor: '#FFF',
-                                      borderRadius: 10,
-                                      paddingVertical: 12,
-                                      paddingHorizontal: 10,
-                                      justifyContent: 'center',
-                                      alignItems: 'center',
-                                  }}>
-                                  <Text style={{ fontSize: 18, color: '#00A2A2', textAlign: 'center' }}>
-                                      Fall Risk Prediction
-                                  </Text>
-
-                                  <LinearGradient
-                                      colors={fallRingColors}
-                                      start={{ x: 0, y: 0 }}
-                                      end={{ x: 1, y: 0 }}
-                                      style={{
-                                          padding: 1,
-                                          marginTop: 10,
-                                          width: 130,
-                                          height: 130,
-                                          borderRadius: 65,
-                                          justifyContent: 'center',
-                                          alignItems: 'center',
-                                      }}>
-                                      <View
-                                          style={{
-                                              backgroundColor: '#FFF',
-                                              width: 110,
-                                              height: 110,
-                                              borderRadius: 55,
-                                              justifyContent: 'center',
-                                              alignItems: 'center',
-                                          }}>
-                                          <Text
-                                              style={{
-                                                  fontSize: 32,
-                                                  fontWeight: 'bold',
-                                                  color:
-                                                      (fallRisk === 1 && '#5EC104') ||
-                                                      (fallRisk === 2 && '#D1D501') ||
-                                                      (fallRisk === 3 && '#FD9801'),
-                                              }}>
-                                              {(fallRisk === 1 && 'Low') ||
-                                                  (fallRisk === 2 && 'Medium') ||
-                                                  (fallRisk === 3 && 'High')}
-                                          </Text>
-                                      </View>
-                                  </LinearGradient>
-                              </View>
-                          </LinearGradient>
-
-                          {/* ──────────────── Card B : Cadence · Steps · Speed ──────────────── */}
-                          <LinearGradient
-                              colors={['#005C51', '#0CFFD3']}
-                              start={{ x: 0, y: 0 }}
-                              end={{ x: 1, y: 0 }}
-                              style={{
-                                  padding: 1,
-                                  borderRadius: 10,
-                                  width: '40%',
-                                  height: 222,
-                              }}>
-                              <View
-                                  style={{
-                                      flex: 1,
-                                      backgroundColor: '#FFF',
-                                      borderRadius: 10,
-                                      paddingVertical: 12,
-                                      paddingHorizontal: 10,
-                                      justifyContent: 'center',
-                                      alignItems: 'center',
-                                  }}>
-
-                                  {/* Cadence */}
-                                  <Text style={{ fontSize: 16, color: '#00A2A2', fontWeight: 'bold' }}>
-                                      {this.state.healthData.cadence ?? '--'}
-                                  </Text>
-                                  <Text style={{ fontSize: 14, color: '#00A2A2', textAlign: 'center' }}>
-                                      Cadence{'\n'}(steps/min)
-                                  </Text>
-
-                                  <LinearGradient
-                                      colors={['#005C51', '#0CFFD3']}
-                                      start={{ x: 0, y: 0 }}
-                                      end={{ x: 1, y: 0 }}
-                                      style={{
-                                          padding: 2,
-                                          width: '90%',
-                                          marginVertical: 5,
-                                          borderRadius: 10,
-                                      }}
-                                  />
-
-                                  {/* Step count */}
-                                  <Text style={{ fontSize: 16, color: '#00A2A2', fontWeight: 'bold' }}>
-                                      {this.state.healthData.step_count ?? '--'}
-                                  </Text>
-                                  <Text style={{ fontSize: 14, color: '#00A2A2', textAlign: 'center' }}>
-                                      Step count{'\n'}(steps)
-                                  </Text>
-
-                                  <LinearGradient
-                                      colors={['#005C51', '#0CFFD3']}
-                                      start={{ x: 0, y: 0 }}
-                                      end={{ x: 1, y: 0 }}
-                                      style={{
-                                          padding: 2,
-                                          width: '90%',
-                                          marginVertical: 5,
-                                          borderRadius: 10,
-                                      }}
-                                  />
-
-                                  {/* Gait speed */}
-                                  <Text style={{ fontSize: 16, color: '#00A2A2', fontWeight: 'bold' }}>
-                                      {this.state.healthData.gait_speed ?? '--'}
-                                  </Text>
-                                  <Text style={{ fontSize: 14, color: '#00A2A2', textAlign: 'center' }}>
-                                      Gait Speed{'\n'}(m/s)
-                                  </Text>
-                              </View>
-                          </LinearGradient>
-                      </View>
-
-                        {/* ─────────── PRESSURE + STANCE-TIME PERCENTAGE CARD ─────────── */}
-                        <LinearGradient
-                          colors={['#005C51', '#0CFFD3']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 0 }}
-                          style={{
-                              padding: 1,
-                              borderRadius: 12,
-                              marginHorizontal: 10,
-                              marginTop: 0,           // ← adds breathing room under Peak-Pressure card
-                          }}
-                        >
-                          <View style={{ backgroundColor: '#fff', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 12 }}>
-
-                              {/* ── reusable pill component ─────────────────────────────── */}
-                              {/**  call as <Pill left={xx} right={yy}/>  */}
-
-
-                          {/* ─────────── Row 1 : Left foot (labels + pill) ─────────── */}
-                          <View style={{ flexDirection:'row', alignItems:'center', marginBottom:18, marginTop:12 }}>
-                              {/* icon */}
-                              <Image source={stanceStandImg} style={{ width:60, height:60, resizeMode:'contain' }} />
-                              {/* pill */}
-                              <View style={{ marginLeft:22, marginRight:24 }}>
-                                  {/* headings row */}
-                                  <View style={{
-                                        flexDirection:'row',
-                                        justifyContent:'space-between',
-                                        width:180,                 // exact width of the pill (90 + 90)
-                                        marginBottom:2,            // tiny gap above the pill
-                                  }}>
-                                    <Text style={{ width:90, textAlign:'center', fontSize:16, fontWeight:'bold', color:'#000' }}>
-                                        Stance
-                                    </Text>
-                                    <Text style={{ width:90, textAlign:'center', fontSize:16, fontWeight:'bold', color:'#000' }}>
-                                        Swing
-                                    </Text>
-                                  </View>
-                                  <Pill
-                                      left={this.state.healthData.left_stance}
-                                      right={this.state.healthData.left_swing}
-                                  />
-                              </View>
-                              {/* label */}
-                              <Text style={{ flex:1, textAlign:'center', color:'#00A2A2', fontSize:14 }}>
-                                  Left foot
-                              </Text>
-                          </View>
-
-                          {/* ─────────── Row 2 : Right-foot stance / swing % ─────────── */}
-                          <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-evenly', marginBottom:12, marginTop:10 }}>
-                              {/* icon */}
-                              <Image source={stanceStandImg} style={{ width:60, height:60, resizeMode:'contain' }} />
-                              {/* pill */}
-                              <View style={{ marginLeft:22, marginRight:24 }}>
-                                  <Pill
-                                      left={this.state.healthData.right_stance}
-                                      right={this.state.healthData.right_swing}
-                                  />
-                              </View>
-                              {/* label */}
-                              <Text style={{ flex:1, textAlign:'center', color:'#00A2A2', fontSize:14 }}>
-                                  Right foot
-                              </Text>
-                            </View>
-                            </View>
-                        </LinearGradient>
-                      </>
-                      ) : (
-                      /* -------------------------------------------------------------- *
-                      *   SENSOR-TYPE 1  →  show existing Foot-Balance card           *
-                      * -------------------------------------------------------------- */
-                        <View style={{ marginVertical: 10 }}>
-                          {/*  keep your original Foot Balance JSX exactly as-is  */}
-                            <>
-                                <View style={{ marginVertical: 10 }}>
-                                    <LinearGradient
-                                        colors={['#005C51', '#0CFFD3']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
-                                        style={{
-                                            padding: 1,
-                                            borderRadius: 10,
-                                            marginHorizontal: 10,
-                                        }}>
-                                        <View
-                                            style={{
-                                                backgroundColor: '#fff',
-                                                padding: 10,
-                                                borderRadius: 10,
-                                            }}>
-                                            <View
-                                                style={{
-                                                    flexDirection: 'row',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    paddingHorizontal: 10,
-                                                    width: '100%',
-                                                }}>
-                                                {/* ---------- Left column: Radar + labels ---------- */}
-                                                <View style={{ width: '40%' }}>
-                                                    <Text style={{ fontSize: 18, color: '#00A2A2' }}>
-                                                        Foot Balance{' '}
-                                                    </Text>
-
-                                                    <View style={{ alignItems: 'center', marginVertical: 5 }}>
-                                                        {this.state.focus ? (
-                                                            <RadarChartForDashboard
-                                                                positionValue={this.state.positionValue}
-                                                            />
-                                                        ) : (
-                                                            <View />
-                                                        )}
-                                                    </View>
-
-                                                    <View
-                                                        style={{
-                                                            flexDirection: 'row',
-                                                            justifyContent: 'space-between',
-                                                            alignItems: 'center',
-                                                        }}>
-                                                        <Text style={{ fontSize: 15, color: '#00A2A2' }}>Left</Text>
-                                                        <Text style={{ fontSize: 15, color: '#00A2A2' }}>Right</Text>
-                                                    </View>
-                                                </View>
-
-                                                {/* ---------- Right column: sway / velocity cards ---------- */}
-                                                <View
-                                                    style={{
-                                                        width: '65%',
-                                                        paddingHorizontal: 5,
-                                                        paddingVertical: 5,
-                                                    }}>
-                                                    {/* -- Card 1 : Path, ML, AP sway -- */}
-                                                    <LinearGradient
-                                                        colors={['#005C51', '#0CFFD3']}
-                                                        start={{ x: 0, y: 0 }}
-                                                        end={{ x: 1, y: 0 }}
-                                                        style={{
-                                                            padding: 1,
-                                                            borderRadius: 10,
-                                                            marginHorizontal: 5,
-                                                            marginVertical: 10,
-                                                        }}>
-                                                        <View
-                                                            style={{
-                                                                backgroundColor: '#fff',
-                                                                padding: 10,
-                                                                borderRadius: 10,
-                                                            }}>
-                                                            <View
-                                                                style={{
-                                                                    justifyContent: 'center',
-                                                                    alignItems: 'center',
-                                                                }}>
-                                                                <Text style={{ fontSize: 15, color: '#00A2A2' }}>
-                                                                    Path Sway
-                                                                </Text>
-                                                                <Text
-                                                                    style={{
-                                                                        fontSize: 15,
-                                                                        color: '#00A2A2',
-                                                                        fontWeight: 'bold',
-                                                                    }}>
-                                                                    {this.state.healthData.path_sway} cm
-                                                                </Text>
-                                                            </View>
-
-                                                            <View
-                                                                style={{
-                                                                    flexDirection: 'row',
-                                                                    justifyContent: 'space-evenly',
-                                                                    alignItems: 'center',
-                                                                }}>
-                                                                <View
-                                                                    style={{
-                                                                        justifyContent: 'center',
-                                                                        alignItems: 'center',
-                                                                    }}>
-                                                                    <Text style={{ fontSize: 15, color: '#00A2A2' }}>
-                                                                        ML Sway
-                                                                    </Text>
-                                                                    <Text
-                                                                        style={{
-                                                                            fontSize: 15,
-                                                                            color: '#00A2A2',
-                                                                            fontWeight: 'bold',
-                                                                        }}>
-                                                                        {this.state.healthData.ml_sway} cm
-                                                                    </Text>
-                                                                </View>
-
-                                                                <View
-                                                                    style={{
-                                                                        justifyContent: 'center',
-                                                                        alignItems: 'center',
-                                                                    }}>
-                                                                    <Text style={{ fontSize: 15, color: '#00A2A2' }}>
-                                                                        AP Sway
-                                                                    </Text>
-                                                                    <Text
-                                                                        style={{
-                                                                            fontSize: 15,
-                                                                            color: '#00A2A2',
-                                                                            fontWeight: 'bold',
-                                                                        }}>
-                                                                        {this.state.healthData.ap_sway} cm
-                                                                    </Text>
-                                                                </View>
-                                                            </View>
-                                                        </View>
-                                                    </LinearGradient>
-
-                                                    {/* -- Card 2 : Ellipse area + velocity -- */}
-                                                    <LinearGradient
-                                                        colors={['#005C51', '#0CFFD3']}
-                                                        start={{ x: 0, y: 0 }}
-                                                        end={{ x: 1, y: 0 }}
-                                                        style={{
-                                                            padding: 1,
-                                                            borderRadius: 10,
-                                                            marginHorizontal: 5,
-                                                            marginVertical: 10,
-                                                        }}>
-                                                        <View
-                                                            style={{
-                                                                backgroundColor: '#fff',
-                                                                padding: 10,
-                                                                borderRadius: 10,
-                                                            }}>
-                                                            <View
-                                                                style={{
-                                                                    flexDirection: 'row',
-                                                                    justifyContent: 'space-evenly',
-                                                                    alignItems: 'center',
-                                                                }}>
-                                                                {/* Ellipse area */}
-                                                                <View
-                                                                    style={{
-                                                                        justifyContent: 'center',
-                                                                        alignItems: 'center',
-                                                                        marginHorizontal: 5,
-                                                                    }}>
-                                                                    <Text
-                                                                        style={{
-                                                                            fontSize: 15,
-                                                                            color: '#00A2A2',
-                                                                            textAlign: 'center',
-                                                                        }}>
-                                                                        Ellipse Area
-                                                                    </Text>
-                                                                    <Text
-                                                                        style={{
-                                                                            fontSize: 15,
-                                                                            textAlign: 'center',
-                                                                            color: '#00A2A2',
-                                                                            fontWeight: 'bold',
-                                                                        }}>
-                                                                        {this.state.healthData.ellipse_area + '\n'} cm
-                                                                    </Text>
-                                                                    <Text
-                                                                        style={{
-                                                                            position: 'absolute',
-                                                                            fontSize: 10,
-                                                                            top: 37,
-                                                                            left: 52,
-                                                                            color: '#00A2A2',
-                                                                            fontWeight: 'bold',
-                                                                        }}>
-                                                                        ²
-                                                                    </Text>
-                                                                </View>
-
-                                                                {/* Velocity */}
-                                                                <View
-                                                                    style={{
-                                                                        justifyContent: 'center',
-                                                                        alignItems: 'center',
-                                                                        marginHorizontal: 5,
-                                                                    }}>
-                                                                    <Text
-                                                                        style={{
-                                                                            fontSize: 15,
-                                                                            color: '#00A2A2',
-                                                                            textAlign: 'center',
-                                                                        }}>
-                                                                        Velocity
-                                                                    </Text>
-                                                                    <Text
-                                                                        style={{
-                                                                            textAlign: 'center',
-                                                                            fontSize: 15,
-                                                                            color: '#00A2A2',
-                                                                            fontWeight: 'bold',
-                                                                        }}>
-                                                                        {this.state.healthData.velocity + '\n'} cm/sec
-                                                                    </Text>
-                                                                </View>
-                                                            </View>
-                                                        </View>
-                                                    </LinearGradient>
-                                                </View>
-                                            </View>
-                                        </View>
-                                    </LinearGradient>
-                                </View>
-                            </>
-                        </View>
-                      )}
-                      </View>
-                  </View>
-                </ScrollView>
-
-                {/* ──────────── PAGE 2 ──────────── */}
-                  <LinearGradient
-                      colors={[
-                          '#eafffa',
-                          '#eafffa'
-                          // '#FFFFFF',
-                          // '#FFFFFF',
-                          // 'rgba(216,255,255,0.6)',
-                          // '#CFFFFF',
-                      ]}
-                      locations={[0, 0.9, 0.96, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 0, y: 1 }}
-                      style={{ flex: 1 }}
-                  >
-                      <ScrollView
-                          contentContainerStyle={{
-                              flexGrow: 1,
-                              alignItems: 'center',
-                              paddingHorizontal: 20,
-                          }}
-                          showsVerticalScrollIndicator={false}
-                      >
-                      <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 20 }}>
-
-                          <View
-                              style={{
-                                  width: 300,
-                                  height: 300,
-                                  borderRadius: 150,
-                                  overflow: 'hidden',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  marginTop: 40,
-                              }}
-                          >
-                              <Image
-                                  source={exerciseImg}
-                                  style={{ width: '100%', height: '100%', resizeMode: 'contain' }}
-                              />
-                          </View>
-
-                          {/* paragraph */}
-                          <View style={{ width: '85%', backgroundColor: '#fff', borderRadius: 16, padding: 18, marginVertical: 10, elevation: 2 }}>
-                          <Text
-                              style={{
-                                  width: 325,
-                                  // marginTop: 24,
-                                  fontFamily: 'BaiJamjuree-Medium',
-                                  fontSize: 16,
-                                  lineHeight: 16 * 1.53,
-                                  textAlign: 'justify',
-                                  color: '#333',
-                              }}
-                          >
-                              {this.state.dashboardSummaryText || 'Loading summary...'}
-                          </Text>
-                          </View>
-
-                          {/* push button to the bottom */}
-                          <View style={{ flex: 1 }} />
-
-                          {/* Exercise Training CTA */}
-                          <TouchableOpacity
-                              activeOpacity={0.8}
-                              style={{
-                                  width: 353,
-                                  height: 56.5,
-                                  borderRadius: 30,
-                                  backgroundColor: '#00A2A2',
-                                  justifyContent: 'center',
-                                  alignItems: 'center',
-                                  marginBottom: 70,        // keeps button off the very edge
-                              }}
-                              onPress={() => this.props.navigation.navigate('ExerciseTraining')}
-                          >
-                              <Text
-                                  style={{
-                                      fontFamily: 'BaiJamjuree-Bold', // 700 weight
-                                      fontSize: 30,
-                                      lineHeight: 30,                 // 100 % of font size
-                                      letterSpacing: -0.3,            // ≈ −1 % of 30 px
-                                      color: '#FFFFFF',
-                                      textAlign: 'center',
-                                  }}
-                              >
-                                  {this.props.exerciseTrainingLabel}
-                              </Text>
-                          </TouchableOpacity>
-                      </View>
-                      </ScrollView>
-                  </LinearGradient>
-
-              </Swiper>
-          )}
-        </View>
+           {/* Pagination Dots */}
+           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', position: 'absolute', bottom: 5, width: '100%' }}>
+             <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: this.state.currentPage === 0 ? '#007bff' : '#e0e0e0', marginHorizontal: 5 }} />
+             <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: this.state.currentPage === 1 ? '#007bff' : '#e0e0e0', marginHorizontal: 5 }} />
+           </View>
+         </View>
+        </PagerView>
+      </View>
     );
   }
 }
 
-const mapStateToProps = state => {
-    const langKey = state.lang;
+const mapStateToProps = state => ({
+  user: state.user,
+  data: state.data,
+  lang: state.lang,
+  token: state.token,
+});
 
-    const effectiveUser = state.impersonating && state.patient_id
-        ? { ...state.user, id_customer: state.patient_id, security_token: state.patient_token }
-        : state.user;
-
-    const effectiveToken = state.impersonating && state.patient_token
-        ? state.patient_token
-        : state.token;
-
-    return {
-        user: effectiveUser,
-        token: effectiveToken,
-        lang: state.lang,
-        exerciseTrainingLabel: getLocalizedText(state.lang, LangDashboard.exerciseTraining) || 'Exercise Training',
-    };
-};
-
-
-export default connect(mapStateToProps)(index);
+export default connect(mapStateToProps)(DashboardScreen);

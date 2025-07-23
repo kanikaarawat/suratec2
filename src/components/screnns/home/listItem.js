@@ -94,16 +94,7 @@ class listItem extends Component {
                         alignItems: 'center',
                         marginHorizontal: 5,
                     }}>
-                    <Items
-                        text={getLocalizedText(this.props.lang, Lang.assessmentTests)}
-                        source={require('../../../assets/image/menu/assessment_icon.png')}
-                        onPress={() => {
-                            this.props.navigation.navigate('FallRiskScreen', {
-                                name: getLocalizedText(this.props.lang, Lang.assessmentTests),
-                            });
-                        }}
-                    />
-                    <Items
+                         <Items
                         text={getLocalizedText(this.props.lang, Lang.gaitAnalysisButton)}
                         source={require('../../../assets/image/menu/gail.png')}
                         onPress={() => {
@@ -119,24 +110,12 @@ class listItem extends Component {
                         text={getLocalizedText(this.props.lang, Lang.exerciseTraining)}
                         source={require('../../../assets/image/menu/training.png')}
                         onPress={() => {
-                            this.props.navigation.navigate('ExerciseTraining', {
+                            this.props.navigation.navigate('Training', {
                                 name: getLocalizedText(this.props.lang, Lang.exerciseTraining),
                             });
                         }}
                     />
 
-                </View>
-
-                {/* Row 3 */}
-                <View
-                    style={{
-                        width: '96%',
-                        alignSelf: 'center',
-                        flexDirection: 'row',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        marginHorizontal: 5,
-                    }}>
                     <Items
                         text={getLocalizedText(this.props.lang, Lang.footsBalanceButton)}
                         source={require('../../../assets/image/menu/balance.png')}
@@ -152,12 +131,36 @@ class listItem extends Component {
                             }
                         }}
                     />
+                    
+                   
+                </View>
+
+                {/* Row 3 */}
+                <View
+                    style={{
+                        width: '96%',
+                        alignSelf: 'center',
+                        flexDirection: 'row',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginHorizontal: 5,
+                    }}>
+                    
                     <Items
-                        text={getLocalizedText(this.props.lang, Lang.shoeRecommend)}
-                        source={require('../../../assets/image/menu/shoe_icon.png')}
+                        text="Gesture"
+                        source={require('../../../assets/image/menu/gesture.png')}
                         onPress={() => {
-                            this.props.navigation.navigate('ShoeRecommend', {
-                                name: getLocalizedText(this.props.lang, Lang.shoeRecommend),
+                            this.props.navigation.navigate('Gesture', {
+                                name: 'Gesture',
+                            });
+                        }}
+                    />
+                    <Items
+                        text="Gesture Analysis"
+                        source={require('../../../assets/image/menu/gesture_analysis.jpg')}
+                        onPress={() => {
+                            this.props.navigation.navigate('GestureAnalysis', {
+                                name: 'Gesture Analysis',
                             });
                         }}
                     />
