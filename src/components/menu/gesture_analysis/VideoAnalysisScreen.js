@@ -55,10 +55,19 @@ const isInDustbin = (x, y) =>
   x > DUSTBIN_AREA.x && x < DUSTBIN_AREA.x + DUSTBIN_AREA.width &&
   y > DUSTBIN_AREA.y && y < DUSTBIN_AREA.y + DUSTBIN_AREA.height;
 
-const VideoAnalysisScreen = ({ route, navigation }) => {
+const VideoAnalysisScreen = (props) => {
+  // Support both v4 and v5 navigation prop shapes
+  const videoUri =
+    props.route?.params?.videoUri ||
+    props.navigation?.state?.params?.videoUri;
+  // Removed excessive logging to prevent video stutter
+  const isValidVideoUri = typeof videoUri === 'string' && videoUri.length > 0;
   const lang = useSelector(state => state.lang);
-  const videoUri = route?.params?.videoUri;
-  const videoId = route?.params?.videoId || route?.params?.video_id;
+  const videoId =
+    props.route?.params?.videoId ||
+    props.route?.params?.video_id ||
+    props.navigation?.state?.params?.videoId ||
+    props.navigation?.state?.params?.video_id;
   const [playbackRate, setPlaybackRate] = useState(1.0);
   const [showPlaybackOptions, setShowPlaybackOptions] = useState(false);
   const [showAngles] = useState(false);
@@ -460,14 +469,22 @@ const VideoAnalysisScreen = ({ route, navigation }) => {
     setIsPlaying(p => !p);
   };
   const handleProgress = (progress) => {
-    setCurrentTime(progress.currentTime);
+    // Only update if time actually changed and not seeking
+    setCurrentTime(prevTime => {
+      if (Math.abs(prevTime - progress.currentTime) > 0.25) {
+        return progress.currentTime;
+      }
+      return prevTime;
+    });
   };
   const handleLoad = (meta) => {
     setDuration(meta.duration);
   };
   const handleSeek = (value) => {
-    videoRef.current?.seek(value);
-    setCurrentTime(value);
+    if (Math.abs(currentTime - value) > 0.25) {
+      videoRef.current?.seek(value);
+      setCurrentTime(value);
+    }
   };
 
   // Optionally, display sensor type info:
@@ -478,10 +495,10 @@ const VideoAnalysisScreen = ({ route, navigation }) => {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <HeaderFix
-        title={LangHome.gestureAnalysisButton}
+        title="Gesture Analysis"
         lang={lang}
         icon_left={true}
-        onpress_left={() => navigation && navigation.goBack && navigation.goBack()}
+        onpress_left={() => props.navigation && props.navigation.goBack && props.navigation.goBack()}
       />
       <View style={{ flex: 1 }}>
         <TouchableOpacity
@@ -491,17 +508,23 @@ const VideoAnalysisScreen = ({ route, navigation }) => {
         >
           {/* Fullscreen black video area */}
           <View style={styles.fullScreenVideo}>
-            <Video
-              ref={videoRef}
-              source={{ uri: videoUri }}
-              style={styles.fullScreenVideo}
-              controls={false}
-              paused={!isPlaying}
-              rate={playbackRate}
-              resizeMode="contain"
-              onProgress={handleProgress}
-              onLoad={handleLoad}
-            />
+            {isValidVideoUri ? (
+              <Video
+                ref={videoRef}
+                source={{ uri: videoUri }}
+                style={styles.fullScreenVideo}
+                controls={false}
+                paused={!isPlaying}
+                rate={playbackRate}
+                resizeMode="contain"
+                onProgress={handleProgress}
+                onLoad={handleLoad}
+              />
+            ) : (
+              <View style={[styles.fullScreenVideo, { justifyContent: 'center', alignItems: 'center' }]}> 
+                <Text style={{ color: 'red', fontSize: 18 }}>No video source provided</Text>
+              </View>
+            )}
             {/* Custom playback controls */}
             <View style={styles.customControlsContainer}>
               <Slider

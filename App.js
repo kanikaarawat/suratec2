@@ -24,10 +24,7 @@ import DailyDataScreen from './src/components/menu/dailydata';
 import PressureMapScreen from './src/components/menu/pressuremap';
 import GailAnalysisScreen from './src/components/menu/gail';
 import TrainingScreen from './src/components/menu/training';
-import ExerciseTraining from './src/components/menu/training/ExerciseTraining';
-import ExerciseWorkOutScreen from './src/components/menu/training/ExerciseWorkOut';
-import LowRiskExercise from './src/components/menu/training/LowRiskExercise';
-import ModerateRiskExercise from './src/components/menu/training/ModerateRiskExercise';
+
 import DashboardScreen from './src/components/menu/dashboard';
 import ProfileScreen from './src/components/menu/profile';
 import FootsBalanceScreen from './src/components/menu/balance';
@@ -61,6 +58,11 @@ import PatientList from './src/components/screnns/Try/PatientList';
 import Gesture from './src/components/menu/gesture';
 import GestureAnalysisWrapper from './src/components/menu/gesture_analysis/GestureAnalysisWrapper';
 import VideoAnalysisScreen from './src/components/menu/gesture_analysis/VideoAnalysisScreen';
+import TrainingSettings from './src/components/menu/training/settings';
+
+// Import WalkTrainingSettings for navigation
+import WalkTrainingSettings from './src/components/menu/training/settings';
+
 
 // FAB Component
 import DraggableFAB from './src/components/common/DraggableFAB';
@@ -75,7 +77,11 @@ const withFAB = (ScreenComponent) => {
         render() {
             return (
                 <View style={styles.screenContainer}>
-                    <ScreenComponent {...this.props} />
+                    <ScreenComponent
+                        {...this.props}
+                        navigation={this.props.navigation}
+                        route={this.props.route}
+                    />
                     <DraggableFAB navigation={this.props.navigation} />
                 </View>
             );
@@ -116,11 +122,8 @@ const AppStack = createStackNavigator(
         PressureMap: withFAB(PressureMapScreen),
         GailAnalysis: withFAB(GailAnalysisScreen),
         Training: withFAB(TrainingScreen),
-        ExerciseTraining: withFAB(ExerciseTraining),
-        ExerciseWorkOut: withFAB(ExerciseWorkOutScreen),
-        LowRiskExercise: withFAB(LowRiskExercise),
-        ModerateRiskExercise: withFAB(ModerateRiskExercise),
-        FallRiskScreen: withFAB(FallRiskScreen),
+
+
         StandOpenEyes: withFAB((props) => <StandEyes {...props} type="open" />),
         StandEyesClosed: withFAB((props) => <StandEyes {...props} type="closed" />),
         TenMeterWalkTest: withFAB(TenMeterWalkTest),
@@ -142,10 +145,18 @@ const AppStack = createStackNavigator(
         RigthFootsEight: withFAB(RightFootsEightSensorScreen),
         DashboardEight: withFAB(DashboardEightSensorScreen),
         Gesture: withFAB(Gesture),
-        GestureAnalysis: withFAB(GestureAnalysisWrapper),
-        VideoAnalysis: VideoAnalysisScreen,
+        GestureAnalysis: withFAB((props) => {
+            const { useSelector } = require('react-redux');
+            const token = useSelector(state => state?.token);
+            const user = useSelector(state => state?.user);
+            const id_member = user?.member_info?.id_member || user?.id_member || user?.id_data_role || user?.id_customer;
+            return <GestureAnalysisWrapper {...props} token={token} id_member={id_member} />;
+        }),
+        VideoAnalysis: withFAB(VideoAnalysisScreen),
         Chatbot: Chatbot, // <-- No FAB here
         PatientList: PatientList,   // no withFAB
+        TrainingSettings: withFAB(TrainingSettings),
+        WalkTrainingSettings: withFAB(WalkTrainingSettings),
     },
     {
         defaultNavigationOptions: {

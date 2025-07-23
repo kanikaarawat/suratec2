@@ -97,6 +97,7 @@ class SignIn extends Component {
         device_token: deviceToken,
         deviceType,
         security_token: data.data,
+        id_member: data.member_info.id_member,
       };
       if (data.patients) userInfo.patients = data.patients;
 

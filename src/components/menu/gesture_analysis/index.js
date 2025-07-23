@@ -80,7 +80,7 @@ const GestureAnalysis = (props) => {
   return (
     <View style={{ flex: 1, backgroundColor: '#f6fcff' }}>
       <HeaderFix
-        title={LangHome.gestureAnalysisButton}
+        title="Gesture Analysis"
         lang={props.lang}
         icon_left={true}
         onpress_left={() => navigation.navigate('Home')}
@@ -103,6 +103,7 @@ const GestureAnalysis = (props) => {
                 onPress={() => {
                   console.log('[NAVIGATION] Gesture Analysis video selected:', item);
                   if (item && item.video_url) {
+                    console.log('[GestureAnalysis] onSelectVideo called with:', item.video_url);
                     props.onSelectVideo(item.video_url);
                   } else {
                     console.warn('[GESTURE_ANALYSIS] Missing video_url in item:', item);

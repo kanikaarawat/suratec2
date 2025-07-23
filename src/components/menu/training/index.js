@@ -1,20 +1,39 @@
-//5.11.62
-
 import React, {Component} from 'react';
 import {
-  View,
   Image,
   Dimensions,
   NativeModules,
   NativeEventEmitter,
-  ScrollView,
   Vibration,
   Alert,
   StyleSheet,
+  BackHandler,
 } from 'react-native';
-import NetInfo from '@react-native-community/netinfo';
-import {Card, TabHeading} from 'native-base';
-import {Col, Grid} from 'react-native-easy-grid';
+import { TouchableOpacity } from 'react-native';
+import {
+  Container,
+  Header,
+  Content,
+  Card,
+  CardItem,
+  Text,
+  Button,
+  Icon,
+  Body,
+  Title,
+  Left,
+  Right,
+  Grid,
+  Col,
+  Tab,
+  Tabs,
+  Fab,
+  View,
+  Switch,
+  Input,
+  Item,
+  Picker
+} from 'native-base';
 import {connect} from 'react-redux';
 import {
   FileManager,
@@ -26,7 +45,7 @@ import {Dropdown} from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HeaderFix from '../../common/HeaderFix';
 import NotificationsState from '../../shared/Notification';
-import Text from '../../common/TextFix';
+import TextFix from '../../common/TextFix';
 import ButtonFix from '../../common/ButtonFix';
 import AlertFix from '../../common/AlertsFix';
 import API from '../../../config/Api';
@@ -42,6 +61,10 @@ import BleManager from 'react-native-ble-manager';
 import Lang from '../../../assets/language/menu/lang_record';
 import LangHome from '../../../assets/language/screen/lang_home';
 import TrainingLang from '../../../assets/language/menu/lang_training';
+
+
+const settingsIcon = require('../../../assets/image/icons/settings.png');
+const soundIcon = require('../../../assets/image/icons/sound.png');
 
 var RNFS = require('react-native-fs');
 
@@ -111,6 +134,7 @@ class index extends Component {
   //#endregion
 
   componentDidMount = async () => {
+    console.log('[NAVIGATION] Entered menu/training module');
     // notiAlarm
     let noti = await AsyncStorage.getItem('notiSetting');
     noti !== null ? this.setState({notiAlarm: parseInt(noti)}) : 100;
@@ -122,6 +146,8 @@ class index extends Component {
     NetInfo.addEventListener(this.handleConnectivityChange);
     this.retrieveConnected();
     this.startReading();
+
+    this.backHandler = BackHandler.addEventListener('hardwareBackPress', this.handleBackPress);
   };
 
   componentWillUnmount = () => {
@@ -129,6 +155,10 @@ class index extends Component {
     if (this.dataRecord) {
       this.dataRecord.remove();
     }
+    if (this.props.dispatch) {
+      this.props.dispatch({ type: 'READ_BLUETOOTH_STATE', payload: false });
+    }
+    if (this.backHandler) this.backHandler.remove();
   };
 
   getWalktrainingdata() {
@@ -410,11 +440,11 @@ class index extends Component {
       this.props.actionRecordingButton('Record');
       this.setState({textAction: 'Record'});
     }
-
     this.dataRecord = bleManagerEmitter.addListener(
       'BleManagerDidUpdateValueForCharacteristic',
       ({value, peripheral, characteristic, service}) => {
         let time = new Date();
+        let newData = null;
         if (peripheral === this.props.rightDevice) {
           let rsensor = this.toDecimalArray(value);
           this.recordData(rsensor, 2);
@@ -427,6 +457,7 @@ class index extends Component {
             );
             this.setState({rsensor: sensor, shouldVibrate});
             this.rtime = time;
+            newData = { side: 'right', sensor };
           }
         }
         if (peripheral === this.props.leftDevice) {
@@ -441,10 +472,17 @@ class index extends Component {
             );
             this.setState({lsensor: sensor, shouldVibrate});
             this.ltime = time;
+            newData = { side: 'left', sensor };
           }
+        }
+        if (newData && this.props.dispatch) {
+          this.props.dispatch({ type: 'ADD_BLUETOOTH_DATA', payload: newData });
         }
       },
     );
+    if (this.props.dispatch) {
+      this.props.dispatch({ type: 'READ_BLUETOOTH_STATE', payload: true });
+    }
   }
 
   recordData(data, sensor) {
@@ -776,73 +814,92 @@ class index extends Component {
     }
   };
 
+  handleBackPress = () => {
+    const { navigation } = this.props;
+    if (navigation && typeof navigation.goBack === 'function') {
+      navigation.goBack();
+      return true;
+    } else if (navigation && typeof navigation.navigate === 'function') {
+      navigation.navigate('Home');
+      return true;
+    }
+    return false;
+  };
+
   render() {
     this.canVibration(this.state.shouldVibrate, this.state.switch);
     return (
-      <View style={{flex: 1, backgroundColor: 'white'}}>
+      <Container style={{backgroundColor: '#fff'}}>
         <HeaderFix
           icon_left={'left'}
           onpress_left={() => {
             this.props.navigation.goBack();
           }}
-          title={this.props.navigation.getParam('name', '')}
+          title={'Walk Training'}
         />
 
-        <ScrollView>
-          <NotificationsState />
+        <Content contentContainerStyle={{flexGrow: 1}}>
 
-          <View style={{flex: 5, height: '100%', padding: 15}}>
-            <View style={styles.container}>
-              <Text
-                style={[styles.label, this.state.isFocus1 && {color: 'blue'}]}>
-                Please select your left/right foot
-              </Text>
+          {/* Settings Heading */}
+          <View style={styles.settingsHeader}>
+            <Text style={styles.headerText}>Settings</Text>
+            <TouchableOpacity 
+              onPress={() => this.props.navigation.navigate('WalkTrainingSettings')}
+              style={styles.iconButton}>
+              <Image source={settingsIcon} style={styles.icon} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Notification Section */}
+          <Card style={styles.notificationContainer}>
+            <View style={styles.notificationRow}>
+              <Text style={styles.notificationText}>Notifications</Text>
+              <View style={styles.notificationControls}>
+                <Switch
+                  value={this.props.noti}
+                  onValueChange={v => this.props.actionNotificationButton(v)}
+                  thumbColor={this.props.noti ? UI.color_buttonConfirm : UI.color_greyLight}
+                  trackColor={{false: UI.color_greyLight, true: UI.color_buttonConfirmLight}}
+                />
+                <Image source={soundIcon} style={[styles.icon, styles.soundIcon]} />
+              </View>
+            </View>
+          </Card>
+
+          {/* Dropdowns Row */}
+          <View style={styles.dropdownsContainer}>
+            <View style={styles.dropdownWrapper}>
+              <Text style={styles.dropdownLabel}>Select foot</Text>
               <Dropdown
-                style={[
-                  styles.dropdown,
-                  this.state.isFocus1 && {borderColor: 'blue'},
-                ]}
+                style={[styles.dropdown, this.state.isFocus1 && {borderColor: 'blue'}]}
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
-                // inputSearchStyle={styles.inputSearchStyle}
                 iconStyle={styles.iconStyle}
                 data={[
                   {label: 'Left', value: 'Left', id: '1'},
                   {label: 'Right', value: 'Right', id: '2'},
                 ]}
                 itemTextStyle={styles.placeholderStyle}
-                // search
                 maxHeight={300}
                 labelField="label"
                 valueField="value"
-                placeholder={!this.state.isFocus1 ? 'Select item' : '...'}
-                // searchPlaceholder="Search..."
+                placeholder={'Select item'}
                 value={this.state.drpDown1PlcHldr}
                 onFocus={() => this.setState({isFocus1: true})}
                 onBlur={() => this.setState({isFocus1: false})}
                 onChange={item => {
-                  //   setValue(item.value);
                   this.selectFoot(item.id, item.value);
                   this.setState({isFocus1: false});
                 }}
               />
             </View>
 
-            <View style={styles.container}>
-              <Text
-                style={[styles.label, this.state.isFocus2 && {color: 'blue'}]}>
-                {this.props.lang
-                  ? TrainingLang.titleText.thai
-                  : TrainingLang.titleText.eng}
-              </Text>
+            <View style={styles.dropdownWrapper}>
+              <Text style={styles.dropdownLabel}>Select training mode</Text>
               <Dropdown
-                style={[
-                  styles.dropdown,
-                  this.state.isFocus2 && {borderColor: 'blue'},
-                ]}
+                style={[styles.dropdown, this.state.isFocus2 && {borderColor: 'blue'}]}
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
-                // inputSearchStyle={styles.inputSearchStyle}
                 iconStyle={styles.iconStyle}
                 data={[
                   {label: 'Toe touch', value: 'Toe touch', id: '1'},
@@ -850,196 +907,133 @@ class index extends Component {
                   {label: 'Full weight', value: 'Full weight', id: '3'},
                 ]}
                 itemTextStyle={styles.placeholderStyle}
-                // search
                 maxHeight={300}
                 labelField="label"
                 valueField="value"
-                placeholder={!this.state.isFocus2 ? 'Select item' : '...'}
-                // searchPlaceholder="Search..."
+                placeholder={'Select item'}
                 value={this.state.drpDown2PlcHldr}
                 onFocus={() => this.setState({isFocus2: true})}
                 onBlur={() => this.setState({isFocus2: false})}
                 onChange={item => {
-                  //   setValue(item.value);
                   this.onDropDownChange(item.id, item.value);
                   this.setState({isFocus2: false});
                 }}
               />
             </View>
-
-            {/* <DropdownFix
-              title={'please select your left/right foot'}
-              placeholderDropdown={{
-                label: '',
-                value: null,
-              }}
-              onValueChange={items => this.selectFoot(items)}
-              items={[
-                {label: 'Left', value: '1'},
-                {label: 'Right', value: '2'},
-              ]}
-            /> */}
-
-            {/* <DropdownFix
-              title={
-                this.props.lang
-                  ? TrainingLang.titleText.thai
-                  : TrainingLang.titleText.eng
-              }
-              placeholderDropdown={{
-                label: '',
-                value: null,
-              }}
-              onValueChange={items => this.onDropDownChange(items)}
-              items={[
-                {label: 'Toe touch', value: '1'},
-                {label: 'Partial weight', value: '2'},
-                {label: 'Full weight', value: '3'},
-              ]}
-            /> */}
-
-            <Grid style={{padding: 15}}>
-              <Col>
-                <Svg.Svg
-                  width={Dimensions.get('window').width / 2.5}
-                  height={Dimensions.get('window').height / 2.5}
-                  viewBox="0 0 382.38 1010.54">
-                  <Svg.Path
-                    fill="#999999"
-                    d="M211,1010.19a153.23,153.23,0,0,0,15.74-.84H195.63A151.93,151.93,0,0,0,211,1010.19Z"
-                    transform="translate(0 0)"
-                  />
-
-                  <Svg.Path
-                    fill={
-                      this.state.foot === 1
-                        ? this.actionGradientColor([this.state.lsensor[4]])
-                        : this.actionGradientColor([0])
-                    }
-                    d="M364.26,759.82c-5-26.36-12.86-52-20.44-76.88-4.93-16.16-10-32.87-14.28-49.56-1.93-7.57-4.5-15-5.89-22.46H56.34c4,39.25,2.11,79.19.14,120.42-1,22-2.12,44.69-2.22,67.16-.27,63.6,8,152.89,82.84,194a152.1,152.1,0,0,0,58.07,18h31a152.82,152.82,0,0,0,86.65-38.4C377.7,913.7,376.6,824.49,364.26,759.82Z"
-                    transform="translate(0 0)"
-                  />
-
-                  <Svg.Path
-                    fill={
-                      this.state.foot === 1
-                        ? this.actionGradientColor([this.state.lsensor[3]])
-                        : this.actionGradientColor([0])
-                    }
-                    d="M1.93,308.16c-2.66,34-2.59,66.19.35,96,4.26,43.28,17.86,80.77,35.19,125.29,4,13.81,8.45,28.25,12.48,41.09a342.5,342.5,0,0,1,6.51,40.79H324c-7.8-41.4-7.21-80.4,1.86-118.55,6.46-27.25,15.88-54.21,25-80.29,6.88-19.7,14-40.07,19.85-60.54a333.92,333.92,0,0,0,9.39-43.79Z"
-                    transform="translate(0 0)"
-                  />
-
-                  <Svg.Path
-                    fill={
-                      this.state.foot === 1
-                        ? this.actionGradientColor([
-                            this.state.lsensor[0],
-                            this.state.lsensor[1],
-                            this.state.lsensor[2],
-                          ])
-                        : this.actionGradientColor([0])
-                    }
-                    d="M380.15,308.16a292.35,292.35,0,0,0-2.82-90.07c-16.46-88-42.54-174.16-120.56-208.76-.21-.09-.42-.18-.64-.25s-.52-.25-.81-.37C200.46-12.56,133.87,6.08,93.33,54,36.52,121.28,14.43,212.3,5.87,276.83c-1.23,9.3-2.2,18.46-3,27.52l-.37,3.81Z"
-                    transform="translate(0 0)"
-                  />
-                </Svg.Svg>
-              </Col>
-              <Col>
-                <Svg.Svg
-                  width={Dimensions.get('window').width / 2.5}
-                  height={Dimensions.get('window').height / 2.5}
-                  viewBox="0 0 387.21 1023.36">
-                  <Svg.Path
-                    fill="#999999"
-                    d="M173.54,1023.05a154.31,154.31,0,0,1-15.94-.86h31.51A152.79,152.79,0,0,1,173.54,1023.05Z"
-                    transform="translate(-0.05 0)"
-                  />
-
-                  <Svg.Path
-                    fill={
-                      this.state.foot === 2
-                        ? this.actionGradientColor([this.state.rsensor[4]])
-                        : this.actionGradientColor([0])
-                    }
-                    d="M70,984.47a154.76,154.76,0,0,0,87.76,38.89h31.49A154,154,0,0,0,248,1005.14c75.77-41.63,84.17-132,83.9-196.44-.1-22.76-1.2-45.77-2.25-68-2-41.78-3.88-82.18.14-121.94H59.09c-1.41,7.5-4,15-6,22.75-4.3,16.89-9.47,33.82-14.46,50.17C31,716.82,23,742.79,17.92,769.53,5.45,834.94,4.34,925.38,70,984.47Z"
-                    transform="translate(-0.05 0)"
-                  />
-
-                  <Svg.Path
-                    fill={
-                      this.state.foot === 2
-                        ? this.actionGradientColor([this.state.rsensor[3]])
-                        : this.actionGradientColor([0])
-                    }
-                    d="M385.3,312.08c2.7,34.42,2.62,67-.36,97.27-4.31,43.79-18.08,81.76-35.63,126.84-4.07,14-8.56,28.61-12.65,41.62a349.17,349.17,0,0,0-6.58,41.29H59.1c7.9-42,7.3-81.45-1.84-120-6.54-27.6-16.09-54.91-25.32-81.32-7-19.95-14.18-40.58-20.1-61.31A338.25,338.25,0,0,1,2.3,312.08Z"
-                    transform="translate(-0.05 0)"
-                  />
-
-                  <Svg.Path
-                    fill={
-                      this.state.foot === 2
-                        ? this.actionGradientColor([
-                            this.state.rsensor[0],
-                            this.state.rsensor[1],
-                            this.state.rsensor[2],
-                          ])
-                        : this.actionGradientColor([0])
-                    }
-                    d="M2.3,312.08a296,296,0,0,1,2.85-91.21C21.82,131.74,48.19,44.44,127.2,9.45c.21-.09.42-.18.64-.25a8.58,8.58,0,0,1,.82-.37c55.56-21.54,123-2.67,164.06,45.9C350.3,122.82,372.62,215,381.3,280.36c1.24,9.43,2.23,18.69,3.08,27.88l.37,3.85Z"
-                    transform="translate(-0.05 0)"
-                  />
-                </Svg.Svg>
-              </Col>
-            </Grid>
           </View>
 
-          <View style={{flex: 1, padding: 15, borderRadius: 5}}>
+          {/* Footprints - SVG Version */}
+          <View style={styles.footprintsContainer}>
+            <View style={styles.footSvgContainer}>
+              <Svg.Svg
+                width={Dimensions.get('window').width / 2.5}
+                height={Dimensions.get('window').height / 2.5}
+                viewBox="0 0 382.38 1010.54">
+                <Svg.Path
+                  fill="#999999"
+                  d="M211,1010.19a153.23,153.23,0,0,0,15.74-.84H195.63A151.93,151.93,0,0,0,211,1010.19Z"
+                  transform="translate(0 0)"
+                />
+                <Svg.Path
+                  fill={
+                    this.state.foot === 1
+                      ? this.actionGradientColor([this.state.lsensor[4]])
+                      : this.actionGradientColor([0])
+                  }
+                  d="M364.26,759.82c-5-26.36-12.86-52-20.44-76.88-4.93-16.16-10-32.87-14.28-49.56-1.93-7.57-4.5-15-5.89-22.46H56.34c4,39.25,2.11,79.19.14,120.42-1,22-2.12,44.69-2.22,67.16-.27,63.6,8,152.89,82.84,194a152.1,152.1,0,0,0,58.07,18h31a152.82,152.82,0,0,0,86.65-38.4C377.7,913.7,376.6,824.49,364.26,759.82Z"
+                  transform="translate(0 0)"
+                />
+                <Svg.Path
+                  fill={
+                    this.state.foot === 1
+                      ? this.actionGradientColor([this.state.lsensor[3]])
+                      : this.actionGradientColor([0])
+                  }
+                  d="M1.93,308.16c-2.66,34-2.59,66.19.35,96,4.26,43.28,17.86,80.77,35.19,125.29,4,13.81,8.45,28.25,12.48,41.09a342.5,342.5,0,0,1,6.51,40.79H324c-7.8-41.4-7.21-80.4,1.86-118.55,6.46-27.25,15.88-54.21,25-80.29,6.88-19.7,14-40.07,19.85-60.54a333.92,333.92,0,0,0,9.39-43.79Z"
+                  transform="translate(0 0)"
+                />
+                <Svg.Path
+                  fill={
+                    this.state.foot === 1
+                      ? this.actionGradientColor([
+                          this.state.lsensor[0],
+                          this.state.lsensor[1],
+                          this.state.lsensor[2],
+                        ])
+                      : this.actionGradientColor([0])
+                  }
+                  d="M380.15,308.16a292.35,292.35,0,0,0-2.82-90.07c-16.46-88-42.54-174.16-120.56-208.76-.21-.09-.42-.18-.64-.25s-.52-.25-.81-.37C200.46-12.56,133.87,6.08,93.33,54,36.52,121.28,14.43,212.3,5.87,276.83c-1.23,9.3-2.2,18.46-3,27.52l-.37,3.81Z"
+                  transform="translate(0 0)"
+                />
+              </Svg.Svg>
+            </View>
+            <View style={styles.footSvgContainer}>
+              <Svg.Svg
+                width={Dimensions.get('window').width / 2.5}
+                height={Dimensions.get('window').height / 2.5}
+                viewBox="0 0 387.21 1023.36">
+                <Svg.Path
+                  fill="#999999"
+                  d="M173.54,1023.05a154.31,154.31,0,0,1-15.94-.86h31.51A152.79,152.79,0,0,1,173.54,1023.05Z"
+                  transform="translate(-0.05 0)"
+                />
+                <Svg.Path
+                  fill={
+                    this.state.foot === 2
+                      ? this.actionGradientColor([this.state.rsensor[4]])
+                      : this.actionGradientColor([0])
+                  }
+                  d="M70,984.47a154.76,154.76,0,0,0,87.76,38.89h31.49A154,154,0,0,0,248,1005.14c75.77-41.63,84.17-132,83.9-196.44-.1-22.76-1.2-45.77-2.25-68-2-41.78-3.88-82.18.14-121.94H59.09c-1.41,7.5-4,15-6,22.75-4.3,16.89-9.47,33.82-14.46,50.17C31,716.82,23,742.79,17.92,769.53,5.45,834.94,4.34,925.38,70,984.47Z"
+                  transform="translate(-0.05 0)"
+                />
+                <Svg.Path
+                  fill={
+                    this.state.foot === 2
+                      ? this.actionGradientColor([this.state.rsensor[3]])
+                      : this.actionGradientColor([0])
+                  }
+                  d="M385.3,312.08c2.7,34.42,2.62,67-.36,97.27-4.31,43.79-18.08,81.76-35.63,126.84-4.07,14-8.56,28.61-12.65,41.62a349.17,349.17,0,0,0-6.58,41.29H59.1c7.9-42,7.3-81.45-1.84-120-6.54-27.6-16.09-54.91-25.32-81.32-7-19.95-14.18-40.58-20.1-61.31A338.25,338.25,0,0,1,2.3,312.08Z"
+                  transform="translate(-0.05 0)"
+                />
+                <Svg.Path
+                  fill={
+                    this.state.foot === 2
+                      ? this.actionGradientColor([
+                          this.state.rsensor[0],
+                          this.state.rsensor[1],
+                          this.state.rsensor[2],
+                        ])
+                      : this.actionGradientColor([0])
+                  }
+                  d="M2.3,312.08a296,296,0,0,1,2.85-91.21C21.82,131.74,48.19,44.44,127.2,9.45c.21-.09.42-.18.64-.25a8.58,8.58,0,0,1,.82-.37c55.56-21.54,123-2.67,164.06,45.9C350.3,122.82,372.62,215,381.3,280.36c1.24,9.43,2.23,18.69,3.08,27.88l.37,3.85Z"
+                  transform="translate(-0.05 0)"
+                />
+              </Svg.Svg>
+            </View>
+          </View>
+
+          {/* Gradient Bar */}
+          <View style={styles.gradientContainer}>
             <LinearGradient
               start={{x: 0.0, y: 0.5}}
               end={{x: 1, y: 0.5}}
               colors={[UI.color_buttonConfirm, UI.color_buttonAction]}
-              style={{
-                borderRadius: 5,
-                height: '40%',
-                width: '100%',
-                alignItems: 'center',
-              }}
-            />
-            <CardStatusFix
-              title={'Balancing Grade'}
-              status={this.state.status}
-              txt={this.state.statusTxt}
+              style={styles.gradientBar}
             />
           </View>
 
-          <View
-            style={{
-              flex: 1,
-              height: '100%',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-            <Grid style={{padding: 15}}>
-              {/* <Col> */}
-              <ButtonFix
-                action={true}
-                rounded={true}
-                title={this.state.textAction}
-                onPress={() => this.actionRecording()}
-              />
-              {/* </Col> */}
-              {/* <Col>
-                <ButtonFix
-                  rounded={true}
-                  title={'Dashboard'}
-                  onPress={() => this.actionDashboard()}
-                />
-              </Col> */}
-            </Grid>
+          {/* Record Button */}
+          <View style={styles.buttonContainer}>
+            <ButtonFix
+              action={true}
+              rounded={true}
+              title={this.state.textAction}
+              onPress={() => this.actionRecording()}
+            />
           </View>
-        </ScrollView>
-      </View>
+        </Content>
+
+      </Container>
     );
   }
 }
@@ -1055,6 +1049,7 @@ const mapStateToProps = state => {
     productNumber: state.productNumber,
   };
 };
+
 const mapDisPatchToProps = dispatch => {
   return {
     addLeftDevice: device => {
@@ -1078,44 +1073,117 @@ const mapDisPatchToProps = dispatch => {
 export default connect(mapStateToProps, mapDisPatchToProps)(index);
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: 'white',
-    padding: 16,
+settingsHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: 16,
+  paddingBottom: 8,
+},
+headerText: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  color: '#000', // Changed to black for better visibility
+},
+iconButton: {
+  padding: 4,
+},
+icon: {
+  width: 24,
+  height: 24,
+  tintColor: UI.color_textSecondary,
+},
+notificationContainer: {
+  marginHorizontal: 16,
+  marginBottom: 16,
+  borderRadius: 8,
+  padding: 16,
+  backgroundColor: '#fff',
+  elevation: 2,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.2,
+  shadowRadius: 1,
+},
+notificationRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+},
+notificationText: {
+  fontSize: 16,
+  color: '#000', // Changed to black for better visibility
+},
+notificationControls: {
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+soundIcon: {
+  marginLeft: 16,
+},
+// ... rest of your styles remain the same
+  dropdownsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  dropdownWrapper: {
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  dropdownLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 6,
   },
   dropdown: {
     height: 50,
-    width: '60%',
-    borderColor: 'gray',
-    borderWidth: 0.5,
+    borderColor: '#ddd',
+    borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 8,
-  },
-  icon: {
-    marginRight: 5,
-  },
-  label: {
-    position: 'absolute',
-    backgroundColor: 'white',
-    left: 22,
-    top: 8,
-    zIndex: 999,
-    paddingHorizontal: 8,
-    fontSize: 14,
+    paddingHorizontal: 12,
+    backgroundColor: '#f9f9f9',
   },
   placeholderStyle: {
     fontSize: 16,
-    color: '#000',
+    color: '#666',
   },
   selectedTextStyle: {
     fontSize: 16,
-    color: '#000',
+    color: '#333',
   },
   iconStyle: {
     width: 20,
     height: 20,
   },
-  inputSearchStyle: {
-    height: 40,
-    fontSize: 16,
+  footprintsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  footSvgContainer: {
+    marginHorizontal: 8,
+  },
+  gradientContainer: {
+    height: 18,
+    marginHorizontal: 20,
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginVertical: 16,
+  },
+  gradientBar: {
+    height: '100%',
+    width: '100%',
+  },
+  statusCard: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  buttonContainer: {
+    alignItems: 'center',
+    marginVertical: 24,
+    paddingHorizontal: 16,
   },
 });

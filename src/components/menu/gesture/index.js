@@ -280,11 +280,11 @@ const Gesture = (props) => {
   return (
     <View style={styles.fullScreenContainer}>
       <HeaderFix
-        title={LangHome.gestureButton}
-        lang={props.lang}
-        icon_left={true}
-        onpress_left={() => navigation.navigate('Home')}
-      />
+              title="Gesture"
+              lang={props.lang}
+              icon_left={true}
+              onpress_left={() => navigation.navigate('Home')}
+            />
       <View style={styles.cameraContainer}>
         {/* Camera preview always visible, stays in place */}
         <View style={styles.camera} />
