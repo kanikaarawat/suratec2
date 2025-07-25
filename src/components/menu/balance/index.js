@@ -1,1484 +1,1084 @@
-//5.11.62
-
-import React, {Component} from 'react';
-import {
-  View,
-  Image,
-  ScrollView,
-  NativeModules,
-  NativeEventEmitter,
-  Vibration,
-  TouchableOpacity,
-  Text as RNText,
-  Alert,
-} from 'react-native';
-import NetInfo from '@react-native-community/netinfo';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import {Col, Grid} from 'react-native-easy-grid';
-import {connect} from 'react-redux';
-
+import React, { useState, useEffect, useRef } from 'react';
+import { View, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, Dimensions, Text as RNText, Modal, Platform, PermissionsAndroid, NativeModules, NativeEventEmitter, BackHandler, AppState } from 'react-native';
+import { launchCamera } from 'react-native-image-picker';
 import HeaderFix from '../../common/HeaderFix';
-import NotificationsState from '../../shared/Notification';
-import Text from '../../common/TextFix';
-import ButtonFix from '../../common/ButtonFix';
-import RadarChartFix from '../../common/RadarChartFix';
-import CardStatusFix from '../../common/CardStatusFix';
-import AlertFix from '../../common/AlertsFix';
-import ScoreFix from '../../common/ScoreFix';
-import API from '../../../config/Api';
-import BleManager from 'react-native-ble-manager';
-
-import {
-  FileManager,
-  getFileList,
-  deleteFile,
-  readFile,
-} from '../../../FileManager';
-import {TabHeading} from 'native-base';
-
-import BalanceLang from '../../../assets/language/menu/lang_balance';
-import Lang from '../../../assets/language/menu/lang_record';
+import { connect } from 'react-redux';
 import LangHome from '../../../assets/language/screen/lang_home';
-import {getLocalizedText} from "../../../assets/language/langUtils";
+import { useSelector, useDispatch } from 'react-redux';
+import BleManager from 'react-native-ble-manager';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import BackgroundTimer from 'react-native-background-timer';
 
-var RNFS = require('react-native-fs');
+const GALLERY_ICON = require('../../../assets/image/gesture_analysis/gallery.png');
+
+const { width, height } = Dimensions.get('window');
 
 const BleManagerModule = NativeModules.BleManager;
 const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+const MAX_UPLOAD_ATTEMPTS = 3;
 
-const TIMER = 100;
-const TIMER_BIG = 1;
-const Duration = 1500;
+const Gesture = (props) => {
+  const navigation = props.navigation || useNavigation();
+  const dispatch = useDispatch();
+  
+  // Video and UI states
+  const [videoUri, setVideoUri] = useState(null);
+  const [preview, setPreview] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showSensorSuccess, setShowSensorSuccess] = useState(false);
+  const [hasPermission, setHasPermission] = useState(null);
+  
+  // Recording states
+  const [recording, setRecording] = useState(false);
+  const [sensorDataArray, setSensorDataArray] = useState([]);
+  const [bleListener, setBleListener] = useState(null);
+  const [backgroundTimerId, setBackgroundTimerId] = useState(null);
+  const [appStateListener, setAppStateListener] = useState(null);
+  
+  // CRITICAL: Use refs for precise timing control
+  const sensorRecordingRef = useRef(false);
+  const actualVideoStartTime = useRef(null);
+  const actualVideoEndTime = useRef(null);
+  const lastTimestamp = useRef(null);
+  
+  // Other states
+  const [shoeSize, setShoeSize] = useState(42);
+  const [token, setToken] = useState(props.token);
+  const [idMember, setIdMember] = useState(props.id_member);
+  
+  const productNumber = useSelector ? useSelector(state => state.productNumber) : null;
+  const user = useSelector ? useSelector(state => state.user) : null;
+  const idCustomer = user?.id_customer || props.id_member;
 
-/*
-code vibration
-
-if (this.state.switch) {
-      Vibration.vibrate(Duration);
-}else{
-  Vibration.cancel();
-}
-
-*/
-
-class index extends Component {
-  leftSwingTime = 0;
-  rightSwingTime = 0;
-  leftStanceTime = 0;
-  rightStanceTime = 0;
-  durationTime = 0;
-
-  lsensor = [0, 0, 0, 0, 0];
-  rsensor = [0, 0, 0, 0, 0];
-
-  readDelay = new Date();
-  start = new Date();
-  lastRtime = new Date();
-  lastLtime = new Date();
-
-  round = Math.floor(1000 + Math.random() * 9000);
-
-  ltime = new Date();
-  rtime = new Date();
-
-  counter = 1;
-
-  state = {
-    textAction: 'Record',
-    lstage: 0,
-    rstage: 0,
-    xPosN: 150,
-    yPosN: 150,
-    focus: true,
-    lphase: 0,
-    rphase: 0,
-    rsensor: [0, 0, 0, 0, 0],
-    lsensor: [0, 0, 0, 0, 0],
-    shouldVibrate: false,
-    score: 0,
-    balance: 0,
-    txt: '',
-    status: 'waiting',
-    isConnected: true,
-    peripherals: new Map(),
-    shoeSize:0,
-    notiAlarm: 0,
-    selectedMenu: 1,
-    menuAction: [
-      {key: 1, title: 'Dynamic'},
-      {key: 2, title: 'Static'},
-    ],
-    countDownTimer:10,
-    isCalibrated: false,
-    leftLegCalibrated: false,
-    rightLegCalibrated: false,
-    percentageCompleted: 0,
-    calibrationScreenOn: false,
-    calibrationPhase: 0,
-    showButton: true,
-  };
-
-  //findCoordinate(sensor) {
-  //return { xPos: ((sensor[2] - sensor[1]) / 650) * 150 + 150, yPos: ((((sensor[0] + sensor[1] + sensor[2]) / 3) - sensor[4]) / -650) * 150 + 150 }
-  //}
-
-  calMeasurePressure = value => {
-    return 2.206 * Math.exp(0.0068 * value);
-  };
-
-  measurePressure = sensor => {
-    for (let i = 0; i < sensor.length; i++) {
-      if (this.calMeasurePressure(sensor[i]) > this.state.notiAlarm) {
-        Vibration.vibrate(100);
-        return;
-      }
-    }
-  };
-
-  toDecimalArray(byteArray) {
-    let dec = [];
-    for (let i = 0; i < byteArray.length - 1; i += 2) {
-      dec.push(byteArray[i] * 255 + byteArray[i + 1]);
-    }
-    return dec;
-  }
-
-  toKilo = value => {
-    return (5.6 * 10 ** -4 * Math.exp(value / 53.36) + 6.72) / 0.796;
-  };
-
-  shouldBeVibration = sensor => {
-    for (let i = 0; i < sensor.length; i++) {
-      if (this.toKilo(sensor[i]) > this.props.user.weight * 0.3) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  componentDidMount = async () => {
-    // notiAlarm
-    let noti = await AsyncStorage.getItem('notiSetting');
-    noti !== null ? this.setState({notiAlarm: parseInt(noti)}) : 100;
-    NetInfo.addEventListener(this.handleConnectivityChange);
-    const {navigation} = this.props;
-    this.focusListener = navigation.addListener('didFocus', () => {
-      this.retrieveConnected();
-      this.startReading();
-      this.setState({focus: true});
+  useEffect(() => {
+    requestCameraPermission();
+    setupBLEConnection();
+    
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      cleanupAllRecording();
+      navigation.navigate('Home');
+      return true;
     });
-    this.zoneInterval = setInterval(() => {
-      var score =
-        (this.state.balance + Number.parseInt(this.state.score)) / this.counter;
-      this.setState({score: score.toFixed(0)}, () => this.counter++);
-    }, 1000);
-  };
+    
+    return () => {
+      backHandler.remove();
+      cleanupAllRecording();
+    };
+  }, []);
 
-  componentWillUnmount = () => {
-    clearInterval(this.readInterval);
-    clearInterval(this.zoneInterval);
-    if (this.dataRecord) {
-      this.dataRecord.remove();
-    }
-    this.focusListener.remove();
-  };
+  useEffect(() => {
+    return () => {
+      console.log('🧹 [COMPONENT] Gesture component unmounting...');
+      cleanupAllRecording();
+    };
+  }, []);
 
+  useEffect(() => {
+    const fetchAuthData = async () => {
+      if (!token) {
+        const t = await AsyncStorage.getItem('token');
+        if (t) setToken(t);
+      }
+      if (!idMember) {
+        const idm = await AsyncStorage.getItem('id_member');
+        if (idm) setIdMember(idm);
+      }
+    };
+    fetchAuthData();
+  }, [token, idMember]);
 
-
-  actionConnectDevice(peripheral) {
-    if (peripheral) {
-      if (peripheral.connected) {
-        BleManager.disconnect(peripheral.id);
+  const requestCameraPermission = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: "Camera Permission",
+            message: "This app needs access to your camera to record videos.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK"
+          }
+        );
+        setHasPermission(granted === PermissionsAndroid.RESULTS.GRANTED);
       } else {
-        BleManager.connect(peripheral.id)
-          .then(() => {
-            let peripherals = this.state.peripherals;
-            let p = peripherals.get(peripheral.id);
-            if (p) {
-              p.connected = true;
-              peripherals.set(peripheral.id, p);
-              this.setState({peripherals});
-            }
-            if (peripheral.name[peripheral.name.length - 1] === 'L') {
-              this.props.addLeftDevice(peripheral.id);
-              this.setState({shoeSize:peripheral.name[peripheral.name.length - 3] + peripheral.name[peripheral.name.length - 2]})
-            } else if (peripheral.name[peripheral.name.length - 1] === 'R') {
-              this.props.addRightDevice(peripheral.id);
-            }
-            setTimeout(() => {
-              BleManager.retrieveServices(peripheral.id).then(
-                peripheralInfo => {
-                  var service;
-                  var bakeCharacteristic;
-                  var crustCharacteristic;
-                  if (Platform.OS === 'android') {
-                    service = '0000FFE0-0000-1000-8000-00805F9B34FB';
-                    bakeCharacteristic = '0000FFE1-0000-1000-8000-00805F9B34FB';
-                    crustCharacteristic =
-                      '0000FFE1-0000-1000-8000-00805F9B34FB';
-                  } else {
-                    service = 'FFE0';
-                    bakeCharacteristic = 'FFE1';
-                    crustCharacteristic = 'FFE1';
-                  }
-                },
-              );
-            }, 900);
-          })
-          .catch(error => {
-            console.log('Connection error', error);
-          });
+        setHasPermission(true);
       }
-    }
-  }
-
-  retrieveConnected() {
-    BleManager.getConnectedPeripherals([]).then(results => {
-      if (results.length == 0) {
-        console.log('No connected peripherals');
-      }
-      console.log(results);
-      var peripherals = this.state.peripherals;
-      for (var i = 0; i < results.length; i++) {
-        var peripheral = results[i];
-        this.actionConnectDevice(peripheral);
-        peripheral.connected = true;
-        peripherals.set(peripheral.id, peripheral);
-        this.setState({peripherals});
-      }
-    });
-  }
-
-  async startReading() {
-    this.dataRecord = bleManagerEmitter.addListener(
-      'BleManagerDidUpdateValueForCharacteristic',
-      ({value, peripheral, characteristic, service}) => {
-        let time = new Date();
-        if (peripheral === this.props.rightDevice) {
-          let rsensor = this.toDecimalArray(value);
-          this.recordData(rsensor, 'R');
-          if (time - this.rtime > 250) {
-            let lsensor = this.state.lsensor;
-            let shouldVibrate = this.shouldBeVibration(lsensor);
-            let sumright =
-              ((rsensor[0] + rsensor[1] + rsensor[2]) / 3) + rsensor[3] + rsensor[4];
-            let sumleft =
-              ((lsensor[0] + lsensor[1] + lsensor[2]) / 3) + lsensor[3] + lsensor[4];
-            let sumup =
-              (rsensor[1] + rsensor[2]) / 2 + (lsensor[1] + lsensor[2]) / 2;
-            let sumdown = lsensor[4] + rsensor[4];
-            let xPos = (sumright - sumleft) / 23.4;
-            let yPos = (sumup - sumdown) / -15.6;
-            let xPosN = (xPos + 100) * 1.5;
-            let yPosN = (yPos + 100) * 1.5;
-            let rphase = rsensor.reduce((a, b) => a + b, 0);
-            let {txt, status, balance} = this.setStatus(xPos, yPos);
-            this.setState({
-              xPosN,
-              yPosN,
-              rphase,
-              rsensor,
-              shouldVibrate,
-              txt,
-              status,
-              balance,
-            });
-            this.rtime = time;
-          }
-        }
-        if (peripheral === this.props.leftDevice) {
-          let lsensor = this.toDecimalArray(value);
-          this.recordData(lsensor, 'L');
-          if (time - this.ltime > 250) {
-            let rsensor = this.state.rsensor;
-            let shouldVibrate = this.shouldBeVibration(lsensor);
-            let sumright =
-              ((rsensor[0] + rsensor[1] + rsensor[2]) / 3) + rsensor[3] + rsensor[4];
-            let sumleft =
-              ((lsensor[0] + lsensor[1] + lsensor[2]) / 3) + lsensor[3] + lsensor[4];
-            let sumup =
-              (rsensor[1] + rsensor[2]) / 2 + (lsensor[1] + lsensor[2]) / 2;
-            let sumdown = lsensor[4] + rsensor[4];
-            let xPos = (sumright - sumleft) / 23.4;
-            let yPos = (sumup - sumdown) / -15.6;
-            let xPosN = (xPos + 100) * 1.5;
-            let yPosN = (yPos + 100) * 1.5;
-
-            let lphase = lsensor.reduce((a, b) => a + b, 0);
-            let {txt, status, balance} = this.setStatus(xPos, yPos);
-            this.setState({
-              xPosN,
-              yPosN,
-              lphase,
-              lsensor,
-              shouldVibrate,
-              txt,
-              status,
-              balance,
-            });
-            this.ltime = time;
-          }
-        }
-      },
-    );
-  }
-
-  recordData(data, sensor) {
-    if (sensor == 'L') {
-      this.lsensor = data;
-    } else {
-      this.rsensor = data;
-    }
-
-    if (this.props.noti === true) {
-      this.measurePressure(data);
-    }
-  }
-
-  setStatus(x, y) {
-    var persent = 0;
-    if (x > y) {
-      persent = Math.abs(x);
-    } else {
-      persent = Math.abs(y);
-    }
-    if (100 - persent >= 80) {
-      return {
-        txt: getLocalizedText(this.state.lang, BalanceLang.goodBalance),
-        status: 'Good',
-        balance: Math.round(100 - persent),
-      };
-    } else if (100 - persent >= 40) {
-      return {
-        txt: getLocalizedText(this.state.lang, BalanceLang.mediumBalance),
-        status: 'Medium',
-        balance: Math.round(100 - persent),
-      };
-    } else {
-      return {
-        txt: getLocalizedText(this.state.lang, BalanceLang.badBalance),
-        status: 'Bad',
-        balance: Math.round(100 - persent),
-      };
-    }
-  }
-
-  handleConnectivityChange = status => {
-    this.setState({isConnected: status.isConnected});
-    console.log(`Wifi Status : ${this.state.isConnected}`);
-  };
-
-  showStages = () => {
-    this.setState({calibrationPhase:2})
-  }
-
-  handleStartCalibration = () => {
-    if (
-      typeof this.props.rightDevice === 'undefined' &&
-      typeof this.props.leftDevice === 'undefined'
-    ) {
-      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
-        {
-          text: 'OK',
-          onPress: () => {
-            this.props.navigation.navigate('Product', {
-              name: getLocalizedText(this.state.lang, LangHome.addDeviceButton),
-            });
-          },
-        },
-      ]);
-      return;
-    } else {
-      this.setState({ calibrationPhase: 1});
+    } catch (err) {
+      console.warn(err);
+      setHasPermission(false);
     }
   };
 
-  handleSaveData = (calibrationStatus,butonLabel) => {
-    this.props.actionRecordingButton(butonLabel);
-    this.setState({isCalibrated: calibrationStatus,textAction:butonLabel});
-  }
-
-  changeMenu = value => {
-    this.setState({selectedMenu: value});
+  const setupBLEConnection = async () => {
+    try {
+      console.log('🔌 [BLE] Setting up BLE connection...');
+      await ensureBLEConnection();
+      console.log('✅ [BLE] BLE connection setup complete');
+    } catch (error) {
+      console.log('❌ [BLE] Error setting up BLE connection:', error);
+    }
   };
 
-
-  actionRecording = async () => {
-    if (
-      typeof this.props.rightDevice === 'undefined' &&
-      typeof this.props.leftDevice === 'undefined'
-    ) {
-      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
-        {
-          text: 'OK',
-          onPress: () => {
-            this.props.navigation.navigate('Product', {
-              name: getLocalizedText(this.state.lang, LangHome.addDeviceButton),
-            });
-          },
-        },
-      ]);
-      return;
-    }
-    if (this.state.textAction == 'Record') {
-      this.setState({textAction: 'Stop'});
-      this.props.actionRecordingButton('Stop');
-      let initTime = new Date();
-      this.start = initTime;
-      this.lastLtime = initTime;
-      this.lastRtime = initTime;
-      this.readInterval = setInterval(async () => {
-        time = new Date();
-        data = {
-          stamp: time.getTime(),
-          timestamp: time,
-          duration: Math.floor((time - this.start) / 1000),
-          left: {
-            sensor: this.lsensor,
-            swing: this.leftSwingTime,
-            stance: this.leftStanceTime,
-          },
-          right: {
-            sensor: this.rsensor,
-            swing: this.rightSwingTime,
-            stance: this.rightStanceTime,
-          },
-          id_customer: this.props.user.id_customer,
-        };
+  const ensureBLEConnection = async () => {
+    try {
+      console.log('🔍 [BLE] Checking BLE device connections...');
+      const connectedDevices = await BleManager.getConnectedPeripherals([]);
+      console.log('🔍 [BLE] Connected devices:', connectedDevices.map(d => d.id));
+      
+      const leftConnected = connectedDevices.some(device => device.id === props.leftDevice);
+      const rightConnected = connectedDevices.some(device => device.id === props.rightDevice);
+      
+      console.log(`🔍 [BLE] Left device (${props.leftDevice}): ${leftConnected ? '✅ Connected' : '❌ Disconnected'}`);
+      console.log(`🔍 [BLE] Right device (${props.rightDevice}): ${rightConnected ? '✅ Connected' : '❌ Disconnected'}`);
+      
+      if (!leftConnected && props.leftDevice) {
+        console.log('🔄 [BLE] Attempting to reconnect left device...');
         try {
-          await await RNFS.appendFile(
-            RNFS.CachesDirectoryPath +
-              '/suratechM/' +
-              this.start.getFullYear() +
-              this.start.getMonth() +
-              this.start.getDate() +
-              this.round,
-            JSON.stringify(data) + ',',
-          );
-        } catch {
-          await RNFS.mkdir(RNFS.CachesDirectoryPath + '/suratechM/');
-          await RNFS.appendFile(
-            RNFS.CachesDirectoryPath +
-              '/suratechM/' +
-              this.start.getFullYear() +
-              this.start.getMonth() +
-              this.start.getDate() +
-              this.round,
-            JSON.stringify(data) + ',',
-          );
+          await BleManager.connect(props.leftDevice);
+          await BleManager.retrieveServices(props.leftDevice);
+          await BleManager.startNotification(props.leftDevice, 'FFE0', 'FFE1');
+          console.log('✅ [BLE] Left device reconnected successfully');
+        } catch (error) {
+          console.log('❌ [BLE] Failed to reconnect left device:', error);
         }
-      }, 100);
-    } else {
-      this.setState({textAction: 'Record'});
-      this.props.actionRecordingButton('Record');
-      clearInterval(this.readInterval);
-      this.sendDataToSetver();
+      }
+      
+      if (!rightConnected && props.rightDevice) {
+        console.log('🔄 [BLE] Attempting to reconnect right device...');
+        try {
+          await BleManager.connect(props.rightDevice);
+          await BleManager.retrieveServices(props.rightDevice);
+          await BleManager.startNotification(props.rightDevice, 'FFE0', 'FFE1');
+          console.log('✅ [BLE] Right device reconnected successfully');
+        } catch (error) {
+          console.log('❌ [BLE] Failed to reconnect right device:', error);
+        }
+      }
+      
+      const finalConnectedDevices = await BleManager.getConnectedPeripherals([]);
+      const finalLeftConnected = finalConnectedDevices.some(device => device.id === props.leftDevice);
+      const finalRightConnected = finalConnectedDevices.some(device => device.id === props.rightDevice);
+      
+      if (!finalLeftConnected || !finalRightConnected) {
+        console.log('⚠️ [BLE] Warning: Not all devices connected');
+        Alert.alert('BLE Connection Warning', 'Some sensors are not connected. Sensor data may be incomplete.');
+        return false;
+      }
+      
+      console.log('🎉 [BLE] All devices connected successfully!');
+      return true;
+    } catch (error) {
+      console.log('❌ [BLE] Error ensuring BLE connection:', error);
+      return false;
     }
   };
 
-  actionRecordingFor10 = async () => {
-    if (
-      typeof this.props.rightDevice === 'undefined' &&
-      typeof this.props.leftDevice === 'undefined'
-    ) {
-      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
+  // FIXED: Start sensor recording but only collect data when video is recording
+  const startSensorRecording = () => {
+    console.log('🚀 [SENSOR] Starting sensor listener...');
+    
+    // Clean up existing listener
+    if (bleListener) {
+      bleListener.remove();
+    }
+    
+    // Reset state
+    setSensorDataArray([]);
+    setRecording(true);
+    sensorRecordingRef.current = true;
+    lastTimestamp.current = Date.now();
+    
+    // Set up BLE listener
+    const listener = bleManagerEmitter.addListener(
+      'BleManagerDidUpdateValueForCharacteristic',
+      ({ value, peripheral }) => {
+        // CRITICAL: Only collect data during actual video recording window
+        if (sensorRecordingRef.current && actualVideoStartTime.current && !actualVideoEndTime.current) {
+          processSensorData(value, peripheral);
+        }
+      }
+    );
+    
+    setBleListener(listener);
+    
+    // Background timer for connection checks
+    const timerId = BackgroundTimer.setInterval(() => {
+      if (sensorRecordingRef.current) {
+        checkBLEConnection();
+      }
+    }, 5000);
+    setBackgroundTimerId(timerId);
+    
+    // App state listener
+    const handleAppStateChange = (nextAppState) => {
+      if (nextAppState === 'background') {
+        console.log('📱 [APP] Going to background, maintaining sensor recording');
+      } else if (nextAppState === 'active') {
+        console.log('📱 [APP] Returning to foreground, sensor recording active');
+        if (sensorRecordingRef.current) {
+          checkBLEConnection();
+        }
+      }
+    };
+    
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    setAppStateListener(subscription);
+    
+    dispatch({ type: 'READ_BLUETOOTH_STATE', payload: true });
+    console.log('✅ [SENSOR] Sensor listener ready (waiting for video start signal)');
+  };
+
+  const stopSensorRecording = () => {
+    console.log('⏹️ [SENSOR] Stopping sensor recording...');
+    
+    setRecording(false);
+    sensorRecordingRef.current = false;
+    
+    // Mark video end time
+    if (actualVideoStartTime.current && !actualVideoEndTime.current) {
+      actualVideoEndTime.current = Date.now();
+      console.log(`📅 [VIDEO-END] Video recording ended at: ${new Date(actualVideoEndTime.current).toISOString()}`);
+    }
+    
+    if (bleListener) {
+      bleListener.remove();
+      setBleListener(null);
+    }
+    
+    if (backgroundTimerId) {
+      BackgroundTimer.clearInterval(backgroundTimerId);
+      setBackgroundTimerId(null);
+    }
+    
+    if (appStateListener) {
+      appStateListener.remove();
+      setAppStateListener(null);
+    }
+    
+    dispatch({ type: 'READ_BLUETOOTH_STATE', payload: false });
+    console.log('✅ [SENSOR] Sensor recording stopped completely');
+  };
+
+  const cleanupAllRecording = () => {
+    console.log('🧹 [CLEANUP] Cleaning up all recording processes...');
+    
+    setRecording(false);
+    sensorRecordingRef.current = false;
+    actualVideoStartTime.current = null;
+    actualVideoEndTime.current = null;
+    lastTimestamp.current = null;
+    
+    if (bleListener) {
+      bleListener.remove();
+      setBleListener(null);
+    }
+    
+    if (backgroundTimerId) {
+      BackgroundTimer.clearInterval(backgroundTimerId);
+      setBackgroundTimerId(null);
+    }
+    
+    if (appStateListener) {
+      appStateListener.remove();
+      setAppStateListener(null);
+    }
+    
+    dispatch({ type: 'READ_BLUETOOTH_STATE', payload: false });
+    console.log('✅ [CLEANUP] All recording processes cleaned up');
+  };
+
+  const processSensorData = (value, peripheral) => {
+    const now = Date.now();
+    const duration = now - (lastTimestamp.current || now);
+    lastTimestamp.current = now;
+    
+    // Enhanced sensor data processing
+    let sensorArr = toDecimalArray(value);
+    
+    // Enhanced validation for meaningful data
+    const hasNonZeroData = sensorArr.some(val => val > 0);
+    if (!hasNonZeroData) {
+      return;
+    }
+    
+    // Apply sensor calibration
+    const calibratedValues = applySensorCalibration(sensorArr, peripheral);
+    
+    let left = null, right = null;
+    
+    if (peripheral === props.leftDevice) {
+      left = { sensor: calibratedValues };
+    } else if (peripheral === props.rightDevice) {
+      right = { sensor: calibratedValues };
+    }
+    
+    setSensorDataArray(prev => {
+      const last = prev[prev.length - 1] || {};
+      const newData = {
+        duration,
+        timestamp: new Date(now).toISOString(),
+        left: left ? left : last.left || { sensor: [0,0,0,0,0,0,0,0] },
+        right: right ? right : last.right || { sensor: [0,0,0,0,0,0,0,0] },
+      };
+      
+      dispatch({ type: 'ADD_BLUETOOTH_DATA', payload: newData });
+      const newArray = [...prev, newData];
+      
+      // Log progress every 50 data points
+      if (newArray.length % 50 === 0) {
+        console.log(`📈 [ACTIVE-RECORDING] Collected ${newArray.length} sensor data points during video recording`);
+      }
+      
+      return newArray;
+    });
+  };
+
+  const checkBLEConnection = async () => {
+    try {
+      const connectedDevices = await BleManager.getConnectedPeripherals([]);
+      const leftConnected = connectedDevices.some(device => device.id === props.leftDevice);
+      const rightConnected = connectedDevices.some(device => device.id === props.rightDevice);
+      
+      if (!leftConnected || !rightConnected) {
+        console.log('🔄 [BLE] Device disconnected during recording, attempting reconnection...');
+        await ensureBLEConnection();
+      }
+    } catch (error) {
+      console.log('❌ [BLE] Error checking BLE connection:', error);
+    }
+  };
+
+  // FIXED: Enhanced toDecimalArray function
+  function toDecimalArray(byteArray) {
+    let dec = [];
+    
+    if (byteArray.length >= 17) {
+      // Handle 17-byte format - extract meaningful values
+      const nonZeroBytes = [];
+      
+      // Check last few bytes which contain sensor values
+      for (let i = Math.max(0, byteArray.length - 5); i < byteArray.length; i++) {
+        if (byteArray[i] > 0) {
+          nonZeroBytes.push(byteArray[i]);
+        }
+      }
+      
+      // Check middle bytes for additional sensor data
+      for (let i = 10; i < byteArray.length - 5; i++) {
+        if (byteArray[i] > 0 && nonZeroBytes.length < 8) {
+          nonZeroBytes.push(byteArray[i]);
+        }
+      }
+      
+      dec = nonZeroBytes.slice(0, 8);
+    } else if (byteArray.length >= 10) {
+      // Medium packet format
+      for (let i = 0; i < byteArray.length - 1; i += 2) {
+        // FIXED: Use 256 instead of 255 for proper byte combination
+        const value = byteArray[i] * 256 + byteArray[i + 1];
+        if (value > 0 && dec.length < 8) {
+          dec.push(value);
+        }
+      }
+    } else {
+      // Short packet format - use individual bytes
+      for (let i = 0; i < byteArray.length; i++) {
+        if (byteArray[i] > 0 && dec.length < 8) {
+          dec.push(byteArray[i]);
+        }
+      }
+    }
+    
+    // Ensure we return exactly 8 values to match API format
+    while (dec.length < 8) {
+      dec.push(0);
+    }
+    
+    return dec.slice(0, 8);
+  }
+
+  const applySensorCalibration = (sensorValues, deviceId) => {
+    return sensorValues.map(value => {
+      if (value < 0 || value > 4095) {
+        return 0;
+      }
+      return Math.round(value);
+    });
+  };
+
+  // FIXED: Video recording with precise timing detection
+  const recordVideo = async () => {
+    if (!props.leftDevice || !props.rightDevice) {
+      Alert.alert('Warning!', 'Please check your Bluetooth connection and add both devices.', [
         {
           text: 'OK',
           onPress: () => {
-            this.props.navigation.navigate('Product', {
-              name: getLocalizedText(this.state.lang, LangHome.addDeviceButton),
+            navigation.navigate('Device', {
+              name: props.lang ? LangHome.addDeviceButton.thai : LangHome.addDeviceButton.eng,
             });
           },
         },
       ]);
       return;
     }
-    if (this.state.textAction == 'Record') {
-      this.setState({textAction: 'Stop'});
-      this.props.actionRecordingButton('Stop');
-      var initTime = new Date();
-      var start = initTime;
-      let lastLtime = initTime;
-      let lastRtime = initTime;
-
-      let count = 10;
-      var timer = setInterval(() => {
-        if(this.state.countDownTimer >= 1) {
-
-          var timer2 = setInterval(()=>{
-            var time = new Date();
-            if(Math.floor((time - start) / 1000) < 11){
-              var data = {
-                stamp: time.getTime(),
-                timestamp: time,
-                duration: Math.floor((time - start) / 1000),
-                left: {
-                  sensor: this.lsensor,
-                  swing: this.leftSwingTime,
-                  stance: this.leftStanceTime,
-                },
-                right: {
-                  sensor: this.rsensor,
-                  swing: this.rightSwingTime,
-                  stance: this.rightStanceTime,
-                },
-                id_customer: this.props.user.id_customer,
-              };
-              try {
-                  RNFS.appendFile(
-                  RNFS.CachesDirectoryPath +
-                    '/suratechM/' +
-                    start.getFullYear() +
-                    start.getMonth() +
-                    start.getDate() +
-                    this.round,
-                  JSON.stringify(data) + ',',
-                );
-              } catch {
-                RNFS.mkdir(RNFS.CachesDirectoryPath + '/suratechM/');
-                RNFS.appendFile(
-                  RNFS.CachesDirectoryPath +
-                    '/suratechM/' +
-                    start.getFullYear() +
-                    start.getMonth() +
-                    start.getDate() +
-                    this.round,
-                  JSON.stringify(data) + ',',
-                );
-              }
-            }
-
-          },100);
-
-          setTimeout(() => {
-            clearInterval(timer2);
-          }, 1000);
-
-          this.setState({countDownTimer:parseInt(this.state.countDownTimer) - 1})
-        }
-
-      }, 1000);
-
-      setTimeout(() => {
-        this.setState({textAction: 'Record',countDownTimer:10});
-        this.props.actionRecordingButton('Record');
-        this.sendDataToSetverCalibration('S');
-        clearInterval(this.readInterval)
-        clearInterval(timer);
-        // clearInterval(this.readInterval);
-      }, 11000);
-
-    } else {
-      this.setState({textAction: 'Record'});
-      this.props.actionRecordingButton('Record');
-      // clearInterval(this.readInterval);
-      this.sendDataToSetverCalibration('S');
+    
+    const permissionGranted = await requestCameraPermission();
+    if (!permissionGranted) {
+      Alert.alert('Permission Required', 'Camera permission is required to record videos.');
+      return;
     }
-  };
 
+    // Pre-connect BLE devices
+    console.log('🔌 [PRE-CONNECT] Ensuring BLE connection before camera launch...');
+    const bleReady = await ensureBLEConnection();
+    if (!bleReady) {
+      Alert.alert('BLE Error', 'Cannot establish sensor connection. Please check your devices.');
+      return;
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('✅ [PRE-CONNECT] BLE connection ready, launching camera...');
 
-  sendDataToSetverCalibration = (legValue) => {
-    this.state.isConnected == false
-      ?  RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
-        console.log('WiFi is not connect');
-        res.forEach(r => {
-          console.log(r.path);
-        });
-      })
-      :  RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
-        res.forEach(r => {
-          console.log(r.path,'path');
-          RNFS.readFile(r.path)
-            .then(  text => {
-              let data = JSON.parse(
-                '[' + text.substring(0, text.length - 1) + ']',
-              );
-              var content = {
-                data: data,
-                id_customer: data[0].id_customer,
-                id_device: '',
-                type: 1, // for medical
-                product_number: this.props.productNumber,
-                bluetooth_left_id: this.props.leftDevice,
-                bluetooth_right_id: this.props.rightDevice,
-                shoe_size: this.state.shoeSize,
-                leg_type:legValue
-              };
-              fetch(`${API}/addjson`, {
-                method: 'POST',
-                headers: {
-                  Accept: 'application/json',
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(content),
-              })
-                .then(resp => resp.json())
-                .then(resp => {
-                  console.log(resp,content,"response");
-                  if (resp.status != 'ผิดพลาด') {
-                    console.log(`Clear : ${r.path}`);
-                    RNFS.unlink(r.path);
-                  }
-                });
-            })
-            .catch(e => { });
-        });
-      });
-    // alert(this.props.lang ? Lang.alert.thai : Lang.alert.eng);
-  }
-
-
-  sendDataToSetver = ()=> {
-    this.state.isConnected == false
-      ? RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
-          console.log('WiFi is not connect');
-          res.forEach(r => {
-            console.log(r.path);
-          });
-        })
-      : RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
-          res.forEach(r => {
-            console.log(r.path);
-            RNFS.readFile(r.path)
-              .then(text => {
-                let data = JSON.parse(
-                  '[' + text.substring(0, text.length - 1) + ']',
-                );
-                var content = {
-                  data: data,
-                  id_customer: data[0].id_customer,
-                  id_device: '',
-                  type: 1, // for medical
-                  product_number: this.props.productNumber,
-                  bluetooth_left_id: this.props.leftDevice,
-                  bluetooth_right_id: this.props.rightDevice,
-                  shoe_size:  this.state.shoeSize,
-                  leg_type:'D'
-                };
-                fetch(`${API}/addjson`, {
-                  method: 'POST',
-                  headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(content),
-                })
-                  .then(resp => resp.json())
-                  .then(resp => {
-                    console.log(resp,content,"response");
-                    if (resp.status != 'ผิดพลาด') {
-                      console.log(`Clear : ${r.path}`);
-                      RNFS.unlink(r.path);
-                    }
-                  });
-              })
-              .catch(e => {});
-          });
-        });
-    // alert(this.props.lang ? Lang.alert.thai : Lang.alert.eng);
-  }
-
-  actionUpdate = content => {
-    content = {
-      data: content,
-      id_customer: this.props.user.id_customer,
-      id_device: '',
-      type: 1, // for medical
+    const options = {
+      mediaType: 'video',
+      videoQuality: 'high',
+      durationLimit: 60,
+      saveToPhotos: false,
+      cameraType: 'back',
+      presentationStyle: 'fullScreen',
     };
 
-    fetch(`${API}/addjson`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(content),
-    })
-      .then(res => res.json())
-      .then(res => {
-        if (res.status === 'สำเร็จ') {
-          AlertFix.alertBasic(
-              getLocalizedText(this.state.lang, Lang.successTitle),
-              getLocalizedText(this.state.lang, Lang.successBody),
+    // Start sensor listener (but not data collection yet)
+    console.log('🔄 [FLOW] Starting sensor listener...');
+    startSensorRecording();
+    
+    console.log('🎥 [CAMERA] Camera launched...');
+
+    launchCamera(options, (response) => {
+      if (response.didCancel) {
+        console.log('📱 [VIDEO] User cancelled camera');
+        stopSensorRecording();
+        return;
+      }
+      
+      if (response.errorCode) {
+        console.log('❌ [VIDEO] Camera error occurred');
+        stopSensorRecording();
+        Alert.alert('Error', response.errorMessage);
+        return;
+      }
+      
+      if (response.assets && response.assets[0]) {
+        const videoAsset = response.assets[0];
+        
+        // CRITICAL: Set video end time when camera returns
+        actualVideoEndTime.current = Date.now();
+        
+        console.log(`📅 [VIDEO-COMPLETE] Video recording completed at: ${new Date(actualVideoEndTime.current).toISOString()}`);
+        console.log(`📊 [DATA-COLLECTED] Total sensor data points: ${sensorDataArray.length}`);
+        
+        // Stop sensor recording
+        stopSensorRecording();
+        
+        // Process with actual timing
+        if (actualVideoStartTime.current && actualVideoEndTime.current) {
+          const filteredSensorData = filterSensorDataByVideoTiming(
+            sensorDataArray,
+            actualVideoStartTime.current,
+            actualVideoEndTime.current
           );
-          deleteFile(this.fileStamp_n);
-        } else {
-          AlertFix.alertBasic(
-              getLocalizedText(this.state.lang, Lang.errorTitle),
-              getLocalizedText(this.state.lang, Lang.errorBody1),
-          );
+          setSensorDataArray(filteredSensorData);
+          console.log(`✅ [FILTERED] Final sensor data points: ${filteredSensorData.length}`);
         }
-      })
-      .catch(error => {
-        AlertFix.alertBasic(
-            getLocalizedText(this.state.lang, Lang.errorTitle),
-            getLocalizedText(this.state.lang, Lang.errorBody2),
-        );
+        
+        setVideoUri(videoAsset.uri);
+        setPreview(true);
+      } else {
+        console.log('❌ [VIDEO] No video recorded');
+        stopSensorRecording();
+      }
+    });
+
+    // CRITICAL: Start collecting sensor data after a delay (when user likely starts recording)
+    setTimeout(() => {
+      if (sensorRecordingRef.current) {
+        actualVideoStartTime.current = Date.now();
+        console.log(`📅 [VIDEO-START] Video recording started at: ${new Date(actualVideoStartTime.current).toISOString()}`);
+        console.log('🎬 [COLLECT] Now collecting sensor data for video...');
+      }
+    }, 2000); // 2 second delay to account for user interaction
+  };
+
+  // FIXED: Better filtering with debugging
+  const filterSensorDataByVideoTiming = (sensorData, videoStartTime, videoEndTime) => {
+    console.log(`🔍 [FILTER] Filtering sensor data...`);
+    console.log(`🔍 [FILTER] Video start: ${new Date(videoStartTime).toISOString()}`);
+    console.log(`🔍 [FILTER] Video end: ${new Date(videoEndTime).toISOString()}`);
+    console.log(`🔍 [FILTER] Total sensor points before filter: ${sensorData.length}`);
+    
+    if (sensorData.length === 0) {
+      console.log('⚠️ [FILTER] No sensor data to filter');
+      return [];
+    }
+    
+    // Debug sensor data timestamp range
+    if (sensorData.length > 0) {
+      const firstDataTime = new Date(sensorData[0].timestamp).getTime();
+      const lastDataTime = new Date(sensorData[sensorData.length - 1].timestamp).getTime();
+      console.log(`🔍 [FILTER] First sensor data: ${new Date(firstDataTime).toISOString()}`);
+      console.log(`🔍 [FILTER] Last sensor data: ${new Date(lastDataTime).toISOString()}`);
+      console.log(`🔍 [FILTER] Sensor data duration: ${(lastDataTime - firstDataTime) / 1000}s`);
+      
+      // Check for time overlap
+      const hasOverlap = !(lastDataTime < videoStartTime || firstDataTime > videoEndTime);
+      console.log(`🔍 [FILTER] Time overlap exists: ${hasOverlap}`);
+      
+      if (!hasOverlap) {
+        console.log('⚠️ [FILTER] No time overlap detected, using all collected sensor data...');
+        // Use all sensor data as fallback since timing detection failed
+        return sensorData.map((dataPoint, index) => ({
+          ...dataPoint,
+          duration: index === 0 ? 0 : 1000,
+          timestamp: dataPoint.timestamp,
+          relativeTime: index,
+          fallbackFiltering: true,
+        }));
+      }
+    }
+    
+    // Normal filtering with time range
+    const filteredData = sensorData.filter(dataPoint => {
+      const dataTimestamp = new Date(dataPoint.timestamp).getTime();
+      return dataTimestamp >= videoStartTime && dataTimestamp <= videoEndTime;
+    });
+    
+    // Process filtered data for API
+    const processedData = filteredData.map((dataPoint, index) => {
+      const dataTimestamp = new Date(dataPoint.timestamp).getTime();
+      const relativeTime = dataTimestamp - videoStartTime;
+      
+      return {
+        ...dataPoint,
+        duration: index === 0 ? 0 : relativeTime,
+        timestamp: dataPoint.timestamp,
+        videoRelativeTime: relativeTime / 1000,
+        fallbackFiltering: false,
+      };
+    });
+    
+    console.log(`✅ [FILTER] Filtered ${processedData.length} sensor data points`);
+    return processedData;
+  };
+
+  const uploadVideo = async () => {
+    if (!videoUri) {
+      Alert.alert('Error', 'No video to upload');
+      return;
+    }
+    
+    const authToken = props.token || token;
+    const authIdMember = (user && (user.id_member || user.id_customer)) || idMember;
+    
+    if (!authToken || !authIdMember) {
+      Alert.alert('Error', 'Authentication data missing');
+      return;
+    }
+    
+    setUploading(true);
+    setUploadError(null);
+    setPreview(false);
+    
+    try {
+      const formData = new FormData();
+      formData.append('id_member', authIdMember);
+      formData.append('video_file', {
+        uri: Platform.OS === 'ios' ? videoUri.replace('file://', '') : videoUri,
+        type: 'video/mp4',
+        name: 'gesture_video.mp4',
       });
-  };
-
-  actionDashboard = () => {
-    this.props.navigation.navigate('Dashboard');
-  };
-
-  startCalibration = () => {
-    this.setState({calibrationScreenOn: true});
-  };
-
-  handleStartLeftLegCalibration = () => {
-
-    if (
-      typeof this.props.rightDevice === 'undefined' &&
-      typeof this.props.leftDevice === 'undefined'
-    ) {
-      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
-        {
-          text: 'OK',
-          onPress: () => {
-            this.props.navigation.navigate('Product', {
-              name: getLocalizedText(this.state.lang, LangHome.addDeviceButton),
-            });
-          },
+      
+      const response = await fetch('https://api1.suratec.co.th/api/video/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json',
         },
-      ]);
-      return;
-    } else {
-      this.setState({showButton:false});
-      this.handleSaveData(true,'Stop');
-
-    let progMargin = 20;
-    let totalCount = 0;
-    let actualValue = 0;
-    let progressValue = '';
-
-      var initTime = new Date();
-      var start = initTime;
-      let lastLtime = initTime;
-      let lastRtime = initTime;
-
-      var count = 5;
-
-    // this.actionRecording();
-    var timer = setInterval(() => {
-
-      if(count >= 1) {
-
-        var timer2 = setInterval(()=>{
-          var time = new Date();
-          if(Math.floor((time - start) / 1000) < 6){
-            var data = {
-              stamp: time.getTime(),
-              timestamp: time,
-              duration: Math.floor((time - start) / 1000),
-              left: {
-                sensor: this.lsensor,
-                swing: this.leftSwingTime,
-                stance: this.leftStanceTime,
-              },
-              right: {
-                sensor: this.rsensor,
-                swing: this.rightSwingTime,
-                stance: this.rightStanceTime,
-              },
-              id_customer: this.props.user.id_customer,
-            };
-
-            try {
-                RNFS.appendFile(
-                RNFS.CachesDirectoryPath +
-                  '/suratechM/' +
-                  start.getFullYear() +
-                  start.getMonth() +
-                  start.getDate() +
-                  this.round,
-                JSON.stringify(data) + ',',
-              );
-            } catch {
-              RNFS.mkdir(RNFS.CachesDirectoryPath + '/suratechM/');
-              RNFS.appendFile(
-                RNFS.CachesDirectoryPath +
-                  '/suratechM/' +
-                  start.getFullYear() +
-                  start.getMonth() +
-                  start.getDate() +
-                  this.round,
-                JSON.stringify(data) + ',',
-              );
-            }
-          }
-
-        },100);
-
+        body: formData,
+      });
+      
+      const data = await response.json();
+      console.log('[uploadVideo] Response:', data);
+      
+      if (response.ok) {
+        setShowSuccess(true);
+        const vid = data.video_id || data.id || data.data?.video_id;
+        
+        if (vid) {
+          await handleAfterVideoUpload(vid);
+        }
+        
         setTimeout(() => {
-          clearInterval(timer2);
-        }, 1000);
-
-        count = count - 1;
+          setShowSuccess(false);
+          setVideoUri(null);
+          setUploading(false);
+          setSensorDataArray([]);
+          actualVideoStartTime.current = null;
+          actualVideoEndTime.current = null;
+        }, 2000);
+      } else {
+        setUploadError(data.message || 'Upload failed');
+        setUploading(false);
       }
-
-      if (totalCount == 5) {
-        actualValue = 0;
-        progMargin = 20;
-
-      }else
-      if (totalCount < 5) {
-        totalCount = totalCount + 1;
-        actualValue = parseInt(actualValue) + parseInt(progMargin);
-        progressValue = actualValue + '%';
-        this.setState({
-          percentageCompleted: progressValue,
-        });
-
-      }
-
-    }, 1000);
-
-    setTimeout( ()=> {
-      this.setState({leftLegCalibrated: true, calibrationPhase: 2,percentageCompleted:0,showButton:true});
-      this.handleSaveData(true,'Record');
-      this.sendDataToSetverCalibration('L');
-    clearInterval(timer);
-
-    }, 6000);
-
-    }
-  }
-
-  handleStartRightLegCalibration = () => {
-    if (
-      typeof this.props.rightDevice === 'undefined' &&
-      typeof this.props.leftDevice === 'undefined'
-    ) {
-      Alert.alert(getLocalizedText(this.props.lang, BalanceLang.warning), getLocalizedText(this.props.lang, BalanceLang.bluetoothAlert), [
-        {
-          text: 'OK',
-          onPress: () => {
-            this.props.navigation.navigate('Product', {
-              name: getLocalizedText(this.state.lang, LangHome.addDeviceButton),
-            });
-          },
-        },
-      ]);
-      return;
-    } else {
-      this.setState({showButton:false});
-      this.handleSaveData(true,'Stop');
-
-    let progMargin = 20;
-    let totalCount = 0;
-    let actualValue = 0;
-    let progressValue = '';
-
-      var initTime = new Date();
-      var start = initTime;
-      let lastLtime = initTime;
-      let lastRtime = initTime;
-
-      var count = 5;
-
-    var timer = setInterval(() => {
-
-      if(count >= 1) {
-
-        var timer2 = setInterval(()=>{
-          var time = new Date();
-          if(Math.floor((time - start) / 1000) < 6){
-            var data = {
-              stamp: time.getTime(),
-              timestamp: time,
-              duration: Math.floor((time - start) / 1000),
-              left: {
-                sensor: this.lsensor,
-                swing: this.leftSwingTime,
-                stance: this.leftStanceTime,
-              },
-              right: {
-                sensor: this.rsensor,
-                swing: this.rightSwingTime,
-                stance: this.rightStanceTime,
-              },
-              id_customer: this.props.user.id_customer,
-            };
-
-            try {
-                RNFS.appendFile(
-                RNFS.CachesDirectoryPath +
-                  '/suratechM/' +
-                  start.getFullYear() +
-                  start.getMonth() +
-                  start.getDate() +
-                  this.round,
-                JSON.stringify(data) + ',',
-              );
-            } catch {
-              RNFS.mkdir(RNFS.CachesDirectoryPath + '/suratechM/');
-              RNFS.appendFile(
-                RNFS.CachesDirectoryPath +
-                  '/suratechM/' +
-                  start.getFullYear() +
-                  start.getMonth() +
-                  start.getDate() +
-                  this.round,
-                JSON.stringify(data) + ',',
-              );
-            }
-          }
-
-        },100);
-
-        setTimeout(() => {
-          clearInterval(timer2);
-        }, 1000);
-
-        count = count - 1;
-      }
-
-      if (totalCount == 5) {
-        actualValue = 0;
-        progMargin = 20;
-
-      }else
-      if (totalCount < 5) {
-        totalCount = totalCount + 1;
-        actualValue = parseInt(actualValue) + parseInt(progMargin);
-        progressValue = actualValue + '%';
-        this.setState({
-          percentageCompleted: progressValue,
-        });
-
-      }
-
-    }, 1000);
-
-    setTimeout( ()=> {
-      this.setState({rightLegCalibrated: true, calibrationPhase: 3,percentageCompleted:0,showButton:true});
-      this.handleSaveData(true,'Record');
-      this.sendDataToSetverCalibration('R');
-    clearInterval(timer);
-
-    }, 6000);
-
-    }
-  }
-
-  canVibration = (vibrate, master) => {
-    if (vibrate && master) {
-      Vibration.vibrate(500);
-    } else {
-      Vibration.cancel();
+    } catch (error) {
+      console.log('[uploadVideo] Error:', error);
+      setUploadError(error.message || 'Upload failed');
+      setUploading(false);
     }
   };
 
-  render() {
-    this.canVibration(this.state.shouldVibrate, this.state.switch);
+  const uploadSensorData = async ({ video_id, attempts = 1 }) => {
+    if (!sensorDataArray || sensorDataArray.length === 0) {
+      console.warn('[uploadSensorData] No sensor data to upload');
+      Alert.alert('No Sensor Data', 'No sensor data was recorded during video recording.');
+      return false;
+    }
 
-    return (
-        <ScrollView
-          style={{ flex: 1, backgroundColor: '#fff' }}
-          contentContainerStyle={{ flexGrow: 1 }}   // <- new
-        >
-        {this.state.calibrationScreenOn ? (
-          <HeaderFix
-            icon_left={'left'}
-            onpress_left={() => {
-              // this.props.navigation.goBack();
-              this.setState({calibrationScreenOn: false});
-            }}
-            title={'Calibration'}
-          />
-        ) : (
-          <HeaderFix
-            icon_left={'left'}
-            onpress_left={() => {
-              this.props.navigation.goBack();
-            }}
-            title={this.props.navigation.getParam('name', '')}
-          />
-        )}
-        {this.state.calibrationScreenOn ? (
-          <>
-            {(this.state.calibrationPhase == 0 && (
-              <View
-                style={{
-                  // flex: 1,
-                  height: 700,
-                  marginVertical: 10,
-                  flexDirection: 'column',
-                  justifyContent: 'space-evenly',
-                  marginHorizontal: 20,
+    console.log(`[uploadSensorData] Uploading ${sensorDataArray.length} sensor data points`);
 
-                }}>
-                <View style={{justifyContent:"center",alignItems:"center" }}>
-                <RNText
-                    style={{fontSize: 20, color: '#00A2A2', fontWeight: '700',textAlign:"left"}}>
-                    Start calibration of SURASOLE
-                  </RNText>
-                <Image source={require('../../../assets/image/start.png')} style={{height:400,width:400,resizeMode:"center"}}/>
+    const payload = {
+      id_customer: idCustomer,
+      video_id,
+      product_number: productNumber,
+      bluetooth_left_id: props.leftDevice,
+      bluetooth_right_id: props.rightDevice,
+      shoe_size: shoeSize,
+      data: sensorDataArray,
+    };
 
-                  <RNText
-                    style={{
-                      fontSize: 20,
-                      color: '#00A2A2',
-                      fontWeight: '700',
-                      marginVertical: 10,
-                    }}>
-                    Please stand up and follow the guide to perform calibration
-                  </RNText>
-                </View>
-                <View style={{justifyContent:"center",alignItems:"center"}}>
-                <TouchableOpacity
-                  onPress={() =>
-                  {
-                    if(this.props.user.height != null && this.props.user.height != 0){
-                      this.setState({calibrationPhase:1})
-                    }else{
-                      Alert.alert("Please Update Height in profile section to get customized result","Do you want to provide Height",[
-                        {
-                          text: 'Yes',
-                          onPress: () =>  this.props.navigation.navigate('Profile'),
-                        },
-                        {
-                          text: 'No',
-                          onPress: () => this.setState({calibrationPhase:1}),
-                          style: 'cancel',
-                        }])
+    try {
+      const response = await fetch('https://api1.suratec.co.th/surasole-record', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
-                    }
-                  } }
-                  style={{
-                    alignItems: 'center',
-                  }}>
-                  <RNText style={{fontSize: 18, color: '#fff'}}>
-                    Calibration
-                  </RNText>
-                </TouchableOpacity>
-                </View>
-              </View>
-            )) ||
-              (this.state.calibrationPhase == 1 && (
-                <View
-                style={{
-                  // flex: 1,
-                  height: 700,
-                  marginVertical: 10,
-                  flexDirection: 'column',
-                  justifyContent: 'space-evenly',
-                  marginHorizontal: 20,
+      const respData = await response.json();
+      console.log('[uploadSensorData] Response:', respData);
 
-                }}>
-                <View style={{}}>
-                <RNText
-                    style={{fontSize: 20, color: '#00A2A2', fontWeight: '700',textAlign:"left"}}>
-                    Please Keep your left foot off from the ground
-                  </RNText>
-                <Image source={require('../../../assets/image/left_leg_up.png')}
-                style={{height:400,width:400,resizeMode:"center",alignSelf:"center"}}/>
-                <View
-                      style={{
-                        marginHorizontal: 20,
-                        marginVertical: 20,
-                        borderRadius: 20,
-                        borderWidth: 0.5,
-                        borderColor: '#ccc',
-                      }}>
-                      <View
-                        style={{
-                          padding: 20,
-                          backgroundColor: '#00A2A2',
-                          borderRadius: 20,
-                          width: this.state.percentageCompleted,
-                          // width:"60%",
-                        }}
-                      />
-                    </View>
-                    {this.state.percentageCompleted != 0 &&  <RNText
-                    style={{
-                      fontSize: 20,
-                      color: '#00A2A2',
-                      fontWeight: '700',
-                      textAlign:"center",
-                    }}>
-                     left foot calibrating...
-                  </RNText>}
+      if (response.ok) {
+        return respData;
+      } else {
+        throw new Error(respData.message || 'Upload failed');
+      }
+    } catch (error) {
+      console.log('[uploadSensorData] Error:', error);
+      
+      if (attempts < MAX_UPLOAD_ATTEMPTS) {
+        return uploadSensorData({ video_id, attempts: attempts + 1 });
+      } else {
+        try {
+          await AsyncStorage.setItem(
+            `sensorData_${video_id}`,
+            JSON.stringify(payload)
+          );
+          Alert.alert('Upload Failed', 'Sensor data saved locally for retry.');
+        } catch (e) {
+          console.log('Failed to save sensor data locally:', e);
+        }
+        return false;
+      }
+    }
+  };
 
+  const handleAfterVideoUpload = async (vid) => {
+    const sensorResult = await uploadSensorData({ video_id: vid });
+    
+    if (sensorResult && sensorResult.status === 'success') {
+      setShowSensorSuccess(true);
+      setTimeout(() => setShowSensorSuccess(false), 2000);
+    }
+  };
 
-                </View>
-                {this.state.showButton && <View style={{justifyContent:"center",alignItems:"center"}}>
-                <TouchableOpacity
-                  onPress={() => this.handleStartLeftLegCalibration()}
-                  style={{
-                    marginHorizontal: 10,
-                    paddingHorizontal: 20,
-                    paddingVertical: 10,
-                    width:"60%",
-                    backgroundColor: '#00A2A2',
-                    borderRadius: 20,
-                    marginVertical: 40,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                  <RNText style={{fontSize: 18, color: '#fff'}}>
-                  Start Calibration
-                  </RNText>
-                </TouchableOpacity>
-                </View>}
+  const discardVideo = () => {
+    setPreview(false);
+    setVideoUri(null);
+    setUploadError(null);
+    setSensorDataArray([]);
+    actualVideoStartTime.current = null;
+    actualVideoEndTime.current = null;
+    cleanupAllRecording();
+  };
 
-              </View>
-              )) ||
-              (this.state.calibrationPhase == 2 && (
-                <View
-                style={{
-                  // flex: 1,
-                  height: 700,
-                  marginVertical: 10,
-                  flexDirection: 'column',
-                  justifyContent: 'space-evenly',
-                  marginHorizontal: 20,
-
-                }}>
-                <View style={{}}>
-                <RNText
-                    style={{fontSize: 20, color: '#00A2A2', fontWeight: '700',textAlign:"left"}}>
-                    Please Keep your right foot off from the ground
-                  </RNText>
-                <Image source={require('../../../assets/image/right_leg_up.png')}
-                style={{height:400,width:400,resizeMode:"center",alignSelf:"center"}}/>
-                <View
-                      style={{
-                        marginHorizontal: 20,
-                        marginVertical: 20,
-                        borderRadius: 20,
-                        borderWidth: 0.5,
-                        borderColor: '#ccc',
-                      }}>
-                      <View
-                        style={{
-                          padding: 20,
-                          backgroundColor: '#00A2A2',
-                          borderRadius: 20,
-                          width: this.state.percentageCompleted,
-                          // width:"60%",
-                        }}
-                      />
-                    </View>
-                    {this.state.percentageCompleted != 0 &&  <RNText
-                    style={{
-                      fontSize: 20,
-                      color: '#00A2A2',
-                      fontWeight: '700',
-                      textAlign:"center",
-                    }}>
-                  right foot calibrating...
-                  </RNText>}
-
-
-                </View>
-                {this.state.showButton &&  <View style={{justifyContent:"center",alignItems:"center"}}>
-                <TouchableOpacity
-                  onPress={() => this.handleStartRightLegCalibration()}
-                  style={{
-                    marginHorizontal: 10,
-                    paddingHorizontal: 20,
-                    paddingVertical: 10,
-                    width:"60%",
-                    backgroundColor: '#00A2A2',
-                    borderRadius: 20,
-                    marginVertical: 40,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                  <RNText style={{fontSize: 18, color: '#fff'}}>
-                   Start Calibration
-                  </RNText>
-                </TouchableOpacity>
-                </View>}
-
-              </View>
-              )) ||
-              (this.state.calibrationPhase == 3 && (
-                <View
-                  style={{
-                    flex: 1,
-                    height: 800,
-                    marginVertical: 10,
-                    flexDirection: 'column',
-                    justifyContent: 'space-evenly',
-                    alignItems: 'center',
-                    marginHorizontal: 20,
-                  }}>
-                  <View style={{}}>
-                    {/* <RNText
-                      style={{
-                        fontSize: 20,
-                        color: '#027862',
-                        fontWeight: '700',
-                      }}>
-                      Start calibration of SURASOLE
-                    </RNText> */}
-                    <RNText
-                      style={{
-                        fontSize: 18,
-                        color: '#00A2A2',
-                        fontWeight: '700',
-                        marginVertical: 20,
-                      }}>
-                      Calibration of SURASOLE Completed
-                    </RNText>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() =>
-                      this.setState({
-                        // calibrationPhase: 3,
-                        calibrationScreenOn: false,
-                      })
-                    }
-                    style={{
-                      marginHorizontal: 10,
-                      paddingHorizontal: 20,
-                      paddingVertical: 10,
-                      backgroundColor: '#00A2A2',
-                      borderRadius: 10,
-                      marginVertical: 40,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}>
-                    <RNText style={{fontSize: 18, color: '#fff'}}>
-                      Completed
-                    </RNText>
-                  </TouchableOpacity>
-                </View>
-              ))}
-          </>
-        ) : (
-          <>
-            {/*<View*/}
-            {/*  style={{*/}
-            {/*    // borderWidth: 0.5,*/}
-            {/*    borderRadius: 6,*/}
-            {/*    marginHorizontal: 20,*/}
-            {/*    marginTop: 20,*/}
-            {/*    // paddingVertical: 10,*/}
-            {/*    flexDirection: 'row',*/}
-            {/*    justifyContent: 'space-evenly',*/}
-            {/*    alignItems: 'center',*/}
-            {/*    backgroundColor: '#ccc',*/}
-            {/*  }}>*/}
-            {/*  {this.state.menuAction.map((data, index) => (*/}
-            {/*    <TouchableOpacity*/}
-            {/*      onPress={() => this.setState({selectedMenu: data.key})}*/}
-            {/*      style={{*/}
-            {/*        padding: 10,*/}
-            {/*        width: '50%',*/}
-            {/*        backgroundColor:*/}
-            {/*          this.state.selectedMenu == data.key ? '#fff' : '#ccc',*/}
-            {/*        justifyContent: 'center',*/}
-            {/*        alignItems: 'center',*/}
-            {/*        borderRadius: 6,*/}
-            {/*      }}>*/}
-            {/*      <RNText*/}
-            {/*        style={{*/}
-            {/*          fontSize: 17,*/}
-            {/*          color:*/}
-            {/*            this.state.selectedMenu == data.key*/}
-            {/*              ? '#0CFFD3'*/}
-            {/*              : '#000',*/}
-            {/*          fontWeight: '700',*/}
-            {/*        }}>*/}
-            {/*        {data.title}*/}
-            {/*      </RNText>*/}
-            {/*    </TouchableOpacity>*/}
-            {/*  ))}*/}
-            {/*</View>*/}
-            {/*<NotificationsState />*/}
-            <View
-                style={{
-                  flex: 1,
-                  paddingHorizontal: 15,
-                  paddingTop: '30%',   // space below HeaderFix
-                  paddingBottom: 30 // space above OS nav-bar / home indicator
-                }}
-            >
-
-              {/* ① Middle block : title · radar · L/R buttons */}
-              <View style={{ flex: 1, justifyContent: 'center' }}>
-
-                {/* title row */}
-                <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                >
-                  <Text>Foot Balance</Text>
-
-                  {this.state.selectedMenu === 2 &&
-                      this.state.textAction === 'Stop' && (
-                          <RNText style={{ fontSize: 18, color: '#FF4433', fontWeight: '700' }}>
-                            {this.state.countDownTimer}
-                          </RNText>
-                      )}
-                </View>
-
-                {/* radar chart */}
-                <View style={{ marginTop: 25, marginBottom: 25, alignItems: 'center' }}>
-                  {this.state.focus && (
-                      <RadarChartFix xPos={this.state.xPosN} yPos={this.state.yPosN} />
-                  )}
-                </View>
-
-                {/* Left / Right buttons */}
-                <Grid style={{ paddingHorizontal: 15 }}>
-                  <Col>
-                    <BalanceButton
-                        bntName="Left"
-                        onPress={() => {
-                          this.dataRecord?.remove?.();
-                          this.setState({ focus: false });
-                          this.props.navigation.navigate('LeftFoots');
-                        }}
-                    />
-                  </Col>
-                  <Col>
-                    <BalanceButton
-                        bntName="Right"
-                        onPress={() => {
-                          this.dataRecord?.remove?.();
-                          this.setState({ focus: false });
-                          this.props.navigation.navigate('RigthFoots');
-                        }}
-                    />
-                  </Col>
-                </Grid>
-              </View>
-
-              {/* ② Bottom block : Record / Calibration */}
-              {this.state.selectedMenu === 1 ? (
-                  <View
-                      style={{
-                        flex: 1,
-                        height: '100%',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        marginBottom: '10%',
-                      }}>
-
-                  <ButtonFix
-                        action
-                        rounded
-                        title={getLocalizedText(this.props.lang, Lang.record)}
-                        onPress={this.actionRecording}
-                    />
-                  </View>
-              ) : (
-                  <View style={{ alignItems: 'center' }}>
-                    <Grid style={{ padding: 15 }}>
-                      <Col>
-                        <TouchableOpacity
-                            onPress={this.startCalibration}
-                            disabled={this.state.isCalibrated}
-                            style={{
-                              marginHorizontal: 10,
-                              padding: 10,
-                              backgroundColor: this.state.isCalibrated ? '#ccc' : '#FF4433',
-                              borderRadius: 10,
-                              justifyContent: 'center',
-                              alignItems: 'center'
-                            }}
-                        >
-                          <RNText style={{ fontSize: 18, color: '#fff' }}>Calibration</RNText>
-                        </TouchableOpacity>
-                      </Col>
-
-                      <Col>
-                        <TouchableOpacity
-                            onPress={this.actionRecordingFor10}
-                            disabled={
-                                !this.state.isCalibrated || this.state.textAction !== 'Record'
-                            }
-                            style={{
-                              marginHorizontal: 10,
-                              padding: 10,
-                              backgroundColor:
-                                  !this.state.isCalibrated || this.state.textAction !== 'Record'
-                                      ? '#ccc'
-                                      : '#FF4433',
-                              borderRadius: 10,
-                              justifyContent: 'center',
-                              alignItems: 'center'
-                            }}
-                        >
-                          <RNText style={{ fontSize: 18, color: '#fff' }}>
-                            {this.state.textAction}
-                          </RNText>
-                        </TouchableOpacity>
-                      </Col>
-                    </Grid>
-                  </View>
-              )}
-            </View>
-
-
-          </>
-        )}
-      </ScrollView>
-    );
+  if (hasPermission === null) {
+    return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#00bfc5" /></View>;
   }
-}
+  
+  if (hasPermission === false) {
+    return <View style={styles.loadingContainer}><RNText style={{ color: '#fff' }}>No access to camera</RNText></View>;
+  }
 
-class BalanceButton extends React.PureComponent {
-  render() {
-    return (
-      <TouchableOpacity
-        style={{padding: 10, flex: 1}}
-        onPress={this.props.onPress}>
-        <View
-          style={{
-            padding: 10,
-            backgroundColor: '#d2afa8',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-evenly',
-            borderRadius: 50,
-          }}>
-          <Text>{this.props.bntName}</Text>
+  return (
+    <View style={styles.fullScreenContainer}>
+      <HeaderFix
+        title="Gesture"
+        lang={props.lang}
+        icon_left={true}
+        onpress_left={() => {
+          cleanupAllRecording();
+          navigation.navigate('Home');
+        }}
+      />
+      
+      <View style={styles.cameraContainer}>
+        <View style={styles.camera} />
+        
+        {recording && (
+          <View style={styles.recordingIndicator}>
+            <View style={styles.recordingDot} />
+            <RNText style={styles.recordingText}>
+              {actualVideoStartTime.current ? 'Recording Video & Sensors...' : 'Preparing...'}
+            </RNText>
+            <RNText style={styles.recordingSubText}>
+              Sensor data: {sensorDataArray.length} points
+            </RNText>
+          </View>
+        )}
+        
+        <View style={styles.bottomBar}>
+          <TouchableOpacity 
+            style={styles.recordButton} 
+            onPress={recordVideo}
+            disabled={uploading}
+          >
+            <RNText style={styles.recordText}>Record</RNText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.galleryButton} 
+            onPress={() => {
+              cleanupAllRecording();
+              navigation.navigate('GestureAnalysis');
+            }}
+          >
+            <Image source={GALLERY_ICON} style={styles.galleryIcon} />
+          </TouchableOpacity>
         </View>
-      </TouchableOpacity>
-    );
-  }
-}
+        
+        {/* All your existing modals remain the same */}
+        <Modal visible={preview} animationType="fade" transparent={true}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <RNText style={styles.modalTitle}>Video Recorded</RNText>
+              <RNText style={styles.modalSubtitle}>
+                Sensor data points: {sensorDataArray.length}
+              </RNText>
+              {sensorDataArray.length > 0 && sensorDataArray[0].fallbackFiltering && (
+                <RNText style={styles.modalWarning}>
+                  ⚠️ Used fallback timing synchronization
+                </RNText>
+              )}
+              <View style={styles.modalButtons}>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.uploadButton]} 
+                  onPress={uploadVideo}
+                >
+                  <RNText style={styles.modalButtonText}>Upload</RNText>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.discardButton]} 
+                  onPress={discardVideo}
+                >
+                  <RNText style={styles.modalButtonText}>Discard</RNText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
-const mapStateToProps = state => {
-  return {
-    user: state.user,
-    rightDevice: state.rightDevice,
-    leftDevice: state.leftDevice,
-    lang: state.lang,
-    record: state.record,
-    noti: state.noti,
-    productNumber: state.productNumber,
-  };
+        {uploading && (
+          <View style={styles.uploadingOverlay}>
+            <View style={styles.uploadingContent}>
+              <ActivityIndicator size="large" color="#00bfc5" />
+              <RNText style={styles.uploadingText}>Uploading video and sensor data...</RNText>
+            </View>
+          </View>
+        )}
+
+        {showSuccess && (
+          <View style={styles.successOverlay}>
+            <View style={styles.successPopup}>
+              <View style={styles.successIcon}>
+                <RNText style={styles.successIconText}>✓</RNText>
+              </View>
+              <RNText style={styles.successText}>Video uploaded successfully!</RNText>
+            </View>
+          </View>
+        )}
+
+        {showSensorSuccess && (
+          <View style={styles.successOverlay}>
+            <View style={styles.successPopup}>
+              <View style={styles.successIcon}>
+                <RNText style={styles.successIconText}>✓</RNText>
+              </View>
+              <RNText style={styles.successText}>Sensor data uploaded successfully!</RNText>
+            </View>
+          </View>
+        )}
+      </View>
+    </View>
+  );
 };
 
-const mapDisPatchToProps = dispatch => {
-  return {
-    addLeftDevice: device => {
-      return dispatch({type: 'ADD_LEFT_DEVICE', payload: device});
-    },
-    addRightDevice: device => {
-      return dispatch({type: 'ADD_RIGHT_DEVICE', payload: device});
-    },
-    addDashBoardData: data => {
-      return dispatch({type: 'ADD_BLUETOOTH_DATA', payload: data});
-    },
-    actionRecordingButton: data => {
-      return dispatch({type: 'ACTION_BUTTON_RECORD', payload: data});
-    },
-    actionNotificationButton: data => {
-      return dispatch({type: 'ACTION_BUTTON_NOTIFICATION', payload: data});
-    },
-  };
-};
+// Keep all your existing styles
+const styles = StyleSheet.create({
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    width: '100%',
+    height: '100%',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cameraContainer: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  camera: {
+    width: width,
+    height: height,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#000',
+  },
+  recordingIndicator: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 200,
+  },
+  recordingDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#ff0000',
+    marginBottom: 4,
+    alignSelf: 'flex-start',
+  },
+  recordingText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  recordingSubText: {
+    color: '#ccc',
+    fontSize: 12,
+  },
+  bottomBar: {
+    position: 'absolute',
+    bottom: 30,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 30,
+    width: '100%',
+    zIndex: 10,
+  },
+  recordButton: {
+    backgroundColor: '#D32F2F',
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
+  recordText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  galleryButton: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 50,
+    height: 50,
+  },
+  galleryIcon: {
+    width: 32,
+    height: 32,
+    resizeMode: 'contain',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: width * 0.85,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalWarning: {
+    fontSize: 14,
+    color: '#ff9800',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 8,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
+  uploadButton: {
+    backgroundColor: '#00bfc5',
+  },
+  discardButton: {
+    backgroundColor: '#D32F2F',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  uploadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 15,
+  },
+  uploadingContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  uploadingText: {
+    fontSize: 16,
+    color: '#333',
+    marginTop: 12,
+    fontWeight: '500',
+  },
+  successOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 20,
+  },
+  successPopup: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  successIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#00bfc5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  successIconText: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+  successText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+  },
+});
 
-export default connect(mapStateToProps, mapDisPatchToProps)(index);
+const mapStateToProps = (state) => ({
+  leftDevice: state.leftDevice,
+  rightDevice: state.rightDevice,
+  lang: state.lang,
+  token: state.token,
+  id_member: state.id_member,
+});
+
+export default connect(mapStateToProps)(Gesture);

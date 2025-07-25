@@ -54,7 +54,6 @@ class index extends Component {
     img_path: '',
     onModal: false,
     loading: false,
-    id_facebook: '',
   };
 
   getImageURI = (img_path) => {
@@ -76,42 +75,22 @@ class index extends Component {
   };
 
   actionUpdate = () => {
-    let body = '';
     this.setState({loading: true});
-    if (this.state.id_facebook != '') {
-      body = {
-        id: this.state.id,
-        id_facebook: this.state.id_facebook,
-        fname: this.state.fname,
-        lname: this.state.lname,
-        email: this.state.email,
-        age: this.state.age,
-        type: this.props.user.role,
-        gender: this.state.sex,
-        weight: this.state.weigth,
-        telephone: this.state.tel,
-        height: this.state.heigth,
-        congenital_disease_flg: '1', // set ไว้รู้จะใส่อะไร
-        congenital_disease: 'ความดัน', // set ไว้รู้จะใส่อะไร
-        emergency_contract: '150 ถ.ศรีธานี', // set ไว้รู้จะใส่อะไร
-      };
-    } else {
-      body = {
-        id: this.state.id,
-        fname: this.state.fname,
-        lname: this.state.lname,
-        age: this.state.age,
-        email: this.state.email,
-        type: this.props.user.role,
-        gender: this.state.sex,
-        weight: this.state.weigth,
-        telephone: this.state.tel,
-        height: this.state.heigth,
-        congenital_disease_flg: '1', // set ไว้รู้จะใส่อะไร
-        congenital_disease: 'ความดัน', // set ไว้รู้จะใส่อะไร
-        emergency_contract: '150 ถ.ศรีธานี', // set ไว้รู้จะใส่อะไร
-      };
-    }
+    const body = {
+      id: this.state.id,
+      fname: this.state.fname,
+      lname: this.state.lname,
+      age: this.state.age,
+      email: this.state.email,
+      type: this.props.user.role,
+      gender: this.state.sex,
+      weight: this.state.weigth,
+      telephone: this.state.tel,
+      height: this.state.heigth,
+      congenital_disease_flg: '1', // set ไว้รู้จะใส่อะไร
+      congenital_disease: 'ความดัน', // set ไว้รู้จะใส่อะไร
+      emergency_contract: '150 ถ.ศรีธานี', // set ไว้รู้จะใส่อะไร
+    };
 
     fetch(`${API}/updata-profile`, {
       method: 'POST',
@@ -165,7 +144,6 @@ class index extends Component {
       weigth: user.weight == null ? '0' : user.weight.toString(),
       age: user.age == null ? '0' : user.age.toString(),
       tel: user.telephone == null ? '0' : user.telephone.toString(),
-      id_facebook: user.id_facebook == null ? '' : user.id_facebook.toString(),
     });
 
     let img = this.props.user.image;

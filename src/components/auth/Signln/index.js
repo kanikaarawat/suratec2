@@ -4,7 +4,7 @@ import {
   StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Modal
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AccessToken, LoginManager } from 'react-native-fbsdk';
+
 import { NavigationActions } from 'react-navigation';
 import LinearGradient from 'react-native-linear-gradient';
 

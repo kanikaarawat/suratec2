@@ -114,9 +114,10 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    
+
 
     implementation project(':react-native-android-location-enabler')
-    implementation project(':react-native-fbsdk')
     implementation 'com.google.firebase:firebase-analytics:17.3.0'
     implementation project(':react-native-push-notification')
     implementation project(':react-native-permissions')

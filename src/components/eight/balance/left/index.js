@@ -1,6 +1,6 @@
 //5.11.62
 
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import {
   View,
   ScrollView,
@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Card} from 'native-base';
-import {Col, Grid} from 'react-native-easy-grid';
-import {connect} from 'react-redux';
+import { Card } from 'native-base';
+import { Col, Grid } from 'react-native-easy-grid';
+import { connect } from 'react-redux';
 
 import HeaderFix from '../../../common/HeaderFix';
 import NotificationsState from '../../../shared/Notification';
@@ -24,7 +24,7 @@ import CardStatusFix from '../../../common/CardStatusFix';
 import AlertFix from '../../../common/AlertsFix';
 import ScoreFix from '../../../common/ScoreFix';
 import API from '../../../../config/Api';
-import {getLocalizedText} from '../../../../assets/language/langUtils';
+import { getLocalizedText } from '../../../../assets/language/langUtils';
 
 import {
   FileManager,
@@ -101,16 +101,16 @@ class index extends Component {
   };
 
   componentDidMount = async () => {
-   
+
     // notiAlarm
     let noti = await AsyncStorage.getItem('notiSetting');
-    noti !== null ? this.setState({notiAlarm: parseInt(noti)}) : 100;
+    noti !== null ? this.setState({ notiAlarm: parseInt(noti) }) : 100;
     NetInfo.addEventListener(this.handleConnectivityChange);
 
     this.startReading();
     if (typeof this.props.leftDevice !== 'undefined') {
       this.zoneInterval = setInterval(() => {
-        this.setState({score: this.state.score + 1});
+        this.setState({ score: this.state.score + 1 });
       }, 1000);
     }
   };
@@ -137,11 +137,11 @@ class index extends Component {
   shouldBeVibration = sensor => {
     for (let i = 0; i < sensor.length; i++) {
       if (this.toKilo(sensor[i]) > this.props.user.weight * 0.3) {
-        this.setState({shouldVibrate: true});
+        this.setState({ shouldVibrate: true });
         return;
       }
     }
-    this.setState({shouldVibrate: false});
+    this.setState({ shouldVibrate: false });
   };
 
   componentWillUnmount = () => {
@@ -179,7 +179,7 @@ class index extends Component {
     if (100 - persent >= 80) {
       if (!this.inZone) {
         this.zoneInterval = setInterval(() => {
-          this.setState({score: this.state.score + 1});
+          this.setState({ score: this.state.score + 1 });
         }, 1000);
         this.inZone = true;
       }
@@ -226,7 +226,7 @@ class index extends Component {
       }
     } else {
       this.props.actionRecordingButton('Record');
-      this.setState({textAction: 'Record'});
+      this.setState({ textAction: 'Record' });
     }
     if (Platform.OS === 'android') {
       service = '0000FFE0-0000-1000-8000-00805F9B34FB';
@@ -243,21 +243,21 @@ class index extends Component {
     }
     this.dataRecord = bleManagerEmitter.addListener(
       'BleManagerDidUpdateValueForCharacteristic',
-      ({value, peripheral, characteristic, service}) => {
+      ({ value, peripheral, characteristic, service }) => {
         let time = new Date();
         if (peripheral === this.props.leftDevice) {
           leftsensor = this.toDecimalArray(value);
           this.recordData(leftsensor, 'L');
           if (time - this.ltime > 333) {
             this.shouldBeVibration(leftsensor);
-            let {xPos, yPos} = this.findCoordinate(leftsensor);
+            let { xPos, yPos } = this.findCoordinate(leftsensor);
             xPos = xPos / 7.8;
             yPos = yPos / -7.8;
             let xPosN = (xPos + 100) * 1.5;
             let yPosN = (yPos + 100) * 1.5;
             this.setStatus(xPos, yPos);
             this.leftPhase = leftsensor.reduce((a, b) => a + b, 0);
-            this.setState({leftsensor, xPosN, yPosN});
+            this.setState({ leftsensor, xPosN, yPosN });
             this.ltime = time;
           }
         }
@@ -266,7 +266,7 @@ class index extends Component {
           this.recordData(rightsensor, 'R');
           if (time - this.rtime > 333) {
             this.rightPhase = rightsensor.reduce((a, b) => a + b, 0);
-            this.setState({rightsensor});
+            this.setState({ rightsensor });
             this.rtime = time;
           }
         }
@@ -286,7 +286,7 @@ class index extends Component {
   }
 
   handleConnectivityChange = status => {
-    this.setState({isConnected: status.isConnected});
+    this.setState({ isConnected: status.isConnected });
     console.log(`Wifi Status : ${this.state.isConnected}`);
   };
 
@@ -310,7 +310,7 @@ class index extends Component {
       return;
     }
     if (this.state.textAction == 'Record') {
-      this.setState({textAction: 'Stop'});
+      this.setState({ textAction: 'Stop' });
       this.props.actionRecordingButton('Stop');
       let initTime = new Date();
       this.start = initTime;
@@ -337,28 +337,28 @@ class index extends Component {
         try {
           await await RNFS.appendFile(
             RNFS.CachesDirectoryPath +
-              '/suratechM/' +
-              this.start.getFullYear() +
-              this.start.getMonth() +
-              this.start.getDate() +
-              this.round,
+            '/suratechM/' +
+            this.start.getFullYear() +
+            this.start.getMonth() +
+            this.start.getDate() +
+            this.round,
             JSON.stringify(data) + ',',
           );
         } catch {
           await RNFS.mkdir(RNFS.CachesDirectoryPath + '/suratechM/');
           await RNFS.appendFile(
             RNFS.CachesDirectoryPath +
-              '/suratechM/' +
-              this.start.getFullYear() +
-              this.start.getMonth() +
-              this.start.getDate() +
-              this.round,
+            '/suratechM/' +
+            this.start.getFullYear() +
+            this.start.getMonth() +
+            this.start.getDate() +
+            this.round,
             JSON.stringify(data) + ',',
           );
         }
       }, 100);
     } else {
-      this.setState({textAction: 'Record'});
+      this.setState({ textAction: 'Record' });
       this.props.actionRecordingButton('Record');
       clearInterval(this.readInterval);
       this.sendDataToSetver();
@@ -368,92 +368,92 @@ class index extends Component {
   sendDataToSetver() {
     this.state.isConnected == false
       ? RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
-          console.log('WiFi is not connect');
-          res.forEach(r => {
-            console.log(r.path);
-          });
-        })
+        console.log('WiFi is not connect');
+        res.forEach(r => {
+          console.log(r.path);
+        });
+      })
       : RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
-          res.forEach(r => {
-            console.log(r.path);
-            RNFS.readFile(r.path)
-              .then(text => {
-                let data = JSON.parse(
-                  '[' + text.substring(0, text.length - 1) + ']',
-                );
-                var content = {
-                  data: data,
-                  id_customer: data[0].id_customer,
-                  id_device: '',
-                  type: 1, // for medical
-                  product_number: this.props.productNumber,
-                  bluetooth_left_id: this.props.leftDevice,
-                  bluetooth_right_id: this.props.rightDevice,
-                };
-                fetch(`${API}/addjson`, {
-                  method: 'POST',
-                  headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(content),
-                })
-                  .then(resp => resp.json())
-                  .then(resp => {
-                    if (resp.status != 'ผิดพลาด') {
-                      console.log(`Clear : ${r.path}`);
-                      RNFS.unlink(r.path);
+        res.forEach(r => {
+          console.log(r.path);
+          RNFS.readFile(r.path)
+            .then(text => {
+              let data = JSON.parse(
+                '[' + text.substring(0, text.length - 1) + ']',
+              );
+              var content = {
+                data: data,
+                id_customer: data[0].id_customer,
+                id_device: '',
+                type: 1, // for medical
+                product_number: this.props.productNumber,
+                bluetooth_left_id: this.props.leftDevice,
+                bluetooth_right_id: this.props.rightDevice,
+              };
+              fetch(`${API}/addjson`, {
+                method: 'POST',
+                headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(content),
+              })
+                .then(resp => resp.json())
+                .then(resp => {
+                  if (resp.status != 'ผิดพลาด') {
+                    console.log(`Clear : ${r.path}`);
+                    RNFS.unlink(r.path);
 
-                      fetch(`${API}member/getUserDashboardStatic`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          id: this.props.user.id_customer,
-                          // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
-                        }),
+                    fetch(`${API}member/getUserDashboardStatic`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        id: this.props.user.id_customer,
+                        // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
+                      }),
+                    })
+                      .then(resp1 => {
+                        console.log('============API Response============');
+                        return resp1.json();
                       })
                       .then(resp1 => {
+
+                        fetch(`${API}member/get_user_data`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            id: this.props.user.id_customer,
+                            ...resp1
+                            // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
+                          }),
+                        })
+                          .then(res => {
                             console.log('============API Response============');
-                            return  resp1.json();
+                            return console.log(res), res.json();
                           })
-                        .then(resp1 => {
-                          
-                          fetch(`${API}member/get_user_data`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              id: this.props.user.id_customer,
-                              ...resp1
-                              // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
-                            }),
+                          .then(res => {
+                            console.log(res, 'responseFromAPU');
+
                           })
-                            .then(res => {
-                              console.log('============API Response============');
-                              return console.log(res), res.json();
-                            })
-                            .then(res => {
-                              console.log(res, 'responseFromAPU');
-  
-                            })
-                            .catch(err => {
-                              console.log(err);
-                              this.setState({ isLoading: false });
-                              Toast.show('Something went wrong. Please Try again!!!');
-                            });
-                        }
-  
-                        )
-                        .catch(err => {
-                          console.log(err);
-                          this.setState({ isLoading: false });
-                          Toast.show('Something went wrong. Please Try again!!!');
-                        });
-                    }
-                  });
-              })
-              .catch(e => {});
-          });
+                          .catch(err => {
+                            console.log(err);
+                            this.setState({ isLoading: false });
+                            Toast.show('Something went wrong. Please Try again!!!');
+                          });
+                      }
+
+                      )
+                      .catch(err => {
+                        console.log(err);
+                        this.setState({ isLoading: false });
+                        Toast.show('Something went wrong. Please Try again!!!');
+                      });
+                  }
+                });
+            })
+            .catch(e => { });
         });
+      });
     alert(this.props.lang ? Lang.alert.thai : Lang.alert.eng);
   }
 
@@ -540,10 +540,10 @@ class index extends Component {
     }
   };
 
-  render() {   
+  render() {
     this.canVibration(this.state.shouldVibrate, this.state.switch);
     return (
-      <ScrollView style={{flex: 1}}>
+      <ScrollView style={{ flex: 1 }}>
         <HeaderFix
           icon_left={'left'}
           onpress_left={() => {
@@ -554,11 +554,11 @@ class index extends Component {
 
         {/*<NotificationsState />*/}
 
-        <View style={{padding: 15}}>
-          <View style={{flex: 4, height: '100%'}}>
-            <Text>Left Foot Balance </Text>
+        <View style={{ padding: 15 }}>
+          <View style={{ flex: 4, height: '100%' }}>
 
-            <View style={{alignItems: 'center'}}>
+
+            <View style={{ alignItems: 'center' }}>
               <RadarChartFix xPos={this.state.xPosN} yPos={this.state.yPosN} />
             </View>
           </View>
@@ -621,13 +621,13 @@ const mapStateToProps = state => {
 const mapDisPatchToProps = dispatch => {
   return {
     addDashBoardData: data => {
-      return dispatch({type: 'ADD_BLUETOOTH_DATA', payload: data});
+      return dispatch({ type: 'ADD_BLUETOOTH_DATA', payload: data });
     },
     actionRecordingButton: data => {
-      return dispatch({type: 'ACTION_BUTTON_RECORD', payload: data});
+      return dispatch({ type: 'ACTION_BUTTON_RECORD', payload: data });
     },
     actionNotificationButton: data => {
-      return dispatch({type: 'ACTION_BUTTON_NOTIFICATION', payload: data});
+      return dispatch({ type: 'ACTION_BUTTON_NOTIFICATION', payload: data });
     },
   };
 };

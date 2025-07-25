@@ -16,13 +16,7 @@ export default class iconsfooter extends Component {
                         </TouchableOpacity> */}
                     </Col>
                     <Col >
-
-                        <TouchableOpacity style={{ alignItems: 'center' }} onPress={this.props.onFacebook} >
-                            <Image
-                                style={{ width: 50, height: 50 }}
-                                source={require('../../../assets/social/facebook.png')}
-                            />
-                        </TouchableOpacity>
+                        {/* Facebook login removed */}
 
                         {/* <TouchableOpacity style={{ alignItems: 'center' }} onPress={this.props.onTwitter} >
                             <Image
