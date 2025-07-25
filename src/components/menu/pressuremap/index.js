@@ -584,11 +584,11 @@ class index extends React.PureComponent {
               showsVerticalScrollIndicator={false}
           >
             {/* Spacer to push content down */}
-            <View style={{flex: 1}} />
+            <View style={{flex: 1, height: 60}} />
 
             {/* Main content container - minimal styling to avoid SVG issues */}
             <View style={{flex: 2, paddingHorizontal: 15}}>
-              <Text style={{fontSize: 16, color: '#666', marginBottom: 15}}>kPa .</Text>
+             {/* <Text style={{fontSize: 16, color: '#666', marginBottom: 15}}>kPa .</Text >*/}
               <View>
                 <SvgContourBasic
                     leftsensor={this.state.leftData}

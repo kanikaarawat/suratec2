@@ -92,12 +92,12 @@ class SignIn extends Component {
 
       const userInfo = {
         ...data.user_info,
+        id_member: data.member_info.id_member,
         role: data.member_info.data_role,
         iddatarole: data.member_info.id_data_role,
         device_token: deviceToken,
         deviceType,
         security_token: data.data,
-        id_member: data.member_info.id_member,
       };
       if (data.patients) userInfo.patients = data.patients;
 
@@ -107,7 +107,7 @@ class SignIn extends Component {
       }
 
       this.props.addUser({ user: userInfo, token: data.data });
-      console.log('USER ID:', userInfo.id_customer);
+      console.log('USER ID:', userInfo.id_member);
       console.log('SECURITY TOKEN:', data.data);
 
       if (userInfo.role === 'mod_employee') {
@@ -240,9 +240,34 @@ class SignIn extends Component {
                 </TouchableOpacity>
               </View>
 
+              {/*// In your SignIn index.js, replace the current usage with:*/}
+
               <LanguagePickerFix
                   langSwitch={Lang.langSwitch}
-                  style={{ marginTop: 30 }}
+                  onLanguageChange={(index) => {
+                    console.log('Language changed to:', index);
+                    // Add any additional SignIn-specific logic here if needed
+                  }}
+                  isCircular={false}          // Keep rectangular for SignIn
+                  showFlag={true}             // Show flag emoji
+                  showText={true}             // Show language text
+                  buttonStyle={{
+                    backgroundColor: '#e0f7fa',
+                    borderColor: '#00c3cc',
+                    paddingHorizontal: 15,
+                    paddingVertical: 10,
+                    minWidth: 120,          // Ensure button has good width
+                  }}
+                  textStyle={{
+                    color: '#00c3cc',
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                  }}
+                  style={{
+                    marginTop: 30,
+                    alignSelf: 'center',    // Center the component
+                  }}
+                  modalTitle="Select Language"  // Custom modal title if needed
               />
             </ScrollView>
           </LinearGradient>

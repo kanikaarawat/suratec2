@@ -104,7 +104,10 @@ const GestureAnalysis = (props) => {
                   console.log('[NAVIGATION] Gesture Analysis video selected:', item);
                   if (item && item.video_url) {
                     console.log('[GestureAnalysis] onSelectVideo called with:', item.video_url);
-                    props.onSelectVideo(item.video_url);
+                    navigation.navigate('VideoAnalysis', {
+                      videoId: item.id || item.video_id,
+                      videoUri: item.video_url,
+                    });
                   } else {
                     console.warn('[GESTURE_ANALYSIS] Missing video_url in item:', item);
                   }

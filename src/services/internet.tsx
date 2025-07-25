@@ -1,13 +1,15 @@
-import { NetInfo } from 'react-native';
-import DeviceInfo from 'react-native-device-info';
+import NetInfo from '@react-native-community/netinfo';
+
 export const internetStatus = async () => {
-  let connectionInfo = await NetInfo.getConnectionInfo();
+  let connectionInfo = await NetInfo.fetch();
   if (connectionInfo.type !== 'wifi' && connectionInfo.type !== 'cellular') {
     return false; 
   } else {
     return true;
   }
 }
+
 export const DeviceTimeZone = async () => {
- return DeviceInfo.getTimezone();
+  // Use JavaScript's built-in Intl API to get timezone
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }

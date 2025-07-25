@@ -96,6 +96,7 @@ class DashboardScreen extends Component {
     this.backHandler = BackHandler.addEventListener('hardwareBackPress', this.handleBackPress);
     NetInfo.addEventListener(this.handleConnectivityChange);
     this.handleFetchDashboardData();
+    this.fetchDashboardSummary();
     
     fetch(`${API}/record`, {
       method: 'POST',
@@ -365,48 +366,55 @@ class DashboardScreen extends Component {
       console.error(error);
       this.setState({ isLoading: false, dataShow: true, hasCopData: false });
     }
+
+  };
+
+fetchDashboardSummary = async () => {
+  try {
+    const { user, token, lang } = this.props;
+    const user_id = user.id_customer;
+    const lang_mode = lang === 1 ? 1 : 0; // 1 = Thai, 0 = English
+    const security_token = token;
     
-    // Fetch dashboard summary
-    this.fetchDashboardSummary();
-  };
-
-  fetchDashboardSummary = async () => {
-    try {
-      const { user, token, lang } = this.props;
-      const user_id = user.id_customer;
-      const lang_mode = lang === 1 ? 1 : 0; // 1 = Thai, 0 = English
-      const security_token = token;
-      console.log('[DASHBOARD] Fetching summary for user:', user_id, 'Token:', security_token);
-      const response = await fetch('https://www.surasole.com/api/dashboard/dashboard-summary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          security_token,
-          user_id,
-          lang_mode
-        }),
+    console.log('[DASHBOARD] Fetching summary for user:', user_id, 'Token:', security_token);
+    
+    const response = await fetch('https://www.surasole.com/api/dashboard/dashboard-summary', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        security_token,
+        user_id,
+        lang_mode
+      }),
+    });
+    
+    const data = await response.json();
+    console.log('[DASHBOARD] Summary response:', data);
+    
+    if (data && data.summary) {
+      this.setState({ 
+        summaryText: data.summary, 
+        summaryLoading: false 
       });
-      const data = await response.json();
-      console.log('Dashboard summary response:', data);
-      if (data && data.summary) {
-        this.setState({ summaryText: data.summary, summaryLoading: false });
-      } else {
-        this.setState({ summaryText: 'No summary available at this time.', summaryLoading: false });
-      }
-    } catch (error) {
-      this.setState({ summaryText: `Unable to load summary: ${error.message}`, summaryLoading: false });
+    } else {
+      this.setState({ 
+        summaryText: 'No summary available at this time.', 
+        summaryLoading: false 
+      });
     }
-  };
+  } catch (error) {
+    console.error('[DASHBOARD] Summary fetch error:', error);
+    this.setState({ 
+      summaryText: `Unable to load summary: ${error.message}`, 
+      summaryLoading: false 
+    });
+  }
+};
 
-  calculateCOP_X = (data) => {
-    // Simplified calculation for demonstration
-    // In a real app, you would use proper biomechanical formulas
-    const xPositions = [];
-    for (let i = 0; i < 10; i++) {
-      xPositions.push(Math.random() * 200 - 100); // Random values between -100 and 100
-    }
-    return xPositions;
-  };
+
+
 
   calculateCOP_Y = (data) => {
     // Simplified calculation for demonstration
@@ -421,37 +429,84 @@ class DashboardScreen extends Component {
     if (!this.state.hasCopData) return null;
 
     return (
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, marginHorizontal: 20 }}>
+      <View style={{ 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        marginTop: 12, 
+        marginHorizontal: 20 
+      }}>
         <View style={{ flex: 1, alignItems: 'flex-start' }}>
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>
+          <Text style={{ 
+            color: '#00b2b2', 
+            fontSize: 18, 
+            fontWeight: 'bold', 
+            marginBottom: 4 
+          }}>
             {this.props.lang ? DashboardLang.cadenceText.thai : DashboardLang.cadenceText.eng}
           </Text>
-          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#007bff', marginBottom: 0 }}>
+          <Text style={{ 
+            color: '#00b2b2', 
+            fontSize: 32, 
+            fontWeight: 'bold', 
+            marginBottom: 0 
+          }}>
             {this.state.healthData.cadence || '0'}
           </Text>
-          <Text style={{ fontSize: 14, color: '#6c757d', marginTop: -5 }}>
+          <Text style={{ 
+            color: '#7b8fa6', 
+            fontSize: 14, 
+            marginTop: -4 
+          }}>
             {this.props.lang ? 'ก้าว/นาที' : 'steps/min'}
           </Text>
         </View>
         <View style={{ flex: 1, alignItems: 'flex-start' }}>
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>
+          <Text style={{ 
+            color: '#00b2b2', 
+            fontSize: 18, 
+            fontWeight: 'bold', 
+            marginBottom: 4 
+          }}>
             {this.props.lang ? DashboardLang.stepCountText.thai : DashboardLang.stepCountText.eng}
           </Text>
-          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#007bff', marginBottom: 0 }}>
+          <Text style={{ 
+            color: '#00b2b2', 
+            fontSize: 32, 
+            fontWeight: 'bold', 
+            marginBottom: 0 
+          }}>
             {this.state.healthData.step_count || '0'}
           </Text>
-          <Text style={{ fontSize: 14, color: '#6c757d', marginTop: -5 }}>
+          <Text style={{ 
+            color: '#7b8fa6', 
+            fontSize: 14, 
+            marginTop: -4 
+          }}>
             {this.props.lang ? 'ก้าว' : 'steps'}
           </Text>
         </View>
         <View style={{ flex: 1, alignItems: 'flex-start' }}>
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>
+          <Text style={{ 
+            color: '#00b2b2', 
+            fontSize: 18, 
+            fontWeight: 'bold', 
+            marginBottom: 4 
+          }}>
             {this.props.lang ? DashboardLang.gaitSpeedText.thai : DashboardLang.gaitSpeedText.eng}
           </Text>
-          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#007bff', marginBottom: 0 }}>
+          <Text style={{ 
+            color: '#00b2b2', 
+            fontSize: 32, 
+            fontWeight: 'bold', 
+            marginBottom: 0 
+          }}>
             {this.state.healthData.gait_speed || '0'}
           </Text>
-          <Text style={{ fontSize: 14, color: '#6c757d', marginTop: -5 }}>
+          <Text style={{ 
+            color: '#7b8fa6', 
+            fontSize: 14, 
+            marginTop: -4 
+          }}>
             {this.props.lang ? 'ม./วินาที' : 'm/s'}
           </Text>
         </View>
@@ -474,54 +529,110 @@ class DashboardScreen extends Component {
           padding: 2
         }}
       >
-        <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <View style={{ flex: 1, paddingRight: 10 }}>
-              <View style={{ marginBottom: 10 }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+        <View style={{
+          backgroundColor: '#fff',
+          borderRadius: 22,
+          padding: 16
+        }}>
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between'
+          }}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <View style={{ marginBottom: 12 }}>
+                <Text style={{ 
+                  color: '#00b2b2', 
+                  fontSize: 16, 
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}>
                   Path Sway
                 </Text>
-                <Text style={{ fontSize: 24, color: '#007bff', textAlign: 'center' }}>
+                <Text style={{ 
+                  color: '#00b2b2', 
+                  fontSize: 20,
+                  textAlign: 'center'
+                }}>
                   {this.state.healthData.path_sway || '0'} cm
                 </Text>
               </View>
   
-              <View style={{ marginBottom: 10 }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+              <View style={{ marginBottom: 12 }}>
+                <Text style={{ 
+                  color: '#00b2b2', 
+                  fontSize: 16, 
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}>
                   ML Sway
                 </Text>
-                <Text style={{ fontSize: 24, color: '#007bff', textAlign: 'center' }}>
+                <Text style={{ 
+                  color: '#00b2b2', 
+                  fontSize: 20,
+                  textAlign: 'center'
+                }}>
                   {this.state.healthData.ml_sway || '0'} cm
                 </Text>
               </View>
   
-              <View style={{ marginBottom: 0 }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+              <View>
+                <Text style={{ 
+                  color: '#00b2b2', 
+                  fontSize: 16, 
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}>
                   AP Sway
                 </Text>
-                <Text style={{ fontSize: 24, color: '#007bff', textAlign: 'center' }}>
+                <Text style={{ 
+                  color: '#00b2b2', 
+                  fontSize: 20,
+                  textAlign: 'center'
+                }}>
                   {this.state.healthData.ap_sway || '0'} cm
                 </Text>
               </View>
             </View>
   
-            <View style={{ height: 1, backgroundColor: '#ccc', marginHorizontal: 10 }} />
+            <View style={{
+              width: 1,
+              backgroundColor: '#e0e0e0',
+              marginVertical: 4
+            }} />
   
-            <View style={{ flex: 1, paddingLeft: 10 }}>
-              <View style={{ marginBottom: 10 }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+            <View style={{ flex: 1, paddingLeft: 8 }}>
+              <View style={{ marginBottom: 12 }}>
+                <Text style={{ 
+                  color: '#00b2b2', 
+                  fontSize: 16, 
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}>
                   Ellipse Area
                 </Text>
-                <Text style={{ fontSize: 24, color: '#007bff', textAlign: 'center' }}>
+                <Text style={{ 
+                  color: '#00b2b2', 
+                  fontSize: 20,
+                  textAlign: 'center'
+                }}>
                   {this.state.healthData.ellipse_area || '0'} cm²
                 </Text>
               </View>
   
-              <View style={{ marginBottom: 0 }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+              <View>
+                <Text style={{ 
+                  color: '#00b2b2', 
+                  fontSize: 16, 
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}>
                   Velocity
                 </Text>
-                <Text style={{ fontSize: 24, color: '#007bff', textAlign: 'center' }}>
+                <Text style={{ 
+                  color: '#00b2b2', 
+                  fontSize: 20,
+                  textAlign: 'center'
+                }}>
                   {this.state.healthData.velocity || '0'} cm/sec
                 </Text>
               </View>
@@ -645,24 +756,24 @@ class DashboardScreen extends Component {
     return (
       <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
         {/* Date and Time */}
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginHorizontal: 20, marginTop: 10, marginBottom: 5 }}>
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>{currentDate} {currentTime}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginHorizontal: 20, marginTop: 12, marginBottom: 8 }}>
+          <Text style={{ color: '#00b2b2', fontSize: 16, fontWeight: 'bold' }}>{currentDate} {currentTime}</Text>
         </View>
         {/* Left and Right Foot Cards */}
-        <View style={{ flexDirection: 'row', marginTop: 10, marginHorizontal: 15 }}>
+        <View style={{ flexDirection: 'row', marginTop: 18, marginHorizontal: 12 }}>
           {/* Left Foot Card */}
-          <LinearGradient colors={['#005b50', '#0cfdd1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 24, marginRight: 10, padding: 5 }}>
-            <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16 }}>
-              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>
+          <LinearGradient colors={['#005b50', '#0cfdd1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 24, marginRight: 8, padding: 2 }}>
+            <View style={{ backgroundColor: '#fff', borderRadius: 22, padding: 16 }}>
+              <Text style={{ color: '#00b2b2', fontWeight: 'bold', fontSize: 21, marginBottom: 8, textAlign: 'center' }}>
                 {this.props.lang ? DashboardLang.leftFootText.thai : DashboardLang.leftFootText.eng}
               </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'center' }}>
-                <Image source={require('../../../assets/image/dashboard/left_foot.png')} style={{ width: 80, height: 60, marginRight: 10 }} />
-                <View style={{ flexDirection: 'column' }}>
-                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, justifyContent: 'center' }}>
+                <Image source={require('../../../assets/image/dashboard/left_foot.png')} style={{ width: 80, height: 60, marginRight: 12 }} />
+                <View>
+                  <Text style={{ color: '#00b2b2', fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>
                     {this.props.lang ? DashboardLang[`${leftHighest.zone}Text`]?.thai || leftHighest.zone : DashboardLang[`${leftHighest.zone}Text`]?.eng || leftHighest.zone}
                   </Text>
-                  <Text style={{ fontSize: 16, color: '#007bff', textAlign: 'center' }}>{leftHighest.value.toFixed(1)}%</Text>
+                  <Text style={{ color: '#00b2b2', fontSize: 18, textAlign: 'center' }}>{leftHighest.value.toFixed(1)}%</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
@@ -671,14 +782,14 @@ class DashboardScreen extends Component {
                   .map((zone, index, arr) => (
                     <React.Fragment key={zone}>
                       {index > 0 && (
-                        <View style={{ height: 80, width: 1, backgroundColor: '#ccc', marginHorizontal: 10 }} />
+                        <View style={{ height: '80%', width: 1, backgroundColor: '#e0e0e0', marginHorizontal: 8 }} />
                       )}
                       <View style={{ flex: 1, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
-                        <View style={{ flexDirection: 'column', alignItems: 'center' }}>
-                          <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#007bff' }}>
+                        <View style={{ alignItems: 'center' }}>
+                          <Text style={{ color: '#7b8fa6', fontSize: 14, fontWeight: 'bold' }}>
                             {this.props.lang ? DashboardLang[`${zone}Text`]?.thai || zone : DashboardLang[`${zone}Text`]?.eng || zone}
                           </Text>
-                          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>{this.renderPressureValue('left', zone)}</Text>
+                          <Text style={{ color: '#7b8fa6', fontSize: 18, fontWeight: 'bold' }}>{this.renderPressureValue('left', zone)}</Text>
                         </View>
                       </View>
                     </React.Fragment>
@@ -687,18 +798,18 @@ class DashboardScreen extends Component {
             </View>
           </LinearGradient>
           {/* Right Foot Card */}
-          <LinearGradient colors={['#005b50', '#0cfdd1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 24, marginLeft: 10, padding: 5 }}>
-            <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16 }}>
-              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>
+          <LinearGradient colors={['#005b50', '#0cfdd1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 24, marginLeft: 8, padding: 2 }}>
+            <View style={{ backgroundColor: '#fff', borderRadius: 22, padding: 16 }}>
+              <Text style={{ color: '#00b2b2', fontWeight: 'bold', fontSize: 21, marginBottom: 8, textAlign: 'center' }}>
                 {this.props.lang ? DashboardLang.rightFootText.thai : DashboardLang.rightFootText.eng}
               </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'center' }}>
-                <Image source={require('../../../assets/image/dashboard/right_foot.png')} style={{ width: 80, height: 60, marginRight: 10 }} />
-                <View style={{ flexDirection: 'column' }}>
-                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', textAlign: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, justifyContent: 'center' }}>
+                <Image source={require('../../../assets/image/dashboard/right_foot.png')} style={{ width: 80, height: 60, marginRight: 12 }} />
+                <View>
+                  <Text style={{ color: '#00b2b2', fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>
                     {this.props.lang ? DashboardLang[`${rightHighest.zone}Text`]?.thai || rightHighest.zone : DashboardLang[`${rightHighest.zone}Text`]?.eng || rightHighest.zone}
                   </Text>
-                  <Text style={{ fontSize: 16, color: '#007bff', textAlign: 'center' }}>{rightHighest.value.toFixed(1)}%</Text>
+                  <Text style={{ color: '#00b2b2', fontSize: 18, textAlign: 'center' }}>{rightHighest.value.toFixed(1)}%</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
@@ -707,14 +818,14 @@ class DashboardScreen extends Component {
                   .map((zone, index, arr) => (
                     <React.Fragment key={zone}>
                       {index > 0 && (
-                        <View style={{ height: 80, width: 1, backgroundColor: '#ccc', marginHorizontal: 10 }} />
+                        <View style={{ height: '80%', width: 1, backgroundColor: '#e0e0e0', marginHorizontal: 8 }} />
                       )}
                       <View style={{ flex: 1, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
-                        <View style={{ flexDirection: 'column', alignItems: 'center' }}>
-                          <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#007bff' }}>
+                        <View style={{ alignItems: 'center' }}>
+                          <Text style={{ color: '#7b8fa6', fontSize: 14, fontWeight: 'bold' }}>
                             {this.props.lang ? DashboardLang[`${zone}Text`]?.thai || zone : DashboardLang[`${zone}Text`]?.eng || zone}
                           </Text>
-                          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>{this.renderPressureValue('right', zone)}</Text>
+                          <Text style={{ color: '#7b8fa6', fontSize: 18, fontWeight: 'bold' }}>{this.renderPressureValue('right', zone)}</Text>
                         </View>
                       </View>
                     </React.Fragment>
@@ -724,47 +835,47 @@ class DashboardScreen extends Component {
           </LinearGradient>
         </View>
         {/* Pressure Percentage and Foot Balance Row */}
-        <View style={{ flexDirection: 'row', marginTop: 10, marginHorizontal: 15 }}>
+        <View style={{ flexDirection: 'row', marginTop: 18, marginHorizontal: 12 }}>
           {/* Pressure Percentage Card */}
-          <LinearGradient colors={['#005b50', '#0cfdd1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 24, marginRight: 10, padding: 5, height: 220 }}>
-            <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16, height: '100%' }}>
-              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>
+          <LinearGradient colors={['#005b50', '#0cfdd1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 24, marginRight: 8, padding: 2, height: 220 }}>
+            <View style={{ backgroundColor: '#fff', borderRadius: 22, padding: 16, height: '100%' }}>
+              <Text style={{ color: '#00b2b2', fontWeight: 'bold', fontSize: 21, textAlign: 'center', marginBottom: 20 }}>
                 {this.props.lang ? DashboardLang.pressurePercentageText.thai : DashboardLang.pressurePercentageText.eng}
               </Text>
-              <View style={{ flexDirection: 'row', height: 55, borderRadius: 12, marginBottom: 10, backgroundColor: '#e0e0e0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 }}>
-                <View style={{ flex: 50 / 100, backgroundColor: '#007bff', justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 24 }}>{leftPercentage}%</Text>
+              <View style={{ flexDirection: 'row', height: 55, borderRadius: 12, marginBottom: 10, backgroundColor: '#f5f5f5', shadowColor: '#000', shadowOffset: { width: 6, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 10, overflow: Platform.OS === 'ios' ? 'visible' : 'hidden' }}>
+                <View style={{ flex: 50 / 100, backgroundColor: '#00b2b2', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 24 }}>{leftPercentage}%</Text>
                 </View>
-                <View style={{ flex: 50 / 100, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ color: '#007bff', fontWeight: 'bold', fontSize: 24 }}>{rightPercentage}%</Text>
+                <View style={{ flex: 50 / 100, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ color:'#00b2b2', fontWeight: 'bold', fontSize: 24 }}>{rightPercentage}%</Text>
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 0, marginTop: 10 }}>
-                <View style={{ alignSelf: 'flex-start', marginLeft: 0, paddingRight: 5 }}>
-                  <Text style={{ color: '#007bff', fontSize: 20 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 0, marginHorizontal: 0, marginTop:10 }}>
+                <View style={{ alignSelf: 'flex-start', marginLeft: 0, paddingRight:4 }}>
+                  <Text style={{ color: '#00b2b2', fontSize: 20 }}>
                     {this.props.lang ? DashboardLang.leftText.thai : DashboardLang.leftText.eng}
                   </Text>
                 </View>
-                <Text style={{ color: '#007bff', fontSize: 20, alignSelf: 'flex-end', marginRight: 0 }}>
+                <Text style={{ color: '#00b2b2', fontSize: 20, alignSelf: 'flex-end', marginRight: 0 }}>
                   {this.props.lang ? DashboardLang.rightText.thai : DashboardLang.rightText.eng}
                 </Text>
               </View>
             </View>
           </LinearGradient>
           {/* Foot Balance Card with Radar Chart */}
-          <LinearGradient colors={['#005C51', '#0CFFD3']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1, borderRadius: 24, marginLeft: 10, padding: 5, height: 220 }}>
-            <View style={{ backgroundColor: 'white', borderRadius: 22, padding: 16, height: '100%' }}>
-              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>
+          <LinearGradient colors={['#005C51', '#0CFFD3']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1, borderRadius: 24, marginLeft: 8, padding: 2, height: 220 }}>
+            <View style={{ backgroundColor: '#fff', borderRadius: 22, padding: 16, height: '100%' }}>
+              <Text style={{ color: '#00b2b2', fontWeight: 'bold', fontSize: 21, textAlign: 'center', marginBottom: 8 }}>
                 {this.props.lang ? DashboardLang.footBalanceText.thai : DashboardLang.footBalanceText.eng}
               </Text>
-              <View style={{ alignItems: 'center', marginTop: 10, flex: 1, justifyContent: 'center' }}>
+              <View style={{ alignItems: 'center', marginVertical: 5, flex: 1, justifyContent: 'center' }}>
                 <RadarChartForDashboard positionValue={positionValue} />
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                <Text style={{ fontSize: 16, color: '#007bff' }}>
+                <Text style={{ fontSize: 15, color: '#00A2A2' }}>
                   {this.props.lang ? DashboardLang.leftText.thai : DashboardLang.leftText.eng}
                 </Text>
-                <Text style={{ fontSize: 16, color: '#007bff' }}>
+                <Text style={{ fontSize: 15, color: '#00A2A2' }}>
                   {this.props.lang ? DashboardLang.rightText.thai : DashboardLang.rightText.eng}
                 </Text>
               </View>
@@ -772,46 +883,65 @@ class DashboardScreen extends Component {
           </LinearGradient>
         </View>
         {/* Metrics Card: Path Sway, ML Sway, AP Sway, Velocity, Ellipse */}
-        <View style={{ marginHorizontal: 15, marginTop: 10, marginBottom: 20, borderRadius: 16, borderWidth: 2, borderColor: '#007bff', backgroundColor: 'white', padding: 10, flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{
+          marginHorizontal: 12,
+          marginTop: 18,
+          marginBottom: 16,
+          borderRadius: 24,
+          borderWidth: 2,
+          borderColor: '#00b2b2',
+          backgroundColor: '#fff',
+          padding: 16,
+          flexDirection: 'row',
+          alignItems: 'center',
+        }}>
           {/* Left Column */}
-          <View style={{ flex: 1.2, paddingRight: 10 }}>
-            <View style={{ alignItems: 'center', marginBottom: 10 }}>
-              <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>
-                {this.props.lang ? DashboardLang.pathSwayText.thai : DashboardLang.pathSwayText.eng}
+          <View style={{ flex: 1, paddingRight: 8 }}>
+            <View style={{ alignItems: 'center', marginBottom: 12 }}>
+              <Text style={{ color: '#00b2b2', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>
+                Path Sway
               </Text>
-              <Text style={{ fontSize: 16, color: '#007bff' }}>{healthData.path_sway || '0'} cm</Text>
+              <Text style={{ color: '#00b2b2', fontSize: 20, textAlign: 'center' }}>{healthData.path_sway || '0.75'} cm</Text>
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>
-                  {this.props.lang ? DashboardLang.mlSwayText.thai : DashboardLang.mlSwayText.eng}
+                <Text style={{ color: '#00b2b2', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>
+                  ML Sway
                 </Text>
-                <Text style={{ fontSize: 16, color: '#007bff' }}>{healthData.ml_sway || '0'} cm</Text>
+                <Text style={{ color: '#00b2b2', fontSize: 20, textAlign: 'center' }}>{healthData.ml_sway || '0.75'} cm</Text>
               </View>
               <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff' }}>
-                  {this.props.lang ? DashboardLang.apSwayText.thai : DashboardLang.apSwayText.eng}
+                <Text style={{ color: '#00b2b2', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>
+                  AP Sway
                 </Text>
-                <Text style={{ fontSize: 16, color: '#007bff' }}>{healthData.ap_sway || '0'} cm</Text>
+                <Text style={{ color: '#00b2b2', fontSize: 20, textAlign: 'center' }}>{healthData.ap_sway || '0.82'} cm</Text>
               </View>
             </View>
           </View>
           {/* Divider */}
-          <View style={{ height: 70, width: 1, backgroundColor: '#007bff', opacity: 0.4, marginHorizontal: 10 }} />
-          {/* Right Column */}
-          <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>
-              {this.props.lang ? DashboardLang.ellipseAreaText.thai : DashboardLang.ellipseAreaText.eng}
-            </Text>
-            <Text style={{ fontSize: 16, color: '#007bff', marginBottom: 10 }}>{healthData.ellipse_area || '0'}
-              <Text style={{ fontSize: 12, color: '#007bff' }}> cm</Text>
-            </Text>
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 5 }}>
-              {this.props.lang ? DashboardLang.velocityText.thai : DashboardLang.velocityText.eng}
-            </Text>
-            <Text style={{ fontSize: 16, color: '#007bff' }}>{healthData.velocity || '0'}
-              <Text style={{ fontSize: 12, color: '#007bff' }}> cm/sec</Text>
-            </Text>
+          <View style={{ width: 1, height: 70, backgroundColor: '#e0e0e0', marginVertical: 4 }} />
+          {/* Right Column - Ellipse Area and Velocity side by side */}
+          <View style={{ flex: 1, paddingLeft: 8 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={{ color: '#00b2b2', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>
+                  Ellipse Area
+                </Text>
+                <Text style={{ color: '#00b2b2', fontSize: 20, textAlign: 'center' }}>
+                  {healthData.ellipse_area || '5.6'}
+                </Text>
+                <Text style={{ color: '#00b2b2', fontSize: 14, textAlign: 'center' }}>cm2</Text>
+              </View>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={{ color: '#00b2b2', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>
+                  Velocity
+                </Text>
+                <Text style={{ color: '#00b2b2', fontSize: 20, textAlign: 'center' }}>
+                  {healthData.velocity || '0.14'}
+                </Text>
+                <Text style={{ color: '#00b2b2', fontSize: 14, textAlign: 'center' }}>cm/sec</Text>
+              </View>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -1041,9 +1171,9 @@ class DashboardScreen extends Component {
               this.renderDynamicDashboard()
             ) : null}
             {/* Pagination Dots */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', position: 'absolute', bottom: 5, width: '100%' }}>
-              <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: currentPage === 0 ? '#007bff' : '#e0e0e0', marginHorizontal: 5 }} />
-              <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: currentPage === 1 ? '#007bff' : '#e0e0e0', marginHorizontal: 5 }} />
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', position: 'absolute', bottom: 20, width: '100%' }}>
+              <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: currentPage === 0 ? '#00b2b2' : '#b2dfdb', margin: 4 }} />
+              <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: currentPage === 1 ? '#00b2b2' : '#b2dfdb', margin: 4 }} />
             </View>
           </View>
          {/* Second Page - Summary */}

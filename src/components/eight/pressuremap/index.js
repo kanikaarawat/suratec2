@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import {
   View,
   Image,
@@ -12,8 +12,8 @@ import {
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import {Col, Grid} from 'react-native-easy-grid';
-import {connect} from 'react-redux';
+import { Col, Grid } from 'react-native-easy-grid';
+import { connect } from 'react-redux';
 
 import HeaderFix from '../../common/HeaderFix';
 import NotificationsState from '../../shared/Notification';
@@ -26,7 +26,7 @@ import BleManager from 'react-native-ble-manager';
 
 import Lang from '../../../assets/language/menu/lang_record';
 import LangHome from '../../../assets/language/screen/lang_home';
-import {getLocalizedText} from '../../../assets/language/langUtils';
+import { getLocalizedText } from '../../../assets/language/langUtils';
 import Lang_pressuremap from "../../../assets/language/menu/lang_pressuremap";
 
 var RNFS = require('react-native-fs');
@@ -119,9 +119,9 @@ class index extends React.PureComponent {
 
   updateState(stage, value, side) {
     if (side === 'LEFT') {
-      this.setState({lstage: stage, leftsensor: this.toDecimalArray(value)});
+      this.setState({ lstage: stage, leftsensor: this.toDecimalArray(value) });
     } else if (side === 'RIGHT') {
-      this.setState({rstage: stage, rightsensor: this.toDecimalArray(value)});
+      this.setState({ rstage: stage, rightsensor: this.toDecimalArray(value) });
     }
   }
   findLeftContourArray(lsensor) {
@@ -217,7 +217,7 @@ class index extends React.PureComponent {
   async startReading() {
     this.dataRecord = bleManagerEmitter.addListener(
       'BleManagerDidUpdateValueForCharacteristic',
-      ({value, peripheral, characteristic, service}) => {
+      ({ value, peripheral, characteristic, service }) => {
         let time = new Date();
         if (peripheral === this.props.leftDevice) {
           let leftsensor = this.toDecimalArray(value);
@@ -226,7 +226,7 @@ class index extends React.PureComponent {
             let shouldVibrate = this.shouldBeVibration(leftsensor);
             let leftData = this.findLeftContourArray(leftsensor);
             this.leftPhase = leftsensor.reduce((a, b) => a + b, 0);
-            this.setState({leftsensor, shouldVibrate, leftData});
+            this.setState({ leftsensor, shouldVibrate, leftData });
             this.ltime = time;
           }
         }
@@ -237,7 +237,7 @@ class index extends React.PureComponent {
             let shouldVibrate = this.shouldBeVibration(rightsensor);
             let rightData = this.findRightContourArray(rightsensor);
             this.rightPhase = rightsensor.reduce((a, b) => a + b, 0);
-            this.setState({rightsensor, shouldVibrate, rightData});
+            this.setState({ rightsensor, shouldVibrate, rightData });
             this.rtime = time;
           }
         }
@@ -271,7 +271,7 @@ class index extends React.PureComponent {
   };
 
   handleConnectivityChange = status => {
-    this.setState({isConnected: status.isConnected});
+    this.setState({ isConnected: status.isConnected });
     console.log(`Wifi Status : ${this.state.isConnected}`);
   };
 
@@ -287,7 +287,7 @@ class index extends React.PureComponent {
             if (p) {
               p.connected = true;
               peripherals.set(peripheral.id, p);
-              this.setState({peripherals});
+              this.setState({ peripherals });
             }
             if (peripheral.name[peripheral.name.length - 1] === 'L') {
               this.props.addLeftDevice(peripheral.id);
@@ -337,7 +337,7 @@ class index extends React.PureComponent {
         this.actionConnectDevice(peripheral);
         peripheral.connected = true;
         peripherals.set(peripheral.id, peripheral);
-        this.setState({peripherals});
+        this.setState({ peripherals });
       }
     });
   }
@@ -356,16 +356,16 @@ class index extends React.PureComponent {
       }
     } else {
       this.props.actionRecordingButton('Record');
-      this.setState({textAction: 'Record'});
+      this.setState({ textAction: 'Record' });
     }
 
     // notiAlarm
     let noti = await AsyncStorage.getItem('notiSetting');
-    noti !== null ? this.setState({notiAlarm: parseInt(noti)}) : 100;
+    noti !== null ? this.setState({ notiAlarm: parseInt(noti) }) : 100;
 
     this.retrieveConnected();
     this.startReading();
-    this.setState({leftData, rightData});
+    this.setState({ leftData, rightData });
   };
 
   componentWillUnmount = () => {
@@ -394,7 +394,7 @@ class index extends React.PureComponent {
       return;
     }
     if (this.state.textAction == 'Record') {
-      this.setState({textAction: 'Stop'});
+      this.setState({ textAction: 'Stop' });
       this.props.actionRecordingButton('Stop');
       let initTime = new Date();
       this.start = initTime;
@@ -432,28 +432,28 @@ class index extends React.PureComponent {
           // }
           await await RNFS.appendFile(
             RNFS.CachesDirectoryPath +
-              '/suratechM/' +
-              this.start.getFullYear() +
-              this.start.getMonth() +
-              this.start.getDate() +
-              this.round,
+            '/suratechM/' +
+            this.start.getFullYear() +
+            this.start.getMonth() +
+            this.start.getDate() +
+            this.round,
             JSON.stringify(data) + ',',
           );
         } catch {
           await RNFS.mkdir(RNFS.CachesDirectoryPath + '/suratechM/');
           await RNFS.appendFile(
             RNFS.CachesDirectoryPath +
-              '/suratechM/' +
-              this.start.getFullYear() +
-              this.start.getMonth() +
-              this.start.getDate() +
-              this.round,
+            '/suratechM/' +
+            this.start.getFullYear() +
+            this.start.getMonth() +
+            this.start.getDate() +
+            this.round,
             JSON.stringify(data) + ',',
           );
         }
       }, 100);
     } else {
-      this.setState({textAction: 'Record'});
+      this.setState({ textAction: 'Record' });
       this.props.actionRecordingButton('Record');
       clearInterval(this.readInterval);
       this.sendDataToSetver();
@@ -463,92 +463,92 @@ class index extends React.PureComponent {
   sendDataToSetver() {
     this.state.isConnected == false
       ? RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
-          console.log('WiFi is not connect');
-          res.forEach(r => {
-            console.log(r.path);
-          });
-        })
+        console.log('WiFi is not connect');
+        res.forEach(r => {
+          console.log(r.path);
+        });
+      })
       : RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
-          res.forEach(r => {
-            console.log(r.path);
-            RNFS.readFile(r.path)
-              .then(text => {
-                let data = JSON.parse(
-                  '[' + text.substring(0, text.length - 1) + ']',
-                );
-                var content = {
-                  data: data,
-                  id_customer: data[0].id_customer,
-                  id_device: '',
-                  type: 1, // for medical
-                  product_number: this.props.productNumber,
-                  bluetooth_left_id: this.props.leftDevice,
-                  bluetooth_right_id: this.props.rightDevice,
-                };
-                fetch(`${API}/addjson`, {
-                  method: 'POST',
-                  headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(content),
-                })
-                  .then(resp => resp.json())
-                  .then(resp => {
-                    if (resp.status != 'ผิดพลาด') {
-                      console.log(`Clear : ${r.path}`);
-                      RNFS.unlink(r.path);
+        res.forEach(r => {
+          console.log(r.path);
+          RNFS.readFile(r.path)
+            .then(text => {
+              let data = JSON.parse(
+                '[' + text.substring(0, text.length - 1) + ']',
+              );
+              var content = {
+                data: data,
+                id_customer: data[0].id_customer,
+                id_device: '',
+                type: 1, // for medical
+                product_number: this.props.productNumber,
+                bluetooth_left_id: this.props.leftDevice,
+                bluetooth_right_id: this.props.rightDevice,
+              };
+              fetch(`${API}/addjson`, {
+                method: 'POST',
+                headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(content),
+              })
+                .then(resp => resp.json())
+                .then(resp => {
+                  if (resp.status != 'ผิดพลาด') {
+                    console.log(`Clear : ${r.path}`);
+                    RNFS.unlink(r.path);
 
-                      fetch(`${API}member/getUserDashboardStatic`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          id: this.props.user.id_customer,
-                          // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
-                        }),
+                    fetch(`${API}member/getUserDashboardStatic`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        id: this.props.user.id_customer,
+                        // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
+                      }),
+                    })
+                      .then(resp1 => {
+                        console.log('============API Response============');
+                        return resp1.json();
                       })
                       .then(resp1 => {
+
+                        fetch(`${API}member/get_user_data`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            id: this.props.user.id_customer,
+                            ...resp1
+                            // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
+                          }),
+                        })
+                          .then(res => {
                             console.log('============API Response============');
-                            return  resp1.json();
+                            return console.log(res), res.json();
                           })
-                        .then(resp1 => {
-                          
-                          fetch(`${API}member/get_user_data`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              id: this.props.user.id_customer,
-                              ...resp1
-                              // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
-                            }),
+                          .then(res => {
+                            console.log(res, 'responseFromAPU');
+
                           })
-                            .then(res => {
-                              console.log('============API Response============');
-                              return console.log(res), res.json();
-                            })
-                            .then(res => {
-                              console.log(res, 'responseFromAPU');
-  
-                            })
-                            .catch(err => {
-                              console.log(err);
-                              this.setState({ isLoading: false });
-                              Toast.show('Something went wrong. Please Try again!!!');
-                            });
-                        }
-  
-                        )
-                        .catch(err => {
-                          console.log(err);
-                          this.setState({ isLoading: false });
-                          Toast.show('Something went wrong. Please Try again!!!');
-                        });
-                    }
-                  });
-              })
-              .catch(e => {});
-          });
+                          .catch(err => {
+                            console.log(err);
+                            this.setState({ isLoading: false });
+                            Toast.show('Something went wrong. Please Try again!!!');
+                          });
+                      }
+
+                      )
+                      .catch(err => {
+                        console.log(err);
+                        this.setState({ isLoading: false });
+                        Toast.show('Something went wrong. Please Try again!!!');
+                      });
+                  }
+                });
+            })
+            .catch(e => { });
         });
+      });
     alert(getLocalizedText(this.state.lang, Lang.alert));
   }
 
@@ -567,53 +567,53 @@ class index extends React.PureComponent {
   render() {
     this.canVibration(this.state.shouldVibrate, this.state.switch);
     return (
-        <View style={{flex: 1, backgroundColor: 'white'}}>
-          <HeaderFix
-              icon_left={'left'}
-              onpress_left={() => {
-                this.props.navigation.goBack();
-              }}
-              title={this.props.navigation.getParam('name', '')}
-          />
+      <View style={{ flex: 1, backgroundColor: 'white' }}>
+        <HeaderFix
+          icon_left={'left'}
+          onpress_left={() => {
+            this.props.navigation.goBack();
+          }}
+          title={this.props.navigation.getParam('name', '')}
+        />
 
-          {/*<NotificationsState />*/}
+        {/*<NotificationsState />*/}
 
-          <ScrollView
-              contentContainerStyle={{ flexGrow: 1 }}
-              showsVerticalScrollIndicator={false}
-          >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Spacer to push content down */}
-          <View style={{flex: 1}} />
+          <View style={{ flex: 1, height: 60 }} />
 
           {/* Main content container - minimal styling to avoid SVG issues */}
-          <View style={{flex: 2, paddingHorizontal: 15}}>
-            <Text style={{fontSize: 16, color: '#666', marginBottom: 15}}>kPa .</Text>
+          <View style={{ flex: 2, paddingHorizontal: 15 }}>
+            {/* <Text style={{fontSize: 16, color: '#666', marginBottom: 15}}>kPa .</Text> */}
             <SvgContourBasic
-                leftsensor={this.state.leftData}
-                rightsensor={this.state.rightData}
+              leftsensor={this.state.leftData}
+              rightsensor={this.state.rightData}
             />
           </View>
 
           {/* Spacer to center the content */}
-          <View style={{flex: 1}} />
+          <View style={{ flex: 1 }} />
 
           {/* Bottom button container */}
           <View
-              style={{
-                paddingHorizontal: 15,
-                paddingBottom: 30,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
+            style={{
+              paddingHorizontal: 15,
+              paddingBottom: 30,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
             <ButtonFix
-                action={true}
-                rounded={true}
-                title={getLocalizedText(this.props.lang, Lang_pressuremap.recordButton)}
-                onPress={() => this.actionRecording()}
+              action={true}
+              rounded={true}
+              title={getLocalizedText(this.props.lang, Lang_pressuremap.recordButton)}
+              onPress={() => this.actionRecording()}
             />
           </View>
-          </ScrollView>
-        </View>
+        </ScrollView>
+      </View>
     );
   }
 }
@@ -634,19 +634,19 @@ const mapStateToProps = state => {
 const mapDisPatchToProps = dispatch => {
   return {
     addLeftDevice: device => {
-      return dispatch({type: 'ADD_LEFT_DEVICE', payload: device});
+      return dispatch({ type: 'ADD_LEFT_DEVICE', payload: device });
     },
     addRightDevice: device => {
-      return dispatch({type: 'ADD_RIGHT_DEVICE', payload: device});
+      return dispatch({ type: 'ADD_RIGHT_DEVICE', payload: device });
     },
     actionRecordingButton: data => {
-      return dispatch({type: 'ACTION_BUTTON_RECORD', payload: data});
+      return dispatch({ type: 'ACTION_BUTTON_RECORD', payload: data });
     },
     addDashBoardData: data => {
-      return dispatch({type: 'ADD_BLUETOOTH_DATA', payload: data});
+      return dispatch({ type: 'ADD_BLUETOOTH_DATA', payload: data });
     },
     actionNotificationButton: data => {
-      return dispatch({type: 'ACTION_BUTTON_NOTIFICATION', payload: data});
+      return dispatch({ type: 'ACTION_BUTTON_NOTIFICATION', payload: data });
     },
   };
 };
@@ -677,9 +677,9 @@ Array.prototype.pip = function (x, y) {
     if (
       this[i][1] > y != this[j][1] > y &&
       x <
-        ((this[j][0] - this[i][0]) * (y - this[i][1])) /
-          (this[j][1] - this[i][1]) +
-          this[i][0]
+      ((this[j][0] - this[i][0]) * (y - this[i][1])) /
+      (this[j][1] - this[i][1]) +
+      this[i][0]
     ) {
       c = !c;
     }
@@ -851,7 +851,7 @@ var kriging = (function () {
     return (
       nugget +
       ((sill - nugget) / range) *
-        (1.0 - Math.exp(-(1.0 / A) * Math.pow(h / range, 2)))
+      (1.0 - Math.exp(-(1.0 / A) * Math.pow(h / range, 2)))
     );
   };
   kriging_variogram_exponential = function (h, nugget, range, sill, A) {
@@ -865,7 +865,7 @@ var kriging = (function () {
     return (
       nugget +
       ((sill - nugget) / range) *
-        (1.5 * (h / range) - 0.5 * Math.pow(h / range, 3))
+      (1.5 * (h / range) - 0.5 * Math.pow(h / range, 3))
     );
   };
 
@@ -1160,7 +1160,7 @@ var kriging = (function () {
     A.width = width;
     return A;
   };
-  kriging.contour = function (value, polygons, variogram) {};
+  kriging.contour = function (value, polygons, variogram) { };
 
   // Plotting on the DOM
   kriging.plot = function (canvas, grid, xlim, ylim, colors) {

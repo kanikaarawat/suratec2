@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import {
   Image,
   Dimensions,
@@ -34,14 +34,14 @@ import {
   Item,
   Picker
 } from 'native-base';
-import {connect} from 'react-redux';
+import { connect } from 'react-redux';
 import {
   FileManager,
   getFileList,
   deleteFile,
   readFile,
 } from '../../../FileManager';
-import {Dropdown} from 'react-native-element-dropdown';
+import { Dropdown } from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HeaderFix from '../../common/HeaderFix';
 import NotificationsState from '../../shared/Notification';
@@ -137,7 +137,7 @@ class index extends Component {
     console.log('[NAVIGATION] Entered menu/training module');
     // notiAlarm
     let noti = await AsyncStorage.getItem('notiSetting');
-    noti !== null ? this.setState({notiAlarm: parseInt(noti)}) : 100;
+    noti !== null ? this.setState({ notiAlarm: parseInt(noti) }) : 100;
 
     this.getWalktrainingdata();
 
@@ -169,13 +169,38 @@ class index extends Component {
         'Content-Type': 'application/json',
       },
     })
-      .then(res => res.json())
       .then(async res => {
-        console.log(res.message);
-        this.setState({standard: res.message});
+        console.log('[TRAINING] API Response status:', res.status);
+        const text = await res.text();
+        console.log('[TRAINING] Raw response:', text);
+
+        // Check if response is HTML (error page)
+        if (text.trim().startsWith('<')) {
+          throw new Error('Received HTML instead of JSON - API endpoint may be down or incorrect');
+        }
+
+        // Try to parse as JSON
+        try {
+          return JSON.parse(text);
+        } catch (parseError) {
+          console.error('[TRAINING] JSON parse error:', parseError);
+          throw new Error(`Invalid JSON response: ${text.substring(0, 100)}...`);
+        }
+      })
+      .then(async res => {
+        console.log('[TRAINING] Parsed response:', res);
+        if (res && res.message) {
+          console.log('[TRAINING] Setting standard:', res.message);
+          this.setState({ standard: res.message });
+        } else {
+          console.log('[TRAINING] No message in response, setting empty standard');
+          this.setState({ standard: '' });
+        }
       })
       .catch(error => {
-        console.error(error);
+        console.error('[TRAINING] getWalktrainingdata error:', error);
+        // Set default empty standard to prevent crashes
+        this.setState({ standard: '' });
       });
   }
 
@@ -268,18 +293,18 @@ class index extends Component {
 
   // สูตรแปลงค่าเป็น kilo
   toKilo = value => {
-    const a1 = 1 / (1000 * ((5 / ((value * 5) / 1023)) -1));
-    return ((2.36111 * Math.exp(1428.01995 * a1)) / 9.81) ;
+    const a1 = 1 / (1000 * ((5 / ((value * 5) / 1023)) - 1));
+    return ((2.36111 * Math.exp(1428.01995 * a1)) / 9.81);
   };
 
   shouldBeVibration = sensor => {
     for (let i = 0; i < sensor.length; i++) {
       if (this.toKilo(sensor[i]) > this.props.user.weight * 0.2) {
-        this.setState({shouldVibrate: true});
+        this.setState({ shouldVibrate: true });
         return;
       }
     }
-    this.setState({shouldVibrate: false});
+    this.setState({ shouldVibrate: false });
   };
 
   getText = (value, weight, lang) => {
@@ -303,7 +328,7 @@ class index extends Component {
         ? (statusTxt = TrainingLang.lowPressure.thai)
         : (statusTxt = TrainingLang.lowPressure.thai);
     }
-    return {shouldVibrate, status, statusTxt};
+    return { shouldVibrate, status, statusTxt };
   };
 
   onModeSelected(mode, sensor, weight, lang) {
@@ -376,7 +401,7 @@ class index extends Component {
             if (p) {
               p.connected = true;
               peripherals.set(peripheral.id, p);
-              this.setState({peripherals});
+              this.setState({ peripherals });
             }
             if (peripheral.name[peripheral.name.length - 1] === 'L') {
               this.props.addLeftDevice(peripheral.id);
@@ -426,7 +451,7 @@ class index extends Component {
         this.actionConnectDevice(peripheral);
         peripheral.connected = true;
         peripherals.set(peripheral.id, peripheral);
-        this.setState({peripherals});
+        this.setState({ peripherals });
       }
     });
   }
@@ -438,24 +463,24 @@ class index extends Component {
       }
     } else {
       this.props.actionRecordingButton('Record');
-      this.setState({textAction: 'Record'});
+      this.setState({ textAction: 'Record' });
     }
     this.dataRecord = bleManagerEmitter.addListener(
       'BleManagerDidUpdateValueForCharacteristic',
-      ({value, peripheral, characteristic, service}) => {
+      ({ value, peripheral, characteristic, service }) => {
         let time = new Date();
         let newData = null;
         if (peripheral === this.props.rightDevice) {
           let rsensor = this.toDecimalArray(value);
           this.recordData(rsensor, 2);
           if (time - this.rtime > 250) {
-            const {sensor, shouldVibrate} = this.onModeSelected(
+            const { sensor, shouldVibrate } = this.onModeSelected(
               this.state.mode,
               rsensor,
               this.props.user.weight,
               this.props.lang,
             );
-            this.setState({rsensor: sensor, shouldVibrate});
+            this.setState({ rsensor: sensor, shouldVibrate });
             this.rtime = time;
             newData = { side: 'right', sensor };
           }
@@ -464,13 +489,13 @@ class index extends Component {
           let lsensor = this.toDecimalArray(value);
           this.recordData(lsensor, 1);
           if (time - this.ltime > 250) {
-            const {sensor, shouldVibrate} = this.onModeSelected(
+            const { sensor, shouldVibrate } = this.onModeSelected(
               this.state.mode,
               lsensor,
               this.props.user.weight,
               this.props.lang,
             );
-            this.setState({lsensor: sensor, shouldVibrate});
+            this.setState({ lsensor: sensor, shouldVibrate });
             this.ltime = time;
             newData = { side: 'left', sensor };
           }
@@ -507,7 +532,7 @@ class index extends Component {
   };
 
   handleConnectivityChange = status => {
-    this.setState({isConnected: status.isConnected});
+    this.setState({ isConnected: status.isConnected });
     console.log(`Wifi Status : ${this.state.isConnected}`);
   };
 
@@ -532,7 +557,7 @@ class index extends Component {
     }
     console.log('==============' + this.state.textAction);
     if (this.state.textAction == 'Record') {
-      this.setState({textAction: 'Stop'});
+      this.setState({ textAction: 'Stop' });
       this.props.actionRecordingButton('Stop');
       let initTime = new Date();
       this.start = initTime;
@@ -570,28 +595,28 @@ class index extends Component {
           // }
           await await RNFS.appendFile(
             RNFS.CachesDirectoryPath +
-              '/suratechM/' +
-              this.start.getFullYear() +
-              this.start.getMonth() +
-              this.start.getDate() +
-              this.round,
+            '/suratechM/' +
+            this.start.getFullYear() +
+            this.start.getMonth() +
+            this.start.getDate() +
+            this.round,
             JSON.stringify(data) + ',',
           );
         } catch {
           await RNFS.mkdir(RNFS.CachesDirectoryPath + '/suratechM/');
           await RNFS.appendFile(
             RNFS.CachesDirectoryPath +
-              '/suratechM/' +
-              this.start.getFullYear() +
-              this.start.getMonth() +
-              this.start.getDate() +
-              this.round,
+            '/suratechM/' +
+            this.start.getFullYear() +
+            this.start.getMonth() +
+            this.start.getDate() +
+            this.round,
             JSON.stringify(data) + ',',
           );
         }
       }, 100);
     } else {
-      this.setState({textAction: 'Record'});
+      this.setState({ textAction: 'Record' });
       this.props.actionRecordingButton('Record');
       clearInterval(this.readInterval);
       this.sendDataToSetver();
@@ -601,92 +626,92 @@ class index extends Component {
   sendDataToSetver() {
     this.state.isConnected == false
       ? RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
-          console.log('WiFi is not connect');
-          res.forEach(r => {
-            console.log(r.path);
-          });
-        })
+        console.log('WiFi is not connect');
+        res.forEach(r => {
+          console.log(r.path);
+        });
+      })
       : RNFS.readDir(RNFS.CachesDirectoryPath + '/suratechM/').then(res => {
-          res.forEach(r => {
-            console.log(r.path);
-            RNFS.readFile(r.path)
-              .then(text => {
-                let data = JSON.parse(
-                  '[' + text.substring(0, text.length - 1) + ']',
-                );
-                var content = {
-                  data: data,
-                  id_customer: data[0].id_customer,
-                  id_device: '',
-                  type: 1, // for medical
-                  product_number: this.props.productNumber,
-                  bluetooth_left_id: this.props.rightDevice,
-                  bluetooth_right_id: this.props.leftDevice,
-                };
-                fetch(`${API}/addjson`, {
-                  method: 'POST',
-                  headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(content),
-                })
-                  .then(resp => resp.json())
-                  .then(resp => {
-                    if (resp.status != 'ผิดพลาด') {
-                      console.log(`Clear : ${r.path}`);
-                      RNFS.unlink(r.path);
+        res.forEach(r => {
+          console.log(r.path);
+          RNFS.readFile(r.path)
+            .then(text => {
+              let data = JSON.parse(
+                '[' + text.substring(0, text.length - 1) + ']',
+              );
+              var content = {
+                data: data,
+                id_customer: data[0].id_customer,
+                id_device: '',
+                type: 1, // for medical
+                product_number: this.props.productNumber,
+                bluetooth_left_id: this.props.rightDevice,
+                bluetooth_right_id: this.props.leftDevice,
+              };
+              fetch(`${API}/addjson`, {
+                method: 'POST',
+                headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(content),
+              })
+                .then(resp => resp.json())
+                .then(resp => {
+                  if (resp.status != 'ผิดพลาด') {
+                    console.log(`Clear : ${r.path}`);
+                    RNFS.unlink(r.path);
 
-                      fetch(`${API}member/getUserDashboardStatic`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          id: this.props.user.id_customer,
-                          // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
-                        }),
+                    fetch(`${API}member/getUserDashboardStatic`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        id: this.props.user.id_customer,
+                        // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
+                      }),
+                    })
+                      .then(resp1 => {
+                        console.log('============API Response============');
+                        return resp1.json();
                       })
                       .then(resp1 => {
+
+                        fetch(`${API}member/get_user_data`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            id: this.props.user.id_customer,
+                            ...resp1
+                            // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
+                          }),
+                        })
+                          .then(res => {
                             console.log('============API Response============');
-                            return  resp1.json();
+                            return console.log(res), res.json();
                           })
-                        .then(resp1 => {
-                          
-                          fetch(`${API}member/get_user_data`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              id: this.props.user.id_customer,
-                              ...resp1
-                              // id: 'wef0cdb8296f90cc467fbf1d3645c57f9dp',
-                            }),
+                          .then(res => {
+                            console.log(res, 'responseFromAPU');
+
                           })
-                            .then(res => {
-                              console.log('============API Response============');
-                              return console.log(res), res.json();
-                            })
-                            .then(res => {
-                              console.log(res, 'responseFromAPU');
-  
-                            })
-                            .catch(err => {
-                              console.log(err);
-                              this.setState({ isLoading: false });
-                              Toast.show('Something went wrong. Please Try again!!!');
-                            });
-                        }
-  
-                        )
-                        .catch(err => {
-                          console.log(err);
-                          this.setState({ isLoading: false });
-                          Toast.show('Something went wrong. Please Try again!!!');
-                        });
-                    }
-                  });
-              })
-              .catch(e => {});
-          });
+                          .catch(err => {
+                            console.log(err);
+                            this.setState({ isLoading: false });
+                            Toast.show('Something went wrong. Please Try again!!!');
+                          });
+                      }
+
+                      )
+                      .catch(err => {
+                        console.log(err);
+                        this.setState({ isLoading: false });
+                        Toast.show('Something went wrong. Please Try again!!!');
+                      });
+                  }
+                });
+            })
+            .catch(e => { });
         });
+      });
     alert(this.props.lang ? Lang.alert.thai : Lang.alert.eng);
   }
 
@@ -780,19 +805,19 @@ class index extends Component {
 
   onDropDownChange = (item, value) => {
     // alert(item)
-    this.setState({drpDown2PlcHldr: value});
+    this.setState({ drpDown2PlcHldr: value });
     switch (item) {
       case '1':
-        this.setState({mode: item});
+        this.setState({ mode: item });
         break;
       case '2':
-        this.setState({mode: item});
+        this.setState({ mode: item });
         break;
       case '3':
-        this.setState({mode: item});
+        this.setState({ mode: item });
         break;
       default:
-        this.setState({mode: 0});
+        this.setState({ mode: 0 });
         break;
     }
   };
@@ -800,16 +825,16 @@ class index extends Component {
   selectFoot = (item, value) => {
     switch (item) {
       case '1':
-        this.setState({drpDown1PlcHldr: value});
-        this.setState({foot: item});
+        this.setState({ drpDown1PlcHldr: value });
+        this.setState({ foot: item });
         break;
       case '2':
-        this.setState({drpDown1PlcHldr: value});
-        this.setState({foot: item});
+        this.setState({ drpDown1PlcHldr: value });
+        this.setState({ foot: item });
         break;
       default:
-        this.setState({drpDown1PlcHldr: ''});
-        this.setState({foot: 0});
+        this.setState({ drpDown1PlcHldr: '' });
+        this.setState({ foot: 0 });
         break;
     }
   };
@@ -829,7 +854,7 @@ class index extends Component {
   render() {
     this.canVibration(this.state.shouldVibrate, this.state.switch);
     return (
-      <Container style={{backgroundColor: '#fff'}}>
+      <Container style={{ backgroundColor: '#fff' }}>
         <HeaderFix
           icon_left={'left'}
           onpress_left={() => {
@@ -838,12 +863,12 @@ class index extends Component {
           title={'Walk Training'}
         />
 
-        <Content contentContainerStyle={{flexGrow: 1}}>
+        <Content contentContainerStyle={{ flexGrow: 1 }}>
 
           {/* Settings Heading */}
           <View style={styles.settingsHeader}>
             <Text style={styles.headerText}>Settings</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => this.props.navigation.navigate('WalkTrainingSettings')}
               style={styles.iconButton}>
               <Image source={settingsIcon} style={styles.icon} />
@@ -859,7 +884,7 @@ class index extends Component {
                   value={this.props.noti}
                   onValueChange={v => this.props.actionNotificationButton(v)}
                   thumbColor={this.props.noti ? UI.color_buttonConfirm : UI.color_greyLight}
-                  trackColor={{false: UI.color_greyLight, true: UI.color_buttonConfirmLight}}
+                  trackColor={{ false: UI.color_greyLight, true: UI.color_buttonConfirmLight }}
                 />
                 <Image source={soundIcon} style={[styles.icon, styles.soundIcon]} />
               </View>
@@ -871,13 +896,13 @@ class index extends Component {
             <View style={styles.dropdownWrapper}>
               <Text style={styles.dropdownLabel}>Select foot</Text>
               <Dropdown
-                style={[styles.dropdown, this.state.isFocus1 && {borderColor: 'blue'}]}
+                style={[styles.dropdown, this.state.isFocus1 && { borderColor: 'blue' }]}
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
                 iconStyle={styles.iconStyle}
                 data={[
-                  {label: 'Left', value: 'Left', id: '1'},
-                  {label: 'Right', value: 'Right', id: '2'},
+                  { label: 'Left', value: 'Left', id: '1' },
+                  { label: 'Right', value: 'Right', id: '2' },
                 ]}
                 itemTextStyle={styles.placeholderStyle}
                 maxHeight={300}
@@ -885,11 +910,11 @@ class index extends Component {
                 valueField="value"
                 placeholder={'Select item'}
                 value={this.state.drpDown1PlcHldr}
-                onFocus={() => this.setState({isFocus1: true})}
-                onBlur={() => this.setState({isFocus1: false})}
+                onFocus={() => this.setState({ isFocus1: true })}
+                onBlur={() => this.setState({ isFocus1: false })}
                 onChange={item => {
                   this.selectFoot(item.id, item.value);
-                  this.setState({isFocus1: false});
+                  this.setState({ isFocus1: false });
                 }}
               />
             </View>
@@ -897,14 +922,14 @@ class index extends Component {
             <View style={styles.dropdownWrapper}>
               <Text style={styles.dropdownLabel}>Select training mode</Text>
               <Dropdown
-                style={[styles.dropdown, this.state.isFocus2 && {borderColor: 'blue'}]}
+                style={[styles.dropdown, this.state.isFocus2 && { borderColor: 'blue' }]}
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
                 iconStyle={styles.iconStyle}
                 data={[
-                  {label: 'Toe touch', value: 'Toe touch', id: '1'},
-                  {label: 'Partial weight', value: 'Partial weight', id: '2'},
-                  {label: 'Full weight', value: 'Full weight', id: '3'},
+                  { label: 'Toe touch', value: 'Toe touch', id: '1' },
+                  { label: 'Partial weight', value: 'Partial weight', id: '2' },
+                  { label: 'Full weight', value: 'Full weight', id: '3' },
                 ]}
                 itemTextStyle={styles.placeholderStyle}
                 maxHeight={300}
@@ -912,11 +937,11 @@ class index extends Component {
                 valueField="value"
                 placeholder={'Select item'}
                 value={this.state.drpDown2PlcHldr}
-                onFocus={() => this.setState({isFocus2: true})}
-                onBlur={() => this.setState({isFocus2: false})}
+                onFocus={() => this.setState({ isFocus2: true })}
+                onBlur={() => this.setState({ isFocus2: false })}
                 onChange={item => {
                   this.onDropDownChange(item.id, item.value);
-                  this.setState({isFocus2: false});
+                  this.setState({ isFocus2: false });
                 }}
               />
             </View>
@@ -956,10 +981,10 @@ class index extends Component {
                   fill={
                     this.state.foot === 1
                       ? this.actionGradientColor([
-                          this.state.lsensor[0],
-                          this.state.lsensor[1],
-                          this.state.lsensor[2],
-                        ])
+                        this.state.lsensor[0],
+                        this.state.lsensor[1],
+                        this.state.lsensor[2],
+                      ])
                       : this.actionGradientColor([0])
                   }
                   d="M380.15,308.16a292.35,292.35,0,0,0-2.82-90.07c-16.46-88-42.54-174.16-120.56-208.76-.21-.09-.42-.18-.64-.25s-.52-.25-.81-.37C200.46-12.56,133.87,6.08,93.33,54,36.52,121.28,14.43,212.3,5.87,276.83c-1.23,9.3-2.2,18.46-3,27.52l-.37,3.81Z"
@@ -999,10 +1024,10 @@ class index extends Component {
                   fill={
                     this.state.foot === 2
                       ? this.actionGradientColor([
-                          this.state.rsensor[0],
-                          this.state.rsensor[1],
-                          this.state.rsensor[2],
-                        ])
+                        this.state.rsensor[0],
+                        this.state.rsensor[1],
+                        this.state.rsensor[2],
+                      ])
                       : this.actionGradientColor([0])
                   }
                   d="M2.3,312.08a296,296,0,0,1,2.85-91.21C21.82,131.74,48.19,44.44,127.2,9.45c.21-.09.42-.18.64-.25a8.58,8.58,0,0,1,.82-.37c55.56-21.54,123-2.67,164.06,45.9C350.3,122.82,372.62,215,381.3,280.36c1.24,9.43,2.23,18.69,3.08,27.88l.37,3.85Z"
@@ -1015,8 +1040,8 @@ class index extends Component {
           {/* Gradient Bar */}
           <View style={styles.gradientContainer}>
             <LinearGradient
-              start={{x: 0.0, y: 0.5}}
-              end={{x: 1, y: 0.5}}
+              start={{ x: 0.0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
               colors={[UI.color_buttonConfirm, UI.color_buttonAction]}
               style={styles.gradientBar}
             />
@@ -1053,19 +1078,19 @@ const mapStateToProps = state => {
 const mapDisPatchToProps = dispatch => {
   return {
     addLeftDevice: device => {
-      return dispatch({type: 'ADD_LEFT_DEVICE', payload: device});
+      return dispatch({ type: 'ADD_LEFT_DEVICE', payload: device });
     },
     addRightDevice: device => {
-      return dispatch({type: 'ADD_RIGHT_DEVICE', payload: device});
+      return dispatch({ type: 'ADD_RIGHT_DEVICE', payload: device });
     },
     addDashBoardData: data => {
-      return dispatch({type: 'ADD_BLUETOOTH_DATA', payload: data});
+      return dispatch({ type: 'ADD_BLUETOOTH_DATA', payload: data });
     },
     actionRecordingButton: data => {
-      return dispatch({type: 'ACTION_BUTTON_RECORD', payload: data});
+      return dispatch({ type: 'ACTION_BUTTON_RECORD', payload: data });
     },
     actionNotificationButton: data => {
-      return dispatch({type: 'ACTION_BUTTON_NOTIFICATION', payload: data});
+      return dispatch({ type: 'ACTION_BUTTON_NOTIFICATION', payload: data });
     },
   };
 };
@@ -1073,55 +1098,55 @@ const mapDisPatchToProps = dispatch => {
 export default connect(mapStateToProps, mapDisPatchToProps)(index);
 
 const styles = StyleSheet.create({
-settingsHeader: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  padding: 16,
-  paddingBottom: 8,
-},
-headerText: {
-  fontSize: 18,
-  fontWeight: 'bold',
-  color: '#000', // Changed to black for better visibility
-},
-iconButton: {
-  padding: 4,
-},
-icon: {
-  width: 24,
-  height: 24,
-  tintColor: UI.color_textSecondary,
-},
-notificationContainer: {
-  marginHorizontal: 16,
-  marginBottom: 16,
-  borderRadius: 8,
-  padding: 16,
-  backgroundColor: '#fff',
-  elevation: 2,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.2,
-  shadowRadius: 1,
-},
-notificationRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-},
-notificationText: {
-  fontSize: 16,
-  color: '#000', // Changed to black for better visibility
-},
-notificationControls: {
-  flexDirection: 'row',
-  alignItems: 'center',
-},
-soundIcon: {
-  marginLeft: 16,
-},
-// ... rest of your styles remain the same
+  settingsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    paddingBottom: 8,
+  },
+  headerText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000', // Changed to black for better visibility
+  },
+  iconButton: {
+    padding: 4,
+  },
+  icon: {
+    width: 24,
+    height: 24,
+    tintColor: UI.color_textSecondary,
+  },
+  notificationContainer: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 8,
+    padding: 16,
+    backgroundColor: '#fff',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+  },
+  notificationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  notificationText: {
+    fontSize: 16,
+    color: '#000', // Changed to black for better visibility
+  },
+  notificationControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  soundIcon: {
+    marginLeft: 16,
+  },
+  // ... rest of your styles remain the same
   dropdownsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,

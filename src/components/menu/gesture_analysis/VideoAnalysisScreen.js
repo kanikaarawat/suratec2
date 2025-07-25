@@ -79,6 +79,15 @@ const VideoAnalysisScreen = (props) => {
   const [currentFrame, setCurrentFrame] = useState(null);
   const videoRef = useRef(null);
 
+  // Debug: log sensor data whenever it changes
+  useEffect(() => {
+    if (sensorData && sensorData.length > 0) {
+      console.log('[VideoAnalysisScreen] Sensor data loaded:', sensorData);
+    } else {
+      console.log('[VideoAnalysisScreen] No sensor data for videoId:', videoId);
+    }
+  }, [sensorData, videoId]);
+
   // For drag-and-drop (angles)
   const pan = useRef(new Animated.ValueXY()).current;
 
@@ -141,20 +150,22 @@ const VideoAnalysisScreen = (props) => {
           },
           body: JSON.stringify({ video_id: videoId }),
         });
+        console.log('[VideoAnalysisScreen] Sensor fetch response status:', response.status);
         const data = await response.json();
+        console.log('[VideoAnalysisScreen] Sensor fetch response data:', data);
         if (data && Array.isArray(data.data) && data.data.length > 0) {
           setSensorData(data.data);
         } else {
           setNoSensorData(true);
           setSensorData([]);
           alert('No sensor data found for this video.');
-          console.log('No sensor data found for video_id:', videoId);
+          console.log('[VideoAnalysisScreen] No sensor data found for video_id:', videoId);
         }
       } catch (error) {
         setNoSensorData(true);
         setSensorData([]);
         alert('Failed to fetch sensor data.');
-        console.log('Failed to fetch sensor data:', error);
+        console.log('[VideoAnalysisScreen] Failed to fetch sensor data:', error);
       }
     };
     fetchSensorData();

@@ -1,4 +1,4 @@
-const titleName = {thai: 'สุระโซล เสี่ยงตก', eng: 'Surasole Rehab', japanese: 'SuraSoleの転倒リスク'};
+const titleName = {thai: 'สุระโซล เสี่ยงตก', eng: 'SuraSole Fall Risk', japanese: 'SuraSoleの転倒リスク'};
 const signIn = {thai: 'เข้าสู่ระบบ', eng: 'Sign in', japanese: 'サインイン'};
 const fieldUsername = {thai: 'ชื่อผู้ใช้', eng: 'Username', japanese: 'ユーザー名'};
 const fieldPassword = {thai: 'รหัสผ่าน', eng: 'Password', japanese: 'パスワード'};
@@ -23,9 +23,9 @@ const alertErrorBody2 = {
   japanese: 'ユーザー名とパスワードを入力してください',
 };
 const langSwitch = {
-  eng: '🇬🇧 English',
-  thai: '🇹🇭 ภาษาไทย ',
-  japanese: '🇯🇵 日本語',
+  eng: 'English',
+  thai: 'ภาษาไทย ',
+  japanese: '日本語',
 }
 
 export default {
